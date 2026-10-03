@@ -1,0 +1,64 @@
+# ============================================================
+# .NET
+# ============================================================
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+
+# Kết quả build / publish
+[Dd]ebug/
+[Rr]elease/
+[Pp]ublish/
+*.dll
+*.exe
+*.pdb
+*.cache
+*.tlog
+
+# Rider / VS
+.vs/
+.idea/
+*.DotSettings.user
+
+# ============================================================
+# CẤU HÌNH CÓ THỂ CHỨA BÍ MẬT — KHÔNG COMMIT
+# appsettings.Development.json đang dùng Windows Authentication (không có password),
+# nhưng vẫn ignore để tránh vô tình commit khi chuyển sang SQL Login / Azure SQL.
+# ============================================================
+appsettings.Development.json
+appsettings.*.Local.json
+secrets.json
+
+# ============================================================
+# Node / Next.js
+# ============================================================
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-error.log*
+.env
+.env*.local
+
+# ============================================================
+# Log & file tạm
+# ============================================================
+*.log
+logs/
+*.tmp
+build-output.txt
+.build-output.txt
+
+# ============================================================
+# OS
+# ============================================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store

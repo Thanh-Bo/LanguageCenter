@@ -1,0 +1,12 @@
+﻿============================================================
+ CASE 10 - TOKEN HET HAN (Jwt:AccessTokenExpirationMinutes = 0)
+============================================================
+Login status = 200
+expiresAt (API tra ve) = 2026-10-01T16:35:07.5332298Z
+iat = 2026-10-01 16:35:07Z
+exp = 2026-10-01 16:35:07Z
+Hien tai UTC = 2026-10-01 16:35:07Z
+GET /api/auth/me voi token het han = 401
+body: 
+RESULT = PASS - token het han bi tu choi 401
+WWW-Authenticate xac nhan token bi coi la het han.

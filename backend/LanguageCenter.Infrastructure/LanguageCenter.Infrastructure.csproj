@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.1" />
+
+    <!-- PasswordHasher<T> chuẩn ASP.NET Core Identity (PBKDF2). Domain KHÔNG bị ảnh hưởng. -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.1" />
+
+    <!-- Sinh JWT (JsonWebTokenHandler). Phiên bản khớp với JwtBearer 10.0.1 -> IdentityModel 8.x -->
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.14.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LanguageCenter.Domain\LanguageCenter.Domain.csproj" />
+    <ProjectReference Include="..\LanguageCenter.Application\LanguageCenter.Application.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

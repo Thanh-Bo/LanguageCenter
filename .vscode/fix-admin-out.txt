@@ -1,0 +1,37 @@
+﻿============================================================
+ KHOI PHUC TAI KHOAN QUAN TRI VIEN
+ Thoi diem: 2026-10-02 08:15:15
+ File SQL : d:\LanguageCenter\database\KhoiPhuc_QuanTriVien.sql
+============================================================
+
+So batch tach duoc: 5
+
+Ket noi OK (SQL Server 11.00.6020)
+
+--- BATCH 1 ---
+    [SQL] Changed database context to 'QuanLyTrungTamNgoaiNgu'.
+
+--- BATCH 2 ---
+    [SQL] === BƯỚC 0: HIỆN TRẠNG ===
+    SoQuanTriVienHienCo=0  |  MaVaiTroQuanTri=1  |  CoNVHV001=1  |  CoADMIN001=0  |  CoADMIN002=0  |  CoADMIN003=0  |  EmailAdminDangDung=0
+    --> 1 dong
+
+--- BATCH 3 ---
+    [SQL] MaVaiTro Quản trị viên = 1
+    [SQL] Độ dài hash mẫu       = 84
+    [SQL] Đã thêm TaiKhoan: 3
+    [SQL] Đã thêm NhanVien: 3
+    [SQL] >>> COMMIT thành công.
+
+--- BATCH 4 ---
+    [SQL] === BƯỚC 2: KẾT QUẢ ===
+    MaTaiKhoan=36  |  TenDangNhap=ADMIN001  |  HoTen=Đỗ Minh Khoa  |  TenVaiTro=Quản trị viên  |  TrangThaiTaiKhoan=Hoạt động  |  Email=admin@trungtam.edu.vn  |  HashThat=CÓ (PBKDF2)  |  DoDaiHash=84  |  DaoHash=GIỐNG NVHV001
+    MaTaiKhoan=37  |  TenDangNhap=ADMIN002  |  HoTen=Nguyễn Hoàng Long  |  TenVaiTro=Quản trị viên  |  TrangThaiTaiKhoan=Hoạt động  |  Email=admin02@trungtam.edu.vn  |  HashThat=CÓ (PBKDF2)  |  DoDaiHash=84  |  DaoHash=GIỐNG NVHV001
+    MaTaiKhoan=38  |  TenDangNhap=ADMIN003  |  HoTen=Trần Thị Bích  |  TenVaiTro=Quản trị viên  |  TrangThaiTaiKhoan=Hoạt động  |  Email=admin03@trungtam.edu.vn  |  HashThat=CÓ (PBKDF2)  |  DoDaiHash=84  |  DaoHash=GIỐNG NVHV001
+    [SQL] === TỔNG SỐ QUẢN TRỊ VIÊN ===
+    SoQuanTriVien=3
+    --> 4 dong
+
+============================================================
+ HOAN TAT - khong co loi
+============================================================

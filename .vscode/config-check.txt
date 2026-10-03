@@ -1,0 +1,14 @@
+﻿=== [1] User Secrets store ===
+  Jwt:Key = <REDACTED, 88 chars>
+
+=== [2] appsettings.json (Jwt section) ===
+  Issuer = LanguageCenter.Api
+  Audience = LanguageCenter.Clients
+  AccessTokenExpirationMinutes = 60
+  Key = <absent - dung thiet ke>
+
+=== [3] Hanh vi THAT cua API dang chay ===
+  login status = 200
+  iat = 2026-10-01 16:48:12Z
+  exp = 2026-10-01 17:48:12Z
+  ==> THOI HAN TOKEN HIEU DUNG = 60 phut

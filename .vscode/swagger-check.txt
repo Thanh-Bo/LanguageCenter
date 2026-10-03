@@ -1,0 +1,20 @@
+﻿=== Swagger / OpenAPI check ===
+securitySchemes = Bearer
+  Bearer.type      = http
+  Bearer.scheme    = bearer
+  Bearer.bearerFormat = JWT
+global security requirement count = 1
+  -> Bearer
+total paths = 9
+  /api/auth/change-password
+  /api/auth/login
+  /api/auth/me
+  /api/development/admin-only
+  /api/development/authenticated
+  /api/development/database-info
+  /api/development/teacher-only
+  /health
+  /health/database
+ALL_EXPECTED_ENDPOINTS_PRESENT = TRUE
+/api/auth/me responses = 200, 401
+/api/auth/login responses = 200, 400, 401

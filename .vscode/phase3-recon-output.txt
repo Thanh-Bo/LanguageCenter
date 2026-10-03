@@ -1,0 +1,63 @@
+﻿
+=== MA HOC VIEN hien co (max suffix) ===
+  4 | HV004 | 4
+
+=== MA GIAO VIEN hien co ===
+  GV001 | Giáo viên | Dang làm vi?c | Ph?m Minh Tu?n
+  GV002 | Giáo viên | Dang làm vi?c | Nguy?n Thu Hà
+  TG001 | Tr? gi?ng | Dang làm vi?c | Vo Thanh Th?o
+
+=== MA NHAN VIEN hien co ===
+  ADMIN001 | Qu?n tr? viên | Dang làm vi?c
+  NVHV001 | Nhân viên h?c v? | Dang làm vi?c
+  NVKT001 | Nhân viên k? toán | Dang làm vi?c
+  NVTV001 | Nhân viên tu v?n | Dang làm vi?c
+
+=== DISTINCT TrangThaiHocTap ===
+  Dang h?c | 3
+  Dang tu v?n | 1
+
+=== DISTINCT GiaoVien.TrangThai ===
+  Dang làm vi?c | 3
+
+=== DISTINCT NhanVien.TrangThaiLamViec ===
+  Dang làm vi?c | 4
+
+=== PHU HUYNH - so hoc vien dung chung ===
+  1 | Nguy?n Van Hùng | 2
+  2 | Tr?n Th? Hoa | 1
+  3 | Lê Van Son | 0
+
+=== HOC VIEN hien co ===
+  HV001 | Nguy?n Minh Anh | 1 | Cha | Dang h?c | minhanh@gmail.com
+  HV002 | Tr?n Quang Huy | 2 | M? | Dang h?c | quanghuy@gmail.com
+  HV003 | Nguy?n Ng?c Linh | 1 | Cha | Dang h?c | ngoclinh@gmail.com
+  HV004 | Lê Hoàng Nam |  |  | Dang tu v?n | hoangnam@gmail.com
+
+=== EMAIL dong bo TaiKhoan vs profile (ky vong 0 lech) ===
+  HocVien | 0
+  GiaoVien | 0
+  NhanVien | 0
+
+=== CHECK CONSTRAINTS lien quan ===
+  GiaoVien | CK_GiaoVien_KinhNghiem | ([SoNamKinhNghiem] IS NULL OR [SoNamKinhNghiem]>=(0))
+  GiaoVien | CK_GiaoVien_Loai | ([LoaiGiaoVien]=N'Tr? gi?ng' OR [LoaiGiaoVien]=N'Giáo viên')
+  HocVien | CK_HocVien_PhuHuynh | ([MaPhuHuynh] IS NULL AND [MoiQuanHePhuHuynh] IS NULL OR [MaPhuHuynh] IS NOT NULL AND [MoiQuanHePhuHuynh] IS NOT NULL)
+  TaiKhoan | CK_TaiKhoan_TrangThai | ([TrangThaiTaiKhoan]=N'Ng?ng s? d?ng' OR [TrangThaiTaiKhoan]=N'B? khóa' OR [TrangThaiTaiKhoan]=N'Ho?t d?ng')
+
+=== UNIQUE INDEX / CONSTRAINT tren TaiKhoan + profile ===
+  GiaoVien | PK__GiaoVien__8D374F505A2693AD | True | True
+  HocVien | PK__HocVien__685B0E6A0A54FAE4 | True | True
+  PhuHuynh | PK__PhuHuynh__D53239A7C58D09C7 | True | True
+  TaiKhoan | PK__TaiKhoan__AD7C65292E8860F5 | True | True
+  TaiKhoan | UQ__TaiKhoan__55F68FC075F61F7F | True | False
+  TaiKhoan | UQ__TaiKhoan__A9D10534C31FEA20 | True | False
+
+=== SQL Server version + isolation ===
+  Microsoft SQL Server 2012 (SP3) (KB3072779) - 11.0.6020.0 (X64) 
+	Oct 20 2015 15:36:27 
+	Copyright (c) Microsoft Corporation
+	Express Edition (64-bit) on Windows NT 6.3 <X64> (Build 26300: ) (Hypervisor)
+ | 
+
+PHASE3_RECON_DONE

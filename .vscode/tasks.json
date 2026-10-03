@@ -1,0 +1,200 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "detail": "dotnet build LanguageCenter.sln",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/LanguageCenter.sln",
+        "-v",
+        "minimal"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "restore",
+      "detail": "dotnet restore LanguageCenter.sln",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "restore",
+        "${workspaceFolder}/LanguageCenter.sln"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "run-api",
+      "detail": "Chạy LanguageCenter.Api (http://localhost:5204)",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "run",
+        "--project",
+        "${workspaceFolder}/backend/LanguageCenter.Api/LanguageCenter.Api.csproj",
+        "--launch-profile",
+        "http"
+      ],
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "panel": "dedicated",
+        "reveal": "always",
+        "group": "api"
+      }
+    },
+    {
+      "label": "phase1-cleanup",
+      "detail": "Xoá các file placeholder Class1.cs còn sót của template",
+      "type": "shell",
+      "command": "Remove-Item -Force -ErrorAction SilentlyContinue '${workspaceFolder}/backend/LanguageCenter.Domain/Class1.cs','${workspaceFolder}/backend/LanguageCenter.Application/Class1.cs','${workspaceFolder}/backend/LanguageCenter.Infrastructure/Class1.cs'; Write-Output CLEANUP_DONE",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase1-verify",
+      "detail": "Gọi các endpoint health để kiểm tra API + database",
+      "type": "shell",
+      "command": "curl.exe -s http://localhost:5204/health; Write-Output ''; curl.exe -s http://localhost:5204/health/database; Write-Output ''; curl.exe -s http://localhost:5204/api/development/database-info; Write-Output ''; Write-Output VERIFY_DONE",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase2-secrets",
+      "detail": "Thiết lập / kiểm tra JWT signing key trong User Secrets (chạy 1 lần khi clone máy mới)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-secrets-final.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase2-verify-swagger",
+      "detail": "Kiểm tra Swagger đã áp dụng Bearer security scheme",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-verify-swagger.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase2-check-config",
+      "detail": "Đo cấu hình JWT hiệu dụng (secret store + thời hạn token thật)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-check-config.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase2-kill-api",
+      "detail": "Kill toàn bộ process API + kiểm tra cổng 5204",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-kill-api.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "build-to-file",
+      "detail": "dotnet build và ghi kết quả ra .build-output.txt",
+      "type": "shell",
+      "command": "dotnet build '${workspaceFolder}/LanguageCenter.sln' -v minimal 2>&1 | Out-File -FilePath '${workspaceFolder}/.build-output.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "postman-validate",
+      "detail": "Kiểm tra 2 file Postman collection/environment có hợp lệ",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-validate-postman.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase3-recon",
+      "detail": "Phase 3 - đọc dữ liệu thật từ SQL Server (read-only)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase3-recon.ps1' | Out-File -FilePath '${workspaceFolder}/.vscode/phase3-recon-output.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase3-test-part1",
+      "detail": "Phase 3 - test tạo học viên/giáo viên + concurrency + phân quyền",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase3-test-part1.ps1' | Out-File -FilePath '${workspaceFolder}/.vscode/phase3-part1-out.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase3-diag",
+      "detail": "Phase 3 - chẩn đoán nhanh API + login + assembly",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase3-diag.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase3-test-part2",
+      "detail": "Phase 3 - test quản lý tài khoản + self profile + regression",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase3-test-part2.ps1' | Out-File -FilePath '${workspaceFolder}/.vscode/phase3-part2-out.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "fix-admin",
+      "detail": "Tạo lại 3 tài khoản Quản trị viên (chạy database/KhoiPhuc_QuanTriVien.sql)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/fix-admin.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase3-verify2",
+      "detail": "Phase 3 - kiểm tra toàn vẹn dữ liệu (đúng tên cột thật)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase3-verify2.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase3-verify",
+      "detail": "Phase 3 - kiểm tra toàn vẹn dữ liệu (có bắt lỗi từng query)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase3-verify.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase3-final-check",
+      "detail": "Phase 3 - build cuối + kiểm tra toàn vẹn dữ liệu trong database",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase3-final.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase2-test-cases",
+      "detail": "Chạy toàn bộ test case authentication/authorization (API phải đang chạy)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-test-cases.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase2-expiry-0",
+      "detail": "Đặt AccessTokenExpirationMinutes = 0 để test CASE 10 (token hết hạn)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-set-expiry.ps1' -Minutes 0",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase2-expiry-60",
+      "detail": "Khôi phục AccessTokenExpirationMinutes = 60",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-set-expiry.ps1' -Minutes 60",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase2-test-expired",
+      "detail": "CASE 10 - kiểm tra token hết hạn bị từ chối 401",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-test-expired.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase2-cleanup",
+      "detail": "Dọn script/output tạm của Phase 2",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-cleanup.ps1'",
+      "problemMatcher": []
+    }
+  ]
+}

@@ -1,0 +1,187 @@
+﻿============================================================
+ PHASE 3 - PART 2: ACCOUNT MGMT + SELF PROFILE + REGRESSION
+ Thoi diem: 2026-10-02 00:21:19
+============================================================
+
+  token admin/gv/hv/tg = True/True/True/True
+
+--- CASE 10-13: Danh sach tai khoan ---
+[PASS] CASE 10 - GET danh sach tai khoan -> 200
+        expected=200  actual=200
+        page=1 pageSize=5 totalItems=24 totalPages=5 so item=5
+[PASS] CASE 10b - So item = pageSize
+        expected=5  actual=5
+[PASS] CASE 10c - page = 1
+        expected=1  actual=1
+[PASS] CASE 10d - Co truong totalPages
+        expected=True  actual=True
+[PASS] CASE 10e - KHONG lo MatKhauHash
+        expected=False  actual=False
+[PASS] CASE 10f - Item co fullName
+        expected=True  actual=True
+[PASS] CASE 10g - Item co role/status/createdAt
+        expected=True  actual=True
+[PASS] CASE 10h - pageSize toi da 100
+        expected=100  actual=100
+[PASS] CASE 10i - page < 1 -> ep ve 1
+        expected=1  actual=1
+[PASS] CASE 10j - Page 2 khac page 1
+        expected=True  actual=True
+[PASS] CASE 11 - Search theo username -> 200
+        expected=200  actual=200
+[PASS] CASE 11b - Tim thay HV001
+        expected=True  actual=True
+[PASS] CASE 11c - Khong tra ve tai khoan khac
+        expected=True  actual=True
+[PASS] CASE 12 - Search theo ma -> co ket qua
+        expected=True  actual=True
+        fullName cua ADMIN001 = D? Minh Khoa
+[PASS] CASE 13 - Filter role=Hoc vien -> 200
+        expected=200  actual=200
+[PASS] CASE 13b - CHI tra ve Hoc vien
+        expected=0  actual=0
+        so hoc vien = 11 / tong 11
+[PASS] CASE 13c - Filter status=Hoat dong
+        expected=0  actual=0
+[PASS] CASE 13d - Ket hop page+role+search
+        expected=200  actual=200
+
+--- CASE 14/15: Khoa / mo tai khoan ---
+[PASS] CASE 14 - Khoa HV001 -> 200
+        expected=200  actual=200
+[PASS] CASE 14b - DB trang thai = Bi khoa
+        expected=B? khóa  actual=B? khóa
+[PASS] CASE 14c - Login HV001 -> 401
+        expected=401  actual=401
+[PASS] CASE 15 - Mo lai HV001 -> 200
+        expected=200  actual=200
+[PASS] CASE 15b - DA KHOI PHUC: DB = Hoat dong
+        expected=Ho?t d?ng  actual=Ho?t d?ng
+[PASS] CASE 15c - Login HV001 lai duoc -> 200
+        expected=200  actual=200
+[PASS] CASE 15d - Status khong hop le -> 400
+        expected=400  actual=400
+[PASS] CASE 15e - Admin tu khoa chinh minh -> 400
+        expected=400  actual=400
+[PASS] CASE 15f - Giao vien doi trang thai -> 403
+        expected=403  actual=403
+
+--- CASE 16: Reset password (tai khoan test moi) ---
+[PASS] CASE 16a - Tao tai khoan test -> 201
+        expected=201  actual=201
+[PASS] CASE 16b - Login bang mat khau tam ban dau
+        expected=200  actual=200
+[PASS] CASE 16 - Reset password -> 200
+        expected=200  actual=200
+        username=HV012 do dai mat khau moi=12
+[PASS] CASE 16c - Tra ve mat khau tam MOI
+        expected=True  actual=True
+[PASS] CASE 16d - Mat khau moi KHAC mat khau cu
+        expected=True  actual=True
+[PASS] CASE 16e - KHONG lo MatKhauHash
+        expected=False  actual=False
+[PASS] CASE 16f - Mat khau CU khong dang nhap duoc -> 401
+        expected=401  actual=401
+[PASS] CASE 16g - Mat khau MOI dang nhap duoc -> 200
+        expected=200  actual=200
+[PASS] CASE 16h - Reset khong ton tai -> 404
+        expected=404  actual=404
+
+--- CASE 17-21: Self profile ---
+[PASS] CASE 17 - HV001 GET student profile -> 200
+        expected=200  actual=200
+        MaHocVien=HV001 HoTen=Nguy?n Minh Anh TrangThai=Dang h?c
+[PASS] CASE 17b - Dung profile HV001
+        expected=HV001  actual=HV001
+[PASS] CASE 17c - Co thong tin phu huynh
+        expected=True  actual=True
+[PASS] CASE 17d - KHONG lo MatKhauHash
+        expected=False  actual=False
+[PASS] CASE 18 - GV001 goi student profile -> 403
+        expected=403  actual=403
+[PASS] CASE 18b - Khong token -> 401
+        expected=401  actual=401
+[PASS] CASE 19 - GV001 GET teacher profile -> 200
+        expected=200  actual=200
+        MaGiaoVien=GV001 Loai=Giáo viên so BangCap=2 so ChungChi=2
+[PASS] CASE 19b - Dung profile GV001
+        expected=GV001  actual=GV001
+[PASS] CASE 20 - TG001 GET teacher profile -> 200
+        expected=200  actual=200
+[PASS] CASE 20b - Dung profile TG001
+        expected=TG001  actual=TG001
+[PASS] CASE 20c - LoaiGiaoVien = Tro giang
+        expected=Tr? gi?ng  actual=Tr? gi?ng
+[PASS] CASE 21 - HV001 goi teacher profile -> 403
+        expected=403  actual=403
+
+--- CASE 22-25: Update self profile + dong bo email ---
+[PASS] CASE 22 - Student tu doi email -> 200
+        expected=200  actual=200
+[PASS] CASE 22b - TaiKhoan.Email == HocVien.Email
+        expected=1  actual=1
+[PASS] CASE 23 - Teacher tu doi email -> 200
+        expected=200  actual=200
+[PASS] CASE 23b - TaiKhoan.Email == GiaoVien.Email
+        expected=1  actual=1
+[PASS] CASE 23c - Doi sang email da ton tai -> 409
+        expected=409  actual=409
+[PASS] CASE 24 - Student gui field trai quyen -> 200 (chi bind field hop le)
+        expected=200  actual=200
+[PASS] CASE 24b - TrangThaiHocTap KHONG bi doi
+        expected=Dang tu v?n  actual=Dang tu v?n
+[PASS] CASE 24c - MaHocVien KHONG bi doi
+        expected=1  actual=1
+[PASS] CASE 24d - TrangThaiTaiKhoan KHONG bi doi
+        expected=Ho?t d?ng  actual=Ho?t d?ng
+[PASS] CASE 24e - HoTen (field hop le) CO duoc cap nhat
+        expected=1  actual=1
+[PASS] CASE 25 - Teacher gui field trai quyen -> 200 (chi bind field hop le)
+        expected=200  actual=200
+[PASS] CASE 25b - LoaiGiaoVien KHONG bi doi
+        expected=Giáo viên  actual=Giáo viên
+[PASS] CASE 25c - ChuyenMon KHONG bi doi (van NULL)
+        expected=1  actual=1
+[PASS] CASE 25d - TrangThai KHONG bi doi
+        expected=1  actual=1
+
+--- Xoa tai khoan (SS22) ---
+[PASS] DEL-1 - Tao tai khoan moi de xoa -> 201
+        expected=True  actual=True
+[PASS] DEL-2 - Xoa tai khoan moi (khong du lieu) -> 204
+        expected=204  actual=204
+[PASS] DEL-3 - Khong con TaiKhoan trong DB
+        expected=0  actual=0
+[PASS] DEL-4 - Khong con HocVien trong DB
+        expected=0  actual=0
+        HV001 co 6 du lieu phu thuoc
+[PASS] DEL-5 - Xoa HV001 (co du lieu) -> 409
+        expected=409  actual=409
+[PASS] DEL-6 - HV001 VAN CON trong DB (khong bi xoa)
+        expected=1  actual=1
+
+--- REGRESSION: Phase 1 + Phase 2 ---
+[PASS] REG-1 - GET /health
+        expected=200  actual=200
+[PASS] REG-2 - GET /health/database
+        expected=200  actual=200
+[PASS] REG-3 - GET /api/development/database-info
+        expected=200  actual=200
+[PASS] REG-4 - POST /api/auth/login
+        expected=200  actual=200
+[PASS] REG-5 - GET /api/auth/me
+        expected=200  actual=200
+[PASS] REG-6 - GET /api/auth/me khong token -> 401
+        expected=401  actual=401
+[PASS] REG-7 - GET /api/development/admin-only (admin) -> 200
+        expected=200  actual=200
+[PASS] REG-8 - GET /api/development/admin-only (giao vien) -> 403
+        expected=403  actual=403
+[PASS] REG-9 - GET /api/development/teacher-only (giao vien) -> 200
+        expected=200  actual=200
+[PASS] REG-10 - POST /api/auth/change-password (sai current) -> 400
+        expected=400  actual=400
+
+============================================================
+ KET QUA PART 2: PASS = 78 / FAIL = 0
+============================================================

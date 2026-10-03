@@ -1,0 +1,112 @@
+﻿============================================================
+ PHASE 3 - ACCOUNT MANAGEMENT / PROFILE TEST REPORT
+ Thoi diem: 2026-10-02 00:19:26
+============================================================
+
+--- Lay token ---
+  adminToken   : True
+  teacherToken : True
+  studentToken : True
+[PASS] SETUP - Lay duoc 3 token
+        expected=True True True  actual=True True True
+
+--- CASE 1 / 3: Tao hoc vien (KHONG phu huynh) ---
+[PASS] CASE 1 - Tao hoc vien -> 201
+        expected=201  actual=201
+        studentId=HV005 username=HV005 role=H?c viên
+        co temporaryPassword? True  (do dai 12)
+[PASS] CASE 1b - Ma co dang HVxxx
+        expected=True  actual=True
+[PASS] CASE 1c - username == studentId
+        expected=HV005  actual=HV005
+[PASS] CASE 1d - Role = Hoc vien
+        expected=H?c viên  actual=H?c viên
+[PASS] CASE 1e - Co temporaryPassword
+        expected=True  actual=True
+[PASS] CASE 1f - KHONG lo MatKhauHash
+        expected=False  actual=False
+[PASS] CASE 1g - Co TaiKhoan trong DB
+        expected=1  actual=1
+[PASS] CASE 1h - Co HocVien trong DB
+        expected=1  actual=1
+[PASS] CASE 1i - MaHocVien == TenDangNhap
+        expected=1  actual=1
+[PASS] CASE 1j - TrangThaiTaiKhoan = Hoat dong
+        expected=Ho?t d?ng  actual=Ho?t d?ng
+[PASS] CASE 1k - TrangThaiHocTap = Dang tu van
+        expected=Dang tu v?n  actual=Dang tu v?n
+[PASS] CASE 1l - MatKhauHash la hash that (khong phai placeholder)
+        expected=AQAAAA  actual=AQAAAA
+[PASS] CASE 1m - Login bang ma + mat khau tam
+        expected=200  actual=200
+[PASS] CASE 1n - Login bang mat khau dev -> 401
+        expected=401  actual=401
+
+--- CASE 2: Tao hoc vien CO phu huynh ---
+[PASS] CASE 2 - Tao hoc vien co phu huynh -> 201
+        expected=201  actual=201
+[PASS] CASE 2b - HocVien co MaPhuHuynh
+        expected=1  actual=1
+[PASS] CASE 2c - MoiQuanHePhuHuynh duoc luu
+        expected=1  actual=1
+[PASS] CASE 2d - PhuHuynh moi chi co 1 hoc vien
+        expected=1  actual=1
+[PASS] CASE 2e - Co phu huynh nhung thieu moiQuanHe -> 400
+        expected=400  actual=400
+
+--- CASE 4: Email trung ---
+[PASS] CASE 4 - Email da ton tai -> 409
+        expected=409  actual=409
+
+--- CASE 5: Phan quyen ---
+[PASS] CASE 5 - Giao vien tao hoc vien -> 403
+        expected=403  actual=403
+[PASS] CASE 5b - Hoc vien tao hoc vien -> 403
+        expected=403  actual=403
+[PASS] CASE 5c - Khong token tao hoc vien -> 401
+        expected=401  actual=401
+
+--- CASE 6: Tao hoc vien DONG THOI (concurrency) ---
+        Max HV truoc khi test: 6
+        Status cac request: 201,201,201,201,201
+        Ma sinh ra: HV011, HV007, HV009, HV008, HV010
+        So request thanh cong: 5
+[PASS] CASE 6 - Tat ca request thanh cong
+        expected=5  actual=5
+[PASS] CASE 6b - KHONG co ma trung
+        expected=5  actual=5
+[PASS] CASE 6c - DB khong co ma trung
+        expected=0  actual=0
+
+--- CASE 7/8: Tao giao vien va tro giang ---
+[PASS] CASE 7 - Tao giao vien -> 201
+        expected=201  actual=201
+        teacherId=GV003 loai=Giáo viên role=Giáo viên
+[PASS] CASE 7b - Ma co dang GVxxx
+        expected=True  actual=True
+[PASS] CASE 7c - Role = Giao vien
+        expected=Giáo viên  actual=Giáo viên
+[PASS] CASE 7d - Ma == TenDangNhap
+        expected=1  actual=1
+[PASS] CASE 7e - LoaiGiaoVien trong DB
+        expected=Giáo viên  actual=Giáo viên
+[PASS] CASE 8 - Tao tro giang -> 201
+        expected=201  actual=201
+[PASS] CASE 8b - Ma co dang TGxxx
+        expected=True  actual=True
+[PASS] CASE 8c - Role = Tro giang
+        expected=Tr? gi?ng  actual=Tr? gi?ng
+[PASS] CASE 8d - LoaiGiaoVien khong hop le -> 400
+        expected=400  actual=400
+[PASS] CASE 8e - Giao vien tao giao vien -> 403
+        expected=403  actual=403
+
+--- CASE 9: Tao GV/TG DONG THOI ---
+        Ma GV sinh ra: GV006, GV004, GV007, GV005
+[PASS] CASE 9 - Tat ca request GV thanh cong
+        expected=4  actual=4
+[PASS] CASE 9b - KHONG trung ma GV
+        expected=4  actual=4
+
+
+ TAM DUNG - PASS = 39 / FAIL = 0

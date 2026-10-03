@@ -1,0 +1,99 @@
+﻿### Q1 - So luong ban ghi
+    TaiKhoan=27  |  HocVien=13  |  GiaoVien=10  |  NhanVien=4  |  VaiTro=7  |  PhuHuynh=4
+    --> OK (1 dong)
+
+### Q2 - Cot that cua TaiKhoan
+    COLUMN_NAME=MaTaiKhoan  |  DATA_TYPE=int
+    COLUMN_NAME=MaVaiTro  |  DATA_TYPE=int
+    COLUMN_NAME=TenDangNhap  |  DATA_TYPE=varchar
+    COLUMN_NAME=MatKhauHash  |  DATA_TYPE=nvarchar
+    COLUMN_NAME=Email  |  DATA_TYPE=varchar
+    COLUMN_NAME=TrangThaiTaiKhoan  |  DATA_TYPE=nvarchar
+    COLUMN_NAME=LanDangNhapCuoi  |  DATA_TYPE=datetime2
+    COLUMN_NAME=NgayTao  |  DATA_TYPE=datetime2
+    COLUMN_NAME=NgayCapNhat  |  DATA_TYPE=datetime2
+    --> OK (9 dong)
+
+### Q3 - Cot that cua HocVien va GiaoVien (chi cot khoa/trang thai/email)
+    TABLE_NAME=GiaoVien  |  COLUMN_NAME=MaGiaoVien  |  DATA_TYPE=varchar
+    TABLE_NAME=GiaoVien  |  COLUMN_NAME=Email  |  DATA_TYPE=varchar
+    TABLE_NAME=GiaoVien  |  COLUMN_NAME=LoaiGiaoVien  |  DATA_TYPE=nvarchar
+    TABLE_NAME=GiaoVien  |  COLUMN_NAME=TrangThai  |  DATA_TYPE=nvarchar
+    TABLE_NAME=HocVien  |  COLUMN_NAME=MaHocVien  |  DATA_TYPE=varchar
+    TABLE_NAME=HocVien  |  COLUMN_NAME=MaPhuHuynh  |  DATA_TYPE=int
+    TABLE_NAME=HocVien  |  COLUMN_NAME=Email  |  DATA_TYPE=varchar
+    TABLE_NAME=HocVien  |  COLUMN_NAME=TrangThaiHocTap  |  DATA_TYPE=nvarchar
+    --> OK (8 dong)
+
+### Q4 - 11 TAI KHOAN GOC: trang thai + vai tro + email
+    TenDangNhap=ADMIN001  |  TenVaiTro=Quản trị viên  |  TrangThaiTaiKhoan=Hoạt động  |  Email=admin@trungtam.edu.vn
+    TenDangNhap=GV001  |  TenVaiTro=Giáo viên  |  TrangThaiTaiKhoan=Hoạt động  |  Email=gv001@trungtam.edu.vn
+    TenDangNhap=GV002  |  TenVaiTro=Giáo viên  |  TrangThaiTaiKhoan=Hoạt động  |  Email=gv002@trungtam.edu.vn
+    TenDangNhap=HV001  |  TenVaiTro=Học viên  |  TrangThaiTaiKhoan=Hoạt động  |  Email=minhanh@gmail.com
+    TenDangNhap=HV002  |  TenVaiTro=Học viên  |  TrangThaiTaiKhoan=Hoạt động  |  Email=quanghuy@gmail.com
+    TenDangNhap=HV003  |  TenVaiTro=Học viên  |  TrangThaiTaiKhoan=Hoạt động  |  Email=ngoclinh@gmail.com
+    TenDangNhap=HV004  |  TenVaiTro=Học viên  |  TrangThaiTaiKhoan=Hoạt động  |  Email=hoangnam@gmail.com
+    TenDangNhap=NVHV001  |  TenVaiTro=Nhân viên học vụ  |  TrangThaiTaiKhoan=Hoạt động  |  Email=hocvu01@trungtam.edu.vn
+    TenDangNhap=NVKT001  |  TenVaiTro=Nhân viên kế toán  |  TrangThaiTaiKhoan=Hoạt động  |  Email=ketoan01@trungtam.edu.vn
+    TenDangNhap=NVTV001  |  TenVaiTro=Nhân viên tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  Email=tuvan01@trungtam.edu.vn
+    TenDangNhap=TG001  |  TenVaiTro=Trợ giảng  |  TrangThaiTaiKhoan=Hoạt động  |  Email=tg001@trungtam.edu.vn
+    --> OK (11 dong)
+
+### Q5 - DONG BO EMAIL: so dong lech (phai = 0)
+    LechEmailHocVien=0  |  LechEmailGiaoVien=0
+    --> OK (1 dong)
+
+### Q6 - MA TRUNG (phai 0 dong)
+    (khong co dong nao)
+    --> OK (0 dong)
+
+### Q7 - MAT KHAU HASH
+    Tong=27  |  Pbkdf2That=27  |  BatThuong=0
+    --> OK (1 dong)
+
+### Q8 - HOC VIEN: ma / trang thai hoc tap / email 2 bang
+    MaHocVien=HV001  |  TrangThaiHocTap=Đang học  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=minhanh@gmail.com  |  EmailTaiKhoan=minhanh@gmail.com  |  DongBo=KHOP
+    MaHocVien=HV002  |  TrangThaiHocTap=Đang học  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=quanghuy@gmail.com  |  EmailTaiKhoan=quanghuy@gmail.com  |  DongBo=KHOP
+    MaHocVien=HV003  |  TrangThaiHocTap=Đang học  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=ngoclinh@gmail.com  |  EmailTaiKhoan=ngoclinh@gmail.com  |  DongBo=KHOP
+    MaHocVien=HV004  |  TrangThaiHocTap=Đang tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=hoangnam@gmail.com  |  EmailTaiKhoan=hoangnam@gmail.com  |  DongBo=KHOP
+    MaHocVien=HV005  |  TrangThaiHocTap=Đang tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=ph3.s1.001928@test.local  |  EmailTaiKhoan=ph3.s1.001928@test.local  |  DongBo=KHOP
+    MaHocVien=HV006  |  TrangThaiHocTap=Đang tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=ph3.s2.001928@test.local  |  EmailTaiKhoan=ph3.s2.001928@test.local  |  DongBo=KHOP
+    MaHocVien=HV007  |  TrangThaiHocTap=Đang tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=ph3.cc.2.001928@test.local  |  EmailTaiKhoan=ph3.cc.2.001928@test.local  |  DongBo=KHOP
+    MaHocVien=HV008  |  TrangThaiHocTap=Đang tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=ph3.cc.4.001928@test.local  |  EmailTaiKhoan=ph3.cc.4.001928@test.local  |  DongBo=KHOP
+    MaHocVien=HV009  |  TrangThaiHocTap=Đang tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=ph3.cc.3.001928@test.local  |  EmailTaiKhoan=ph3.cc.3.001928@test.local  |  DongBo=KHOP
+    MaHocVien=HV010  |  TrangThaiHocTap=Đang tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=ph3.cc.5.001928@test.local  |  EmailTaiKhoan=ph3.cc.5.001928@test.local  |  DongBo=KHOP
+    MaHocVien=HV011  |  TrangThaiHocTap=Đang tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=ph3.cc.1.001928@test.local  |  EmailTaiKhoan=ph3.cc.1.001928@test.local  |  DongBo=KHOP
+    MaHocVien=HV012  |  TrangThaiHocTap=Đang tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=ph3.reset.002119@test.local  |  EmailTaiKhoan=ph3.reset.002119@test.local  |  DongBo=KHOP
+    MaHocVien=HV013  |  TrangThaiHocTap=Đang tư vấn  |  TrangThaiTaiKhoan=Hoạt động  |  EmailHocVien=ph3.new.s.002119@test.local  |  EmailTaiKhoan=ph3.new.s.002119@test.local  |  DongBo=KHOP
+    --> OK (13 dong)
+
+### Q9 - GIAO VIEN / TRO GIANG: ma / loai / trang thai
+    MaGiaoVien=GV001  |  LoaiGiaoVien=Giáo viên  |  TrangThai=Đang làm việc  |  TrangThaiTaiKhoan=Hoạt động  |  DongBo=KHOP
+    MaGiaoVien=GV002  |  LoaiGiaoVien=Giáo viên  |  TrangThai=Đang làm việc  |  TrangThaiTaiKhoan=Hoạt động  |  DongBo=KHOP
+    MaGiaoVien=GV003  |  LoaiGiaoVien=Giáo viên  |  TrangThai=Đang làm việc  |  TrangThaiTaiKhoan=Hoạt động  |  DongBo=KHOP
+    MaGiaoVien=GV004  |  LoaiGiaoVien=Giáo viên  |  TrangThai=Đang làm việc  |  TrangThaiTaiKhoan=Hoạt động  |  DongBo=KHOP
+    MaGiaoVien=GV005  |  LoaiGiaoVien=Giáo viên  |  TrangThai=Đang làm việc  |  TrangThaiTaiKhoan=Hoạt động  |  DongBo=KHOP
+    MaGiaoVien=GV006  |  LoaiGiaoVien=Giáo viên  |  TrangThai=Đang làm việc  |  TrangThaiTaiKhoan=Hoạt động  |  DongBo=KHOP
+    MaGiaoVien=GV007  |  LoaiGiaoVien=Giáo viên  |  TrangThai=Đang làm việc  |  TrangThaiTaiKhoan=Hoạt động  |  DongBo=KHOP
+    MaGiaoVien=GV008  |  LoaiGiaoVien=Giáo viên  |  TrangThai=Đang làm việc  |  TrangThaiTaiKhoan=Hoạt động  |  DongBo=KHOP
+    MaGiaoVien=TG001  |  LoaiGiaoVien=Trợ giảng  |  TrangThai=Đang làm việc  |  TrangThaiTaiKhoan=Hoạt động  |  DongBo=KHOP
+    MaGiaoVien=TG002  |  LoaiGiaoVien=Trợ giảng  |  TrangThai=Đang làm việc  |  TrangThaiTaiKhoan=Hoạt động  |  DongBo=KHOP
+    --> OK (10 dong)
+
+### Q10 - TAI KHOAN HV/GV/TG KHONG CO HO SO (phai 0 dong)
+    (khong co dong nao)
+    --> OK (0 dong)
+
+### Q11 - VaiTro
+    MaVaiTro=1  |  TenVaiTro=Quản trị viên
+    MaVaiTro=2  |  TenVaiTro=Nhân viên học vụ
+    MaVaiTro=3  |  TenVaiTro=Nhân viên tư vấn
+    MaVaiTro=4  |  TenVaiTro=Nhân viên kế toán
+    MaVaiTro=5  |  TenVaiTro=Giáo viên
+    MaVaiTro=6  |  TenVaiTro=Trợ giảng
+    MaVaiTro=7  |  TenVaiTro=Học viên
+    --> OK (7 dong)
+
+============================================================
+ XONG
+============================================================

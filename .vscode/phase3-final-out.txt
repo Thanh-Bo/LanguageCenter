@@ -1,0 +1,59 @@
+﻿============================================================
+ PHASE 3 - BUILD CUOI + KIEM TRA TOAN VEN DATABASE
+ Thoi diem: 2026-10-02 00:24:04
+============================================================
+
+--- BUILD SOLUTION ---
+ExitCode = 0
+  Build succeeded.
+  0 Warning(s)
+  0 Error(s)
+
+--- KET NOI DATABASE ---
+  Ket noi OK (server version 11.00.6020)
+
+--- SO LUONG BAN GHI ---
+  TaiKhoan=27  HocVien=13  GiaoVien=10  NhanVien=4  VaiTro=7  PhuHuynh=4
+
+--- TOAN VEN (tat ca phai = 0) ---
+  Ma trung: KHONG CO
+
+--- DU LIEU GOC (trang thai phai nguyen ven) ---
+
+--- MAT KHAU HASH ---
+  Tong=27  PBKDF2 that=27  Bat thuong=0
+
+--- TAI KHOAN SINH RA TRONG TEST ---
+  ADMIN001 | Quản trị viên
+  GV001 | Giáo viên
+  GV002 | Giáo viên
+  GV003 | Giáo viên
+  GV004 | Giáo viên
+  GV005 | Giáo viên
+  GV006 | Giáo viên
+  GV007 | Giáo viên
+  GV008 | Giáo viên
+  HV001 | Học viên
+  HV002 | Học viên
+  HV003 | Học viên
+  HV004 | Học viên
+  HV005 | Học viên
+  HV006 | Học viên
+  HV007 | Học viên
+  HV008 | Học viên
+  HV009 | Học viên
+  HV010 | Học viên
+  HV011 | Học viên
+  HV012 | Học viên
+  HV013 | Học viên
+  NVHV001 | Nhân viên học vụ
+  NVKT001 | Nhân viên kế toán
+  NVTV001 | Nhân viên tư vấn
+  TG001 | Trợ giảng
+  TG002 | Trợ giảng
+
+  Da dong ket noi.
+
+============================================================
+ HOAN TAT
+============================================================

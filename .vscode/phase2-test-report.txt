@@ -1,0 +1,121 @@
+﻿============================================================
+ PHASE 2 - AUTHENTICATION / AUTHORIZATION TEST REPORT
+ Thoi diem: 2026-10-01 23:48:58
+============================================================
+
+--- CASE 1: Dang nhap dung ---
+[PASS] CASE 1 - ADMIN001 + password dung
+        expected=200  actual=200
+        tokenType=Bearer  expiresAt=2026-10-01T17:48:59.079217Z
+        user.id=1  user.username=ADMIN001  user.role=Quản trị viên
+        JWT claims: sub=1  unique_name=ADMIN001  role=Quản trị viên  jti=present
+        token co MatKhauHash? False
+[PASS] CASE 1b - JWT co claim sub
+        expected=True  actual=True
+[PASS] CASE 1c - JWT co claim unique_name
+        expected=True  actual=True
+[PASS] CASE 1d - JWT co claim role
+        expected=True  actual=True
+[PASS] CASE 1e - JWT co claim jti
+        expected=True  actual=True
+[PASS] CASE 1f - Response KHONG lo MatKhauHash
+        expected=False  actual=False
+
+--- CASE 2: Username sai ---
+[PASS] CASE 2 - Username khong ton tai
+        expected=401  actual=401
+
+--- CASE 3: Password sai ---
+[PASS] CASE 3 - ADMIN001 + password sai
+        expected=401  actual=401
+
+--- CASE 4: Tai khoan bi khoa ---
+        Trang thai HV003 truoc khi test: Hoạt động
+        Da tam doi HV003 thanh: Bị khóa
+[PASS] CASE 4 - HV003 (Bi khoa) dang nhap
+        expected=401  actual=401
+        DA KHOI PHUC HV003 ve: Hoạt động
+[PASS] CASE 4b - HV003 duoc khoi phuc ve trang thai Hoat dong
+        expected=Hoạt động  actual=Hoạt động
+[PASS] CASE 4c - HV003 dang nhap lai duoc sau khoi phuc
+        expected=200  actual=200
+
+--- CASE 5: /api/auth/me khong co token ---
+[PASS] CASE 5 - GET /api/auth/me khong token
+        expected=401  actual=401
+
+--- CASE 6: /api/auth/me voi token hop le ---
+[PASS] CASE 6 - GET /api/auth/me voi token ADMIN001
+        expected=200  actual=200
+        body: {"id":1,"username":"ADMIN001","email":"admin@trungtam.edu.vn","role":"Quản trị viên"}
+[PASS] CASE 6b - Tra dung user ADMIN001
+        expected=ADMIN001  actual=ADMIN001
+
+--- CASE 6c: Thu gia danh bang query string ---
+[PASS] CASE 6c - userId tren query KHONG thay doi danh tinh
+        expected=GV001  actual=GV001
+
+--- CASE 7/8: Role authorization ---
+[PASS] CASE 7 - Giao vien goi admin-only
+        expected=403  actual=403
+[PASS] CASE 7b - Giao vien goi teacher-only
+        expected=200  actual=200
+[PASS] CASE 8 - Quan tri vien goi admin-only
+        expected=200  actual=200
+[PASS] CASE 8b - Quan tri vien goi teacher-only (khong phai Giao vien)
+        expected=403  actual=403
+[PASS] CASE 8c - Khong token goi admin-only
+        expected=401  actual=401
+[PASS] CASE 8d - Hoc vien goi admin-only
+        expected=403  actual=403
+[PASS] CASE 8e - Tro giang goi teacher-only
+        expected=403  actual=403
+
+--- CASE 9: Token bi chinh sua ---
+[PASS] CASE 9 - Token bi sua payload
+        expected=401  actual=401
+[PASS] CASE 9b - Chu ky bi sua
+        expected=401  actual=401
+[PASS] CASE 9c - Token rac
+        expected=401  actual=401
+
+--- CASE 11: Doi mat khau voi current password sai ---
+[PASS] CASE 11a - Lay duoc token HV004
+        expected=True  actual=True
+[PASS] CASE 11 - currentPassword sai
+        expected=400  actual=400
+[PASS] CASE 11b - confirmPassword khong khop
+        expected=400  actual=400
+[PASS] CASE 11c - Mat khau moi vi pham policy (qua ngan)
+        expected=400  actual=400
+[PASS] CASE 11d - Mat khau moi trung mat khau cu
+        expected=400  actual=400
+[PASS] CASE 11e - Doi mat khau khong co token
+        expected=401  actual=401
+
+--- CASE 12: Doi mat khau thanh cong (HV004) ---
+[PASS] CASE 12 - Doi mat khau HV004
+        expected=204  actual=204
+[PASS] CASE 12b - Mat khau CU khong dang nhap duoc nua
+        expected=401  actual=401
+[PASS] CASE 12c - Mat khau MOI dang nhap duoc
+        expected=200  actual=200
+[PASS] CASE 12d - Khoi phuc mat khau dev cho HV004
+        expected=204  actual=204
+[PASS] CASE 12e - HV004 dang nhap lai bang mat khau dev
+        expected=200  actual=200
+
+--- REGRESSION: Phase 1 endpoints ---
+[PASS] REG-1 - GET /health
+        expected=200  actual=200
+        body: {"status":"Healthy"}
+[PASS] REG-2 - GET /health/database
+        expected=200  actual=200
+        body: {"database":"QuanLyTrungTamNgoaiNgu","status":"Connected","vaiTroCount":7}
+[PASS] REG-3 - GET /api/development/database-info
+        expected=200  actual=200
+        body: {"database":"QuanLyTrungTamNgoaiNgu","status":"Connected","provider":"Microsoft.EntityFrameworkCore.SqlServer","sqlServerVersion":"11.00.6020","vaiTroCount":7,"taiKhoanCount":11,"hocVienCount":4}
+
+============================================================
+ KET QUA: PASS = 39 / FAIL = 0
+============================================================

@@ -1,0 +1,23 @@
+﻿temp password tool already absent
+REMOVED docs/postman: True
+REMOVED script: phase2-validate-postman.ps1
+REMOVED output: postman-check.txt
+Removed Jwt:AccessTokenExpirationMinutes override (exit=0)
+Remaining secrets = Jwt:Key
+Remaining files in .vscode:
+  cleanup-report.txt
+  config-check.txt
+  launch.json
+  phase2-check-config.ps1
+  phase2-cleanup.ps1
+  phase2-expired-report.txt
+  phase2-kill-api.ps1
+  phase2-secrets-final.ps1
+  phase2-set-expiry.ps1
+  phase2-test-cases.ps1
+  phase2-test-expired.ps1
+  phase2-test-report.txt
+  phase2-verify-swagger.ps1
+  secrets-check.txt
+  swagger-check.txt
+  tasks.json

@@ -1,0 +1,9 @@
+﻿--- GET /health ---
+status=200 body={"status":"Healthy"}
+--- POST /api/auth/login (ADMIN001) ---
+status=200
+body(first 300)={"accessToken":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJMYW5ndWFnZUNlbnRlci5DbGllbnRzIiwiaXNzIjoiTGFuZ3VhZ2VDZW50ZXIuQXBpIiwiZXhwIjoxNzkwODc5NDI0LCJpYXQiOjE3OTA4NzU4MjQsIm5iZiI6MTc5MDg3NTgyNCwic3ViIjoiMSIsInVuaXF1ZV9uYW1lIjoiQURNSU4wMDEiLCJyb2xlIjoiUXXhuqNuIHRy4buLIHZpw6puIiwianRpIjoiNGE1NWE
+--- GET /api/admin/accounts (khong token) ---
+status=401
+--- Assembly System.Net.Http ---
+Add-Type System.Net.Http OK -> System.Net.Http.HttpClient

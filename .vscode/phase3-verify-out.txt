@@ -1,0 +1,37 @@
+﻿### Q1 - So luong ban ghi
+    
+    --> OK (1 dong)
+
+### Q2 - Lech email TaiKhoan vs ho so
+    
+    --> OK (1 dong)
+
+### Q3 - MaTaiKhoan trong ho so phai khop TaiKhoan
+    !!! LOI: Exception calling "ExecuteReader" with "0" argument(s): "Invalid column name 'MaTaiKhoan'.
+Invalid column name 'MaTaiKhoan'."
+
+### Q4 - Tai khoan khong co ho so (chi tinh vai tro GiaoVien/Tro giang/Hoc vien)
+    (khong co dong nao)
+    --> OK (0 dong)
+
+### Q5 - Trang thai 11 tai khoan goc
+    !!! LOI: Exception calling "ExecuteReader" with "0" argument(s): "Invalid column name 'TrangThai'."
+
+### Q6 - Ma trung (phai 0 dong)
+    (khong co dong nao)
+    --> OK (0 dong)
+
+### Q7 - Mat khau hash
+    
+    --> OK (1 dong)
+
+### Q8 - TenDangNhap phai bang MaHocVien/MaGiaoVien
+    !!! LOI: Exception calling "ExecuteReader" with "0" argument(s): "Invalid column name 'MaTaiKhoan'.
+Invalid column name 'MaTaiKhoan'."
+
+### Q9 - GiaoVien: ma, loai, trang thai, email
+    !!! LOI: Exception calling "ExecuteReader" with "0" argument(s): "Invalid column name 'MaTaiKhoan'."
+
+============================================================
+ XONG
+============================================================

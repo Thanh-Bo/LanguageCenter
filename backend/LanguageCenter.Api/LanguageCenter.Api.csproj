@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>5abb3bbd-25c7-4a1c-b3af-4425b9699013</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Swagger / Swagger UI (/swagger). Thay cho Microsoft.AspNetCore.OpenApi để tránh 2 generator chồng nhau. -->
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.0.1" />
+
+    <!--
+      Ghim trực tiếp để ghi đè bản 2.3.0 mà Swashbuckle kéo theo.
+      CVE-2026-49451 (GHSA-v5pm-xwqc-g5wc), mức High: circular $ref gây stack overflow khi PARSE
+      OpenAPI document. Bản vá: >= 2.7.5.
+    -->
+    <PackageReference Include="Microsoft.OpenApi" Version="2.7.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- JWT Bearer authentication cho ASP.NET Core Web API. -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Dev-time tooling cho `dotnet ef` (Phase 2). Không tham gia runtime, không chạy migration ở Phase 1. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LanguageCenter.Application\LanguageCenter.Application.csproj" />
+    <ProjectReference Include="..\LanguageCenter.Infrastructure\LanguageCenter.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>
