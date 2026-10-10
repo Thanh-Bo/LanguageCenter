@@ -245,7 +245,6 @@ Xem trong `database/KhoiPhuc_QuanTriVien.sql`
 ---
 
 ## 👥 Thành viên nhóm
-## 👥 Thành viên nhóm
 
 | # | Họ tên | MSSV | Vai trò |
 |---|--------|------|---------|
