@@ -17,7 +17,7 @@
 | **Mã đề tài** | CNTT-KLCN013 |
 | **Tên đề tài** | Xây dựng hệ thống quản lý Trung tâm Ngoại ngữ |
 | **GVHD** | Lâm Thị Họa Mi |
-| **Thành viên** | Huỳnh Huyền Thanh, ... |
+| **Thành viên** | Lê Thị Thanh Huyền, Trần Ngọc Trúc Huỳnh, Nguyễn Văn Thành |
 | **Thời gian** | 12 tuần (08/09/2025 → 30/11/2025) |
 
 ---
@@ -245,12 +245,13 @@ Xem trong `database/KhoiPhuc_QuanTriVien.sql`
 ---
 
 ## 👥 Thành viên nhóm
+## 👥 Thành viên nhóm
 
 | # | Họ tên | MSSV | Vai trò |
 |---|--------|------|---------|
-| 1 | Huỳnh Huyền Thanh | ... | Frontend Developer |
-| 2 | ... | ... | Backend Developer |
-| 3 | ... | ... | WinForms Developer |
+| 1 | **Lê Thị Thanh Huyền** | 2001230317 | Full-stack Developer |
+| 2 | **Trần Ngọc Trúc Huỳnh** | 2001230318 | Full-stack Developer |
+| 3 | **Nguyễn Văn Thành** | 2001230895 | Full-stack Developer |
 
 **GVHD:** Lâm Thị Họa Mi — [milth@huit.edu.vn](mailto:milth@huit.edu.vn)
 
@@ -267,10 +268,10 @@ Xem trong `database/KhoiPhuc_QuanTriVien.sql`
 ---
 
 ## 📞 Liên hệ
-
 - **Trường:** Đại học Công Thương TP.HCM (HUIT)
 - **Khoa:** Công nghệ Thông tin
-- **Email:** ...
+- **Lớp:**14DHTH14
+- **Email liên hệ:** 
 
 ---
 
