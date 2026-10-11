@@ -13,7 +13,7 @@ export default function DangNhap() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [email, setEmail] = useState('giaovien@lingohub.vn')
+  const [email, setEmail] = useState('lananh@lingohub.vn')
   const [password, setPassword] = useState('123456')
 
   const submit = async (event: FormEvent) => {
@@ -225,19 +225,81 @@ export default function DangNhap() {
           </div>
 
           {/* Tài khoản demo */}
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs">
-            <div className="mb-2 font-bold text-slate-700">
-              🔑 Tài khoản demo (mật khẩu: 123456)
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm">
+            <div className="mb-3 font-bold text-slate-700">
+              🔑 Tài khoản demo (mật khẩu:{' '}
+              <code className="rounded bg-slate-200 px-1.5 py-0.5">123456</code>
+              )
             </div>
-            <div className="space-y-1 text-slate-600">
-              <div>
-                👨‍🏫 Giáo viên: <strong>giaovien@lingohub.vn</strong>
+
+            {/* Quản trị viên */}
+            <div className="mb-3">
+              <div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+                👨‍💼 Quản trị viên
               </div>
-              <div>
-                👩‍🎓 Học viên: <strong>hocvien@lingohub.vn</strong>
+              <button
+                type="button"
+                onClick={() => {
+                  setEmail('admin@lingohub.vn')
+                  setPassword('123456')
+                }}
+                className="block w-full rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
+              >
+                admin@lingohub.vn
+              </button>
+            </div>
+
+            {/* Giáo viên */}
+            <div className="mb-3">
+              <div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+                👨‍🏫 Giáo viên
               </div>
-              <div>
-                👨‍💼 Quản trị: <strong>admin@lingohub.vn</strong>
+              <div className="grid grid-cols-2 gap-1">
+                {[
+                  'lananh@lingohub.vn',
+                  'minhkhoa@lingohub.vn',
+                  'david@lingohub.vn',
+                  'emily@lingohub.vn',
+                ].map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => {
+                      setEmail(e)
+                      setPassword('123456')
+                    }}
+                    className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Học viên */}
+            <div>
+              <div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
+                👩‍🎓 Học viên
+              </div>
+              <div className="grid grid-cols-2 gap-1">
+                {[
+                  'khoa.hv@lingohub.vn',
+                  'ha.lt@lingohub.vn',
+                  'an.nv@lingohub.vn',
+                  'linh.pm@lingohub.vn',
+                ].map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => {
+                      setEmail(e)
+                      setPassword('123456')
+                    }}
+                    className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
+                  >
+                    {e}
+                  </button>
+                ))}
               </div>
             </div>
           </div>

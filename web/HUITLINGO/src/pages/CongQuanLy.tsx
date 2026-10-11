@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Icon, type IconName } from '../components/BieuTuong'
+import { dungXacThuc } from '../contexts/NguCanhXacThuc'
+import LopCuaToi from './giaovien/LopCuaToi'
+import DiemDanh from './giaovien/DiemDanh'
+import BangDiem from './giaovien/BangDiem'
 
 type Role = 'Quản trị viên' | 'Giáo viên' | 'Học viên'
 type NavItem = { label: string; icon: IconName; badge?: string }
@@ -165,6 +169,7 @@ export default function CongQuanLy({
 }: {
   vaiTroMacDinh?: Role
 }) {
+  const { nguoiDung, dangXuat } = dungXacThuc()
   const [role, setRole] = useState<Role>(vaiTroMacDinh)
   const [active, setActive] = useState('Tổng quan')
   const [sidebar, setSidebar] = useState(false)
@@ -188,6 +193,10 @@ export default function CongQuanLy({
     setRole(next)
     setActive('Tổng quan')
   }
+
+  const tenHienThi = nguoiDung?.hoTen ?? 'Người dùng'
+  const avatarHienThi = nguoiDung?.avatar ?? 'U'
+  const vaiTroHienThi = nguoiDung?.vaiTro ?? role
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800">
@@ -282,17 +291,21 @@ export default function CongQuanLy({
         <div className="m-4 rounded-2xl bg-slate-900 p-4 text-white">
           <div className="flex items-center gap-3">
             <span className="grid size-10 place-items-center rounded-full bg-blue-500 text-sm font-bold">
-              MT
+              {avatarHienThi}
             </span>
             <span className="min-w-0 flex-1">
-              <strong className="block truncate text-sm">Mai Thanh Thảo</strong>
+              <strong className="block truncate text-sm">{tenHienThi}</strong>
               <small className="text-slate-400">
-                {role.toLowerCase()}
+                {vaiTroHienThi.toLowerCase()}
               </small>
             </span>
-            <Link to="/dangnhap" className="text-slate-400 hover:text-white">
+            <button
+              onClick={dangXuat}
+              className="text-slate-400 hover:text-white"
+              title="Đăng xuất"
+            >
               <Icon name="logout" className="size-5" />
-            </Link>
+            </button>
           </div>
         </div>
       </aside>
@@ -327,7 +340,7 @@ export default function CongQuanLy({
               <span className="absolute right-2 top-2 size-2 rounded-full bg-blue-600 ring-2 ring-white" />
             </button>
             <span className="grid size-10 place-items-center rounded-xl bg-blue-600 text-sm font-bold text-white">
-              MT
+              {avatarHienThi}
             </span>
           </div>
           {notice && (
@@ -363,7 +376,7 @@ export default function CongQuanLy({
                     Thứ Tư, 16 tháng 10
                   </p>
                   <h1 className="text-3xl font-bold text-slate-900">
-                    Chào buổi sáng, Thanh Thảo
+                    Chào buổi sáng, {tenHienThi}
                   </h1>
                   <p className="mt-2 text-sm text-slate-500">
                     Đây là những hoạt động cần bạn theo dõi hôm nay.
@@ -608,7 +621,11 @@ export default function CongQuanLy({
                 </div>
               </section>
             </>
-          ) : active === 'Lớp học' || active === 'Lớp của tôi' ? (
+            ) : active === 'Điểm danh' ? (
+             <DiemDanh />
+            ) : active === 'Bảng điểm' ? (
+             <BangDiem />
+            ) : active === 'Lớp học' ? (
             <section>
               <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
                 <div>

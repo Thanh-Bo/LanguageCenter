@@ -7,7 +7,7 @@ import { dungXacThuc, duongDanTheoVaiTro } from '../contexts/NguCanhXacThuc'
 export default function BoCuc() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { pathname } = useLocation()
-  const { nguoiDung } = dungXacThuc()
+  const { nguoiDung, dangXuat } = dungXacThuc()
 
   return (
     <div
@@ -52,21 +52,25 @@ export default function BoCuc() {
           >
             <div
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 10,
-                background: '#2563EB',
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: 18,
+                fontSize: 22,
+                fontWeight: 900,
+                color: '#fff',
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
               }}
             >
-              🎓
+              L
             </div>
             <span
               style={{
-                fontFamily: "'Nunito', sans-serif",
+                fontFamily: "'Plus Jakarta Sans', sans-serif",
                 fontWeight: 800,
                 fontSize: 20,
                 color: '#1E293B',
@@ -114,22 +118,55 @@ export default function BoCuc() {
 
           {/* RIGHT ACTIONS */}
           <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <Link
-              to={
-                nguoiDung
-                  ? duongDanTheoVaiTro(nguoiDung.vaiTro)
-                  : '/dangnhap'
-              }
-              className="desktop-nav"
-              style={{
-                color: '#475569',
-                textDecoration: 'none',
-                fontWeight: 700,
-                fontSize: 14,
-              }}
-            >
-              {nguoiDung ? 'Vào Portal' : 'Đăng nhập'}
-            </Link>
+            {nguoiDung ? (
+              <>
+                <Link
+                  to={duongDanTheoVaiTro(nguoiDung.vaiTro)}
+                  className="desktop-nav"
+                  style={{
+                    color: '#475569',
+                    textDecoration: 'none',
+                    fontWeight: 700,
+                    fontSize: 14,
+                  }}
+                >
+                  Vào Portal
+                </Link>
+                <button
+                  onClick={dangXuat}
+                  className="desktop-nav"
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#64748B',
+                    fontWeight: 700,
+                    fontSize: 14,
+                    cursor: 'pointer',
+                    padding: 0,
+                    transition: 'color 0.2s',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = '#DC2626')}
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.color = '#64748B')
+                  }
+                >
+                  Đăng xuất
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/dangnhap"
+                className="desktop-nav"
+                style={{
+                  color: '#475569',
+                  textDecoration: 'none',
+                  fontWeight: 700,
+                  fontSize: 14,
+                }}
+              >
+                Đăng nhập
+              </Link>
+            )}
             <Link
               to="/khoahoc"
               style={{
@@ -195,6 +232,53 @@ export default function BoCuc() {
                 {label}
               </Link>
             ))}
+            {nguoiDung ? (
+              <>
+                <Link
+                  to={duongDanTheoVaiTro(nguoiDung.vaiTro)}
+                  onClick={() => setMenuOpen(false)}
+                  style={{
+                    color: '#2563EB',
+                    textDecoration: 'none',
+                    fontWeight: 700,
+                    fontSize: 16,
+                  }}
+                >
+                  Vào Portal
+                </Link>
+                <button
+                  onClick={() => {
+                    dangXuat()
+                    setMenuOpen(false)
+                  }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#DC2626',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    cursor: 'pointer',
+                    padding: 0,
+                    textAlign: 'left',
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/dangnhap"
+                onClick={() => setMenuOpen(false)}
+                style={{
+                  color: '#2563EB',
+                  textDecoration: 'none',
+                  fontWeight: 700,
+                  fontSize: 16,
+                }}
+              >
+                Đăng nhập
+              </Link>
+            )}
           </div>
         )}
       </nav>
@@ -233,18 +317,21 @@ export default function BoCuc() {
                     width: 36,
                     height: 36,
                     borderRadius: 9,
-                    background: '#2563EB',
+                    background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: 16,
+                    fontSize: 18,
+                    fontWeight: 900,
+                    color: '#fff',
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                   }}
                 >
-                  🎓
+                  L
                 </div>
                 <span
                   style={{
-                    fontFamily: "'Nunito', sans-serif",
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                     fontWeight: 800,
                     fontSize: 18,
                     color: '#fff',
@@ -330,7 +417,7 @@ export default function BoCuc() {
               <div key={col.title}>
                 <h4
                   style={{
-                    fontFamily: "'Nunito', sans-serif",
+                    fontFamily: "'Plus Jakarta Sans', sans-serif",
                     fontWeight: 700,
                     color: '#fff',
                     fontSize: 15,

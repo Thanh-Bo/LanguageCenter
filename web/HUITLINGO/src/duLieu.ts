@@ -274,8 +274,8 @@ export const TESTIMONIALS = [
 
 export const NAV_LINKS = [
   { label: 'Trang chủ', path: '/' },
-  { label: 'Khóa học', path: '/khoa-hoc' },
-  { label: 'Giáo viên', path: '/giao-vien' },
-  { label: 'Học phí', path: '/hoc-phi' },
-  { label: 'Liên hệ', path: '/#lien-hé' },
+  { label: 'Khóa học', path: '/khoahoc' },
+  { label: 'Giáo viên', path: '/giaovien-public' },
+  { label: 'Học phí', path: '/hocphi' },
+  { label: 'Liên hệ', path: '/#lien-he' },
 ]

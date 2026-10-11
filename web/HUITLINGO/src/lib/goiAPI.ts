@@ -3,11 +3,15 @@ import {
   KHO_LOP_HOC,
   KHO_LICH_DAY,
   KHO_DIEM,
+  KHO_HOC_VIEN,
+  KHO_DIEM_DANH,
+  KHO_BANG_DIEM,
 } from './khoDuLieu'
 
 const API_BASE = import.meta.env.VITE_API_URL || 'https://localhost:5001/api'
 const DUNG_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 
+// ===== TYPES =====
 export type ApiUser = {
   id: string
   hoTen: string
@@ -34,6 +38,17 @@ export type ClassItem = {
   ngayBatDau: string
   ngayKetThuc: string
   trangThai: 'Đang học' | 'Sắp đầy' | 'Sắp mở' | 'Đã kết thúc'
+  maGiaoVien?: string
+}
+
+export type StudentItem = {
+  id: string
+  maHV: string
+  hoTen: string
+  email: string
+  sdt: string
+  maLop: string
+  trangThai: string
 }
 
 export type ScheduleItem = {
@@ -56,6 +71,7 @@ export type GradeItem = {
   trungBinh: number
 }
 
+// ===== REQUEST CORE =====
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('huitlingo_token')
   const res = await fetch(`${API_BASE}${path}`, {
@@ -76,7 +92,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
 const cho = (ms = 400) => new Promise((r) => setTimeout(r, ms))
 
+// ===== API =====
 export const goiAPI = {
+  // ===== AUTH =====
   async dangNhap(email: string, matKhau: string): Promise<LoginResponse> {
     if (DUNG_MOCK) {
       await cho(600)
@@ -110,12 +128,26 @@ export const goiAPI = {
     return request<ApiUser>('/auth/me')
   },
 
-  async layLopCuaToi(): Promise<ClassItem[]> {
+  // ===== GIÁO VIÊN =====
+  // Lấy danh sách lớp của 1 giáo viên (theo mã GV)
+  async layLopCuaToi(maGiaoVien?: string): Promise<ClassItem[]> {
     if (DUNG_MOCK) {
       await cho(500)
-      return KHO_LOP_HOC
+      // Nếu không có mã GV → trả về tất cả (fallback)
+      if (!maGiaoVien) return KHO_LOP_HOC
+      return KHO_LOP_HOC.filter((lop) => lop.maGiaoVien === maGiaoVien)
     }
-    return request<ClassItem[]>('/teacher/classes')
+    const query = maGiaoVien ? `?teacherId=${maGiaoVien}` : ''
+    return request<ClassItem[]>(`/teacher/classes${query}`)
+  },
+
+  // Lấy học viên của 1 lớp
+  async layHocVienTheoLop(maLop: string): Promise<StudentItem[]> {
+    if (DUNG_MOCK) {
+      await cho(400)
+      return KHO_HOC_VIEN.filter((hv) => hv.maLop === maLop)
+    }
+    return request<StudentItem[]>(`/teacher/classes/${maLop}/students`)
   },
 
   async layLichDay(): Promise<ScheduleItem[]> {
@@ -132,5 +164,76 @@ export const goiAPI = {
       return KHO_DIEM
     }
     return request<GradeItem[]>('/teacher/grades')
+  },
+    // ===== ĐIỂM DANH =====
+  async layDiemDanh(
+    maLop: string,
+    ngay: string,
+  ): Promise<
+    Array<{ maHV: string; trangThai: 'Có mặt' | 'Vắng' | 'Đi trễ'; ghiChu: string }>
+  > {
+    if (DUNG_MOCK) {
+      await cho(400)
+      const key = `${maLop}|${ngay}`
+      return KHO_DIEM_DANH[key] ?? []
+    }
+    return request(`/teacher/attendance?classId=${maLop}&date=${ngay}`)
+  },
+
+  async luuDiemDanh(
+    maLop: string,
+    ngay: string,
+    danhSach: Array<{
+      maHV: string
+      trangThai: 'Có mặt' | 'Vắng' | 'Đi trễ'
+      ghiChu: string
+    }>,
+  ): Promise<{ ok: boolean }> {
+    if (DUNG_MOCK) {
+      await cho(600)
+      // Lưu vào bộ nhớ tạm (thực tế sẽ gọi API)
+      const key = `${maLop}|${ngay}`
+      KHO_DIEM_DANH[key] = danhSach
+      return { ok: true }
+    }
+    return request('/teacher/attendance', {
+      method: 'POST',
+      body: JSON.stringify({ maLop, ngay, danhSach }),
+    })
+  },
+    // ===== BẢNG ĐIỂM =====
+  async layBangDiem(maLop: string): Promise<
+    Array<{
+      maHV: string
+      giuaKy: number | null
+      cuoiKy: number | null
+      baiTap: number | null
+    }>
+  > {
+    if (DUNG_MOCK) {
+      await cho(400)
+      return KHO_BANG_DIEM[maLop] ?? []
+    }
+    return request(`/teacher/grades?classId=${maLop}`)
+  },
+
+  async luuBangDiem(
+    maLop: string,
+    danhSach: Array<{
+      maHV: string
+      giuaKy: number | null
+      cuoiKy: number | null
+      baiTap: number | null
+    }>,
+  ): Promise<{ ok: boolean }> {
+    if (DUNG_MOCK) {
+      await cho(600)
+      KHO_BANG_DIEM[maLop] = danhSach
+      return { ok: true }
+    }
+    return request('/teacher/grades', {
+      method: 'POST',
+      body: JSON.stringify({ maLop, danhSach }),
+    })
   },
 }
