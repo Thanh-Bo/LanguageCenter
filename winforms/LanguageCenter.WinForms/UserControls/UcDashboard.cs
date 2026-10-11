@@ -2,11 +2,10 @@ using LanguageCenter.WinForms.Api;
 
 namespace LanguageCenter.WinForms.UserControls;
 
-/// <summary>
 /// Dashboard tổng quan trung tâm ngoại ngữ (Giao diện chuẩn Responsive Full Screen).
 /// Hiển thị 4 thẻ chỉ số thích ứng 100% chiều ngang, khu vực truy cập nhanh các phân hệ,
 /// bảng xem nhanh các khóa đào tạo tiêu biểu và thông báo vận hành.
-/// </summary>
+
 public partial class UcDashboard : UserControl
 {
     private readonly FormMain _formMain;
@@ -17,8 +16,8 @@ public partial class UcDashboard : UserControl
         InitializeComponent();
 
         var currentUser = AppSession.CurrentUser?.Username ?? "Quản trị viên";
-        lblHeroTitle.Text = $"Xin chào, {currentUser}! Chúc bạn một ngày làm việc hiệu quả 🚀";
-        lblHeroClock.Text = $"📅 {DateTime.Now:dd/MM/yyyy} — {DateTime.Now:HH:mm}";
+        lblHeroTitle.Text = $"Xin chào, {currentUser}! Chúc bạn một ngày làm việc hiệu quả";
+        lblHeroClock.Text = $"{DateTime.Now:dd/MM/yyyy} — {DateTime.Now:HH:mm}";
 
         btnRefresh.Click += async (_, _) => await LoadStatsAsync();
         btnGoTuition.Click += (_, _) => _formMain.NavigateTo(NavItem.Tuition);
@@ -81,10 +80,10 @@ public partial class UcDashboard : UserControl
 
         var sampleCourses = new[]
         {
-            new { Code = "IELTS-75", Name = "IELTS Master 7.5+ Chuyên sâu", Duration = "12 tuần (72h)", Price = "12.500.000 ₫", Students = "18/20", Status = "🟢 Tuyển sinh" },
-            new { Code = "COM-PRO",  Name = "Tiếng Anh Giao tiếp phản xạ PRO", Duration = "8 tuần (48h)", Price = "6.800.000 ₫", Students = "15/15", Status = "🔴 Đủ sĩ số" },
-            new { Code = "TOEIC-65", Name = "Luyện thi TOEIC Cấp tốc 650+", Duration = "10 tuần (60h)", Price = "5.500.000 ₫", Students = "12/20", Status = "🟡 Sắp mở" },
-            new { Code = "KIDS-STA", Name = "Tiếng Anh Thiếu nhi Starters", Duration = "16 tuần (96h)", Price = "7.200.000 ₫", Students = "14/16", Status = "🟢 Tuyển sinh" }
+            new { Code = "IELTS-75", Name = "IELTS Master 7.5+ Chuyên sâu", Duration = "12 tuần (72h)", Price = "12.500.000 ₫", Students = "18/20", Status = "Đang tuyển sinh" },
+            new { Code = "COM-PRO",  Name = "Tiếng Anh Giao tiếp phản xạ PRO", Duration = "8 tuần (48h)", Price = "6.800.000 ₫", Students = "15/15", Status = "Đủ sĩ số" },
+            new { Code = "TOEIC-65", Name = "Luyện thi TOEIC Cấp tốc 650+", Duration = "10 tuần (60h)", Price = "5.500.000 ₫", Students = "12/20", Status = "Sắp mở" },
+            new { Code = "KIDS-STA", Name = "Tiếng Anh Thiếu nhi Starters", Duration = "16 tuần (96h)", Price = "7.200.000 ₫", Students = "14/16", Status = "Đang tuyển sinh" }
         };
 
         dgvFeaturedCourses.DataSource = sampleCourses;
@@ -121,7 +120,7 @@ public partial class UcDashboard : UserControl
             : null;
 
         lblLoading.Text = failedMessage is null
-            ? $"✓ Cập nhật lúc {DateTime.Now:HH:mm:ss}"
+            ? $"Cập nhật lúc {DateTime.Now:HH:mm:ss}"
             : $"Không tải được một số số liệu: {failedMessage}";
     }
 }

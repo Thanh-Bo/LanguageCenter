@@ -37,7 +37,7 @@ public partial class UcHocPhi : UserControl
     {
         cboTrangThai.Items.Clear();
         cboTrangThai.Items.Add(AllOption);
-        cboTrangThai.Items.AddRange(["🟢 Đã hoàn thành", "🟡 Đóng đợt 1", "🔴 Chưa thanh toán"]);
+        cboTrangThai.Items.AddRange(["Đã hoàn thành", "Đóng đợt 1", "Chưa thanh toán"]);
         cboTrangThai.SelectedIndex = 0;
 
         cboPhuongThuc.Items.Clear();
@@ -54,10 +54,10 @@ public partial class UcHocPhi : UserControl
         var rate = totalMustPay > 0 ? (totalCollected / totalMustPay) * 100m : 0m;
 
         tblStats.Controls.Clear();
-        tblStats.Controls.Add(CreateStatCard("💰 Tổng học phí phải thu", $"{totalMustPay:N0} ₫", "Sau chiết khấu & ưu đãi", Theme.Primary), 0, 0);
-        tblStats.Controls.Add(CreateStatCard("✅ Đã thực thu vào quỹ", $"{totalCollected:N0} ₫", "Tiền mặt & Chuyển khoản", Theme.Success), 1, 0);
-        tblStats.Controls.Add(CreateStatCard("⏳ Công nợ cần thu", $"{totalDebt:N0} ₫", "Học viên còn nợ học phí", Theme.Danger), 2, 0);
-        tblStats.Controls.Add(CreateStatCard("📊 Tỷ lệ thu học phí", $"{rate:F1}%", "Chỉ tiêu thu kỳ hiện hành", Theme.Purple), 3, 0);
+        tblStats.Controls.Add(CreateStatCard("Tổng học phí phải thu", $"{totalMustPay:N0} ₫", "Sau chiết khấu & ưu đãi", Theme.Primary), 0, 0);
+        tblStats.Controls.Add(CreateStatCard("Đã thực thu vào quỹ", $"{totalCollected:N0} ₫", "Tiền mặt & Chuyển khoản", Theme.Success), 1, 0);
+        tblStats.Controls.Add(CreateStatCard("Công nợ cần thu", $"{totalDebt:N0} ₫", "Học viên còn nợ học phí", Theme.Danger), 2, 0);
+        tblStats.Controls.Add(CreateStatCard("Tỷ lệ thu học phí", $"{rate:F1}%", "Chỉ tiêu thu kỳ hiện hành", Theme.Purple), 3, 0);
     }
 
     private static Panel CreateStatCard(string title, string value, string note, Color accent)
@@ -107,7 +107,7 @@ public partial class UcHocPhi : UserControl
                 SoTienDaDong = 11250000m,
                 SoTienConThieu = 0m,
                 HanThanhToan = new DateOnly(2026, 10, 15),
-                TrangThaiHocPhi = "🟢 Đã hoàn thành",
+                TrangThaiHocPhi = "Đã hoàn thành",
                 PhuongThuc = "Chuyển khoản (Vietcombank)",
                 SoBienNhan = "BN-2026-0018",
                 NgayThanhToan = DateTime.Now.AddDays(-10)
@@ -125,7 +125,7 @@ public partial class UcHocPhi : UserControl
                 SoTienDaDong = 3500000m,
                 SoTienConThieu = 2800000m,
                 HanThanhToan = new DateOnly(2026, 10, 25),
-                TrangThaiHocPhi = "🟡 Đóng đợt 1",
+                TrangThaiHocPhi = "Đóng đợt 1",
                 PhuongThuc = "Tiền mặt tại quầy",
                 SoBienNhan = "BN-2026-0034",
                 NgayThanhToan = DateTime.Now.AddDays(-5)
@@ -143,7 +143,7 @@ public partial class UcHocPhi : UserControl
                 SoTienDaDong = 0m,
                 SoTienConThieu = 5500000m,
                 HanThanhToan = new DateOnly(2026, 10, 20),
-                TrangThaiHocPhi = "🔴 Chưa thanh toán",
+                TrangThaiHocPhi = "Chưa thanh toán",
                 PhuongThuc = "— Chưa nộp —",
                 SoBienNhan = "—",
                 NgayThanhToan = null
@@ -161,7 +161,7 @@ public partial class UcHocPhi : UserControl
                 SoTienDaDong = 6750000m,
                 SoTienConThieu = 0m,
                 HanThanhToan = new DateOnly(2026, 10, 10),
-                TrangThaiHocPhi = "🟢 Đã hoàn thành",
+                TrangThaiHocPhi = "Đã hoàn thành",
                 PhuongThuc = "VNPay-QR / Thẻ",
                 SoBienNhan = "BN-2026-0052",
                 NgayThanhToan = DateTime.Now.AddDays(-8)
@@ -179,7 +179,7 @@ public partial class UcHocPhi : UserControl
                 SoTienDaDong = 4500000m,
                 SoTienConThieu = 4500000m,
                 HanThanhToan = new DateOnly(2026, 10, 30),
-                TrangThaiHocPhi = "🟡 Đóng đợt 1",
+                TrangThaiHocPhi = "Đóng đợt 1",
                 PhuongThuc = "Chuyển khoản (Vietcombank)",
                 SoBienNhan = "BN-2026-0067",
                 NgayThanhToan = DateTime.Now.AddDays(-2)
@@ -197,7 +197,7 @@ public partial class UcHocPhi : UserControl
                 SoTienDaDong = 4500000m,
                 SoTienConThieu = 0m,
                 HanThanhToan = new DateOnly(2026, 10, 12),
-                TrangThaiHocPhi = "🟢 Đã hoàn thành",
+                TrangThaiHocPhi = "Đã hoàn thành",
                 PhuongThuc = "Tiền mặt tại quầy",
                 SoBienNhan = "BN-2026-0071",
                 NgayThanhToan = DateTime.Now.AddDays(-6)
@@ -215,7 +215,7 @@ public partial class UcHocPhi : UserControl
                 SoTienDaDong = 0m,
                 SoTienConThieu = 6700000m,
                 HanThanhToan = new DateOnly(2026, 10, 28),
-                TrangThaiHocPhi = "🔴 Chưa thanh toán",
+                TrangThaiHocPhi = "Chưa thanh toán",
                 PhuongThuc = "— Chưa nộp —",
                 SoBienNhan = "—",
                 NgayThanhToan = null
@@ -312,7 +312,7 @@ public partial class UcHocPhi : UserControl
             BackColor = Color.White
         };
 
-        var lblTitle = new Label { Text = "💳 THU HỌC PHÍ HỌC VIÊN", Font = Theme.FontHeading, ForeColor = Theme.Primary, Location = new Point(24, 16), AutoSize = true };
+        var lblTitle = new Label { Text = "THU HỌC PHÍ HỌC VIÊN", Font = Theme.FontHeading, ForeColor = Theme.Primary, Location = new Point(24, 16), AutoSize = true };
 
         var lblSelect = new Label { Text = "Chọn phiếu học phí / học viên:", Location = new Point(24, 52), AutoSize = true, Font = Theme.FontBold };
         var cboFees = new ComboBox { Location = new Point(24, 76), Width = 456, DropDownStyle = ComboBoxStyle.DropDownList, Font = Theme.FontRegular };
@@ -386,7 +386,7 @@ public partial class UcHocPhi : UserControl
                         target.SoTienDaDong = target.SoTienPhaiDong;
                     
                     target.SoTienConThieu = target.SoTienPhaiDong - target.SoTienDaDong;
-                    target.TrangThaiHocPhi = target.SoTienConThieu == 0 ? "🟢 Đã hoàn thành" : "🟡 Đóng đợt 1";
+                    target.TrangThaiHocPhi = target.SoTienConThieu == 0 ? "Đã hoàn thành" : "Đóng đợt 1";
                     target.PhuongThuc = cboMethod.SelectedItem?.ToString() ?? "Chuyển khoản (Vietcombank)";
                     target.SoBienNhan = $"BN-2026-{Random.Shared.Next(1000, 9999)}";
                     target.NgayThanhToan = DateTime.Now;
@@ -443,7 +443,7 @@ public partial class UcHocPhi : UserControl
         };
 
         var pnlHdr = new Panel { Dock = DockStyle.Top, Height = 75, BackColor = Color.FromArgb(240, 249, 255), Padding = new Padding(20, 12, 20, 12) };
-        var lblHdrTitle = new Label { Text = "🧾 BIÊN LAI THU HỌC PHÍ ĐIỆN TỬ", Font = Theme.FontHeading, ForeColor = Theme.PrimaryDark, AutoSize = true, Location = new Point(20, 12) };
+        var lblHdrTitle = new Label { Text = "BIÊN LAI THU HỌC PHÍ ĐIỆN TỬ", Font = Theme.FontHeading, ForeColor = Theme.PrimaryDark, AutoSize = true, Location = new Point(20, 12) };
         var lblHdrSub = new Label { Text = $"Số chứng từ: {item.SoBienNhan} | Ngày lập: {(item.NgayThanhToan?.ToString("dd/MM/yyyy HH:mm") ?? "Chưa lập")}", Font = new Font("Segoe UI", 8.8f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(20, 42) };
         pnlHdr.Controls.AddRange([lblHdrTitle, lblHdrSub]);
 
@@ -458,8 +458,8 @@ public partial class UcHocPhi : UserControl
             BorderStyle = BorderStyle.FixedSingle,
             Text =
                 $"========================================================\r\n" +
-                $"          TRUNG TÂM NGOẠI NGỮ LINGUAHUB ACADEMY         \r\n" +
-                $"   HỆ THỐNG QUẢN LÝ ĐÀO TẠO & TÀI CHÍNH CHUẨN QUỐC TẾ   \r\n" +
+                $"          TRUNG TÂM NGOẠI NGỮ LANGUAGECENTER ACADEMY         \r\n" +
+                $"           HỆ THỐNG QUẢN LÝ ĐÀO TẠO TRUNG TÂM ANH NGỮ   \r\n" +
                 $"========================================================\r\n\r\n" +
                 $" Mã phiếu học phí : {item.MaHocPhi}\r\n" +
                 $" Mã đăng ký học   : {item.MaDangKy}\r\n" +
@@ -481,7 +481,7 @@ public partial class UcHocPhi : UserControl
 
         var btnPrint = new Button
         {
-            Text = "🖨 In hóa đơn / Lưu PDF",
+            Text = "In hóa đơn / Lưu PDF",
             Location = new Point(250, 422),
             Size = new Size(160, 36),
             BackColor = Theme.Primary,

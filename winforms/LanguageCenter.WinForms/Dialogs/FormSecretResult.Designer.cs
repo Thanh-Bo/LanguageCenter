@@ -41,16 +41,13 @@ partial class FormSecretResult
 
         SuspendLayout();
 
-        lblIcon.Text = "✓";
-        lblIcon.Font = new Font("Segoe UI", 24f, FontStyle.Bold);
-        lblIcon.ForeColor = UI.Theme.Success;
-        lblIcon.AutoSize = true;
-        lblIcon.Location = new Point(30, 24);
+        lblIcon.Text = "";
+        lblIcon.Visible = false;
 
         lblTitle.Font = UI.Theme.FontHeading;
         lblTitle.ForeColor = UI.Theme.TextDark;
         lblTitle.AutoSize = true;
-        lblTitle.Location = new Point(80, 28);
+        lblTitle.Location = new Point(30, 28);
 
         lblMessage.Font = UI.Theme.FontRegular;
         lblMessage.ForeColor = UI.Theme.Muted;
@@ -82,7 +79,7 @@ partial class FormSecretResult
         txtPassword.ReadOnly = true;
         txtPassword.BackColor = Color.White;
 
-        lblWarning.Text = "⚠ Mật khẩu này CHỈ hiển thị một lần và không thể xem lại. "
+        lblWarning.Text = " Mật khẩu này CHỈ hiển thị một lần và không thể xem lại. "
             + "Hãy sao chép và gửi cho người dùng ngay bây giờ.";
         lblWarning.Font = new Font("Segoe UI", 8.75f, FontStyle.Italic);
         lblWarning.ForeColor = UI.Theme.Warning;

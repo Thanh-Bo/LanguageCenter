@@ -36,9 +36,9 @@ partial class UcHocPhi
         cboTrangThai = UI.UiHelpers.CreateComboBox(160);
         cboPhuongThuc = UI.UiHelpers.CreateComboBox(160);
         btnSearch = UI.UiHelpers.CreatePrimaryButton("Tìm kiếm", 90, 32);
-        btnRefresh = UI.UiHelpers.CreateSecondaryButton("⟳", 40, 32);
-        btnCollectFee = UI.UiHelpers.CreatePrimaryButton("💳 Thu học phí", 130, 32);
-        btnPrintReceipt = UI.UiHelpers.CreateSecondaryButton("🧾 In biên lai", 120, 32);
+        btnRefresh = UI.UiHelpers.CreateSecondaryButton("Làm mới", 80, 32);
+        btnCollectFee = UI.UiHelpers.CreatePrimaryButton("Thu học phí", 120, 32);
+        btnPrintReceipt = UI.UiHelpers.CreateSecondaryButton("In biên lai", 100, 32);
         dgvTuition = new DataGridView();
         pnlFooter = new Panel();
         lblSummary = new Label();

@@ -23,8 +23,8 @@ public static class SwaggerExtensions
                 Version = "v1",
                 Description =
                     "Hệ thống quản lý trung tâm ngoại ngữ.\n\n" +
-                    "**Cách dùng JWT:** gọi `POST /api/auth/login` → copy `accessToken` → " +
-                    "bấm nút **Authorize** → dán token (không cần gõ chữ `Bearer`) → gọi các API cần đăng nhập."
+                    "**Cách dùng JWT:** gọi `POST /api/auth/login` -> copy `accessToken` -> " +
+                    "bấm nút **Authorize** -> dán token (không cần gõ chữ `Bearer`) -> gọi các API cần đăng nhập."
             });
 
             // Khai báo scheme Bearer để Swagger UI hiện nút Authorize.

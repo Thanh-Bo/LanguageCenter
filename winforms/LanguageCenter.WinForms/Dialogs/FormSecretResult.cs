@@ -1,6 +1,6 @@
 namespace LanguageCenter.WinForms.Dialogs;
 
-/// <summary>Hộp thoại hiển thị thông tin chỉ-xuất-hiện-một-lần (mật khẩu tạm khi tạo tài khoản / reset mật khẩu).</summary>
+/// Hộp thoại hiển thị thông tin chỉ-xuất-hiện-một-lần (mật khẩu tạm khi tạo tài khoản / reset mật khẩu).
 public partial class FormSecretResult : Form
 {
     public FormSecretResult(string title, string message, string username, string temporaryPassword)

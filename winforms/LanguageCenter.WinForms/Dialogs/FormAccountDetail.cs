@@ -2,12 +2,12 @@ using LanguageCenter.WinForms.Api;
 
 namespace LanguageCenter.WinForms.Dialogs;
 
-/// <summary>Xem chi tiết một tài khoản, đổi trạng thái, đặt lại mật khẩu, xóa (nếu không có dữ liệu phụ thuộc).</summary>
+/// Xem chi tiết một tài khoản, đổi trạng thái, đặt lại mật khẩu, xóa (nếu không có dữ liệu phụ thuộc).
 public partial class FormAccountDetail : Form
 {
     private readonly int _accountId;
 
-    /// <summary>True nếu danh sách phía sau cần được tải lại (có thay đổi trạng thái hoặc đã xóa).</summary>
+    /// True nếu danh sách phía sau cần được tải lại (có thay đổi trạng thái hoặc đã xóa).
     public bool DataChanged { get; private set; }
 
     public FormAccountDetail(int accountId)

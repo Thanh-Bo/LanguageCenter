@@ -89,7 +89,7 @@ public partial class FormLogin : Form
     {
         using var dlg = new Form
         {
-            Text = "Khôi phục mật khẩu — LinguaHub Admin",
+            Text = "Khôi phục mật khẩu — Admin",
             Width = 480,
             Height = 370,
             FormBorderStyle = FormBorderStyle.FixedDialog,
@@ -109,7 +109,7 @@ public partial class FormLogin : Form
 
         var lblHeader = new Label
         {
-            Text = "🔒 KHÔI PHỤC MẬT KHẨU QUẢN TRỊ",
+            Text = "KHÔI PHỤC MẬT KHẨU QUẢN TRỊ",
             Font = UI.Theme.FontHeading,
             ForeColor = UI.Theme.PrimaryDark,
             AutoSize = true,
@@ -130,10 +130,10 @@ public partial class FormLogin : Form
         var lblGuide = new Label
         {
             Text = "Để bảo vệ dữ liệu trung tâm, tài khoản Quản trị viên cần được cấp lại qua quy trình bảo mật nội bộ:\n\n"
-                 + "📌 Vui lòng liên hệ Bộ phận Kỹ thuật hệ thống LinguaHub:\n"
-                 + "• Hotline hỗ trợ nội bộ: 1900 6868 (Nhánh 1)\n"
-                 + "• Email hỗ trợ: it-support@linguahub.edu.vn\n\n"
-                 + "💡 Mẹo môi trường thử nghiệm (Dev):\n"
+                 + "Vui lòng liên hệ Bộ phận Kỹ thuật hệ thống LanguageCenter:\n"
+                 + "- Hotline hỗ trợ nội bộ: 1900 6868 (Nhánh 1)\n"
+                 + "- Email hỗ trợ: it-support@languagecenter.edu.vn\n\n"
+                 + "Mẹo môi trường thử nghiệm (Dev):\n"
                  + "Mật khẩu mặc định hệ thống: LanguageCenter@2026",
             Font = UI.Theme.FontRegular,
             ForeColor = UI.Theme.TextDark,

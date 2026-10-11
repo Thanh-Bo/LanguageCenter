@@ -32,10 +32,10 @@ public partial class UcCourses : UserControl
     private void InitStats()
     {
         tblStats.Controls.Clear();
-        tblStats.Controls.Add(CreateStatCard("📚 Tổng số khóa học", "8 Khóa", "Các cấp độ từ A1 đến C1", Theme.Primary), 0, 0);
-        tblStats.Controls.Add(CreateStatCard("🎓 Chương trình đào tạo", "4 Hệ", "IELTS, TOEIC, Giao tiếp, Thiếu nhi", Theme.Purple), 1, 0);
-        tblStats.Controls.Add(CreateStatCard("🟢 Đang tuyển sinh", "5 Khóa", "Tuyển sinh cho kỳ học mới", Theme.Success), 2, 0);
-        tblStats.Controls.Add(CreateStatCard("👥 Tổng chỉ tiêu", "147 HV", "Học viên các lớp học", Theme.Warning), 3, 0);
+        tblStats.Controls.Add(CreateStatCard("Tổng số khóa học", "8 Khóa", "Các cấp độ từ A1 đến C1", Theme.Primary), 0, 0);
+        tblStats.Controls.Add(CreateStatCard("Chương trình đào tạo", "4 Hệ", "IELTS, TOEIC, Giao tiếp, Thiếu nhi", Theme.Purple), 1, 0);
+        tblStats.Controls.Add(CreateStatCard("Đang tuyển sinh", "5 Khóa", "Tuyển sinh cho kỳ học mới", Theme.Success), 2, 0);
+        tblStats.Controls.Add(CreateStatCard("Tổng chỉ tiêu", "147 HV", "Học viên các lớp học", Theme.Warning), 3, 0);
     }
 
     private static Panel CreateStatCard(string title, string value, string note, Color accent)
@@ -75,7 +75,7 @@ public partial class UcCourses : UserControl
         cboChuongTrinh.SelectedIndex = 0;
 
         cboTrangThai.Items.Add(AllOption);
-        cboTrangThai.Items.AddRange(["🟢 Đang tuyển sinh", "🔴 Đang diễn ra", "🟡 Sắp khai giảng"]);
+        cboTrangThai.Items.AddRange(["Đang tuyển sinh", "Đang diễn ra", "Sắp khai giảng"]);
         cboTrangThai.SelectedIndex = 0;
     }
 
@@ -83,14 +83,14 @@ public partial class UcCourses : UserControl
     {
         _courses.Clear();
         _courses.AddRange([
-            new CourseModel("KH-IELTS-75", "IELTS Master 7.5+ Chuyên sâu", "IELTS Academic", "Cao cấp (Band 7.5+)", 36, 72, 12500000m, new DateOnly(2026, 10, 15), new DateOnly(2027, 1, 15), "18/20", "🟢 Đang tuyển sinh"),
-            new CourseModel("KH-IELTS-65", "IELTS Intensive 6.5 Cấp tốc", "IELTS Academic", "Trung cấp (Band 6.0-6.5)", 30, 60, 9800000m, new DateOnly(2026, 10, 20), new DateOnly(2027, 1, 10), "16/20", "🟢 Đang tuyển sinh"),
-            new CourseModel("KH-COM-PRO", "Tiếng Anh Giao tiếp phản xạ PRO", "Tiếng Anh Giao tiếp", "Trung cấp (B1-B2)", 24, 48, 6800000m, new DateOnly(2026, 10, 1), new DateOnly(2026, 11, 25), "15/15", "🔴 Đang diễn ra"),
-            new CourseModel("KH-COM-BAS", "Tiếng Anh Giao tiếp căn bản (Beginner)", "Tiếng Anh Giao tiếp", "Căn bản (A1-A2)", 20, 40, 4500000m, new DateOnly(2026, 11, 1), new DateOnly(2026, 12, 20), "8/15", "🟡 Sắp khai giảng"),
-            new CourseModel("KH-TOEIC-65", "Luyện thi TOEIC Mục tiêu 650+", "Luyện thi TOEIC", "Trung cấp (Intermediate)", 24, 48, 5500000m, new DateOnly(2026, 10, 18), new DateOnly(2026, 12, 15), "12/20", "🟢 Đang tuyển sinh"),
-            new CourseModel("KH-TOEIC-80", "Luyện thi TOEIC Chuyên sâu 800+", "Luyện thi TOEIC", "Nâng cao (Advanced)", 28, 56, 7200000m, new DateOnly(2026, 11, 5), new DateOnly(2027, 1, 10), "6/20", "🟡 Sắp khai giảng"),
-            new CourseModel("KH-KIDS-STA", "Tiếng Anh Thiếu nhi Starters", "Tiếng Anh Thiếu nhi", "Starters (Pre A1)", 32, 64, 7200000m, new DateOnly(2026, 10, 12), new DateOnly(2027, 2, 12), "14/16", "🟢 Đang tuyển sinh"),
-            new CourseModel("KH-KIDS-MOV", "Tiếng Anh Thiếu nhi Movers", "Tiếng Anh Thiếu nhi", "Movers (A1)", 32, 64, 7500000m, new DateOnly(2026, 10, 15), new DateOnly(2027, 2, 15), "10/16", "🟢 Đang tuyển sinh")
+            new CourseModel("KH-IELTS-75", "IELTS Master 7.5+ Chuyên sâu", "IELTS Academic", "Cao cấp (Band 7.5+)", 36, 72, 12500000m, new DateOnly(2026, 10, 15), new DateOnly(2027, 1, 15), "18/20", "Đang tuyển sinh"),
+            new CourseModel("KH-IELTS-65", "IELTS Intensive 6.5 Cấp tốc", "IELTS Academic", "Trung cấp (Band 6.0-6.5)", 30, 60, 9800000m, new DateOnly(2026, 10, 20), new DateOnly(2027, 1, 10), "16/20", "Đang tuyển sinh"),
+            new CourseModel("KH-COM-PRO", "Tiếng Anh Giao tiếp phản xạ PRO", "Tiếng Anh Giao tiếp", "Trung cấp (B1-B2)", 24, 48, 6800000m, new DateOnly(2026, 10, 1), new DateOnly(2026, 11, 25), "15/15", "Đang diễn ra"),
+            new CourseModel("KH-COM-BAS", "Tiếng Anh Giao tiếp căn bản (Beginner)", "Tiếng Anh Giao tiếp", "Căn bản (A1-A2)", 20, 40, 4500000m, new DateOnly(2026, 11, 1), new DateOnly(2026, 12, 20), "8/15", "Sắp khai giảng"),
+            new CourseModel("KH-TOEIC-65", "Luyện thi TOEIC Mục tiêu 650+", "Luyện thi TOEIC", "Trung cấp (Intermediate)", 24, 48, 5500000m, new DateOnly(2026, 10, 18), new DateOnly(2026, 12, 15), "12/20", "Đang tuyển sinh"),
+            new CourseModel("KH-TOEIC-80", "Luyện thi TOEIC Chuyên sâu 800+", "Luyện thi TOEIC", "Nâng cao (Advanced)", 28, 56, 7200000m, new DateOnly(2026, 11, 5), new DateOnly(2027, 1, 10), "6/20", "Sắp khai giảng"),
+            new CourseModel("KH-KIDS-STA", "Tiếng Anh Thiếu nhi Starters", "Tiếng Anh Thiếu nhi", "Starters (Pre A1)", 32, 64, 7200000m, new DateOnly(2026, 10, 12), new DateOnly(2027, 2, 12), "14/16", "Đang tuyển sinh"),
+            new CourseModel("KH-KIDS-MOV", "Tiếng Anh Thiếu nhi Movers", "Tiếng Anh Thiếu nhi", "Movers (A1)", 32, 64, 7500000m, new DateOnly(2026, 10, 15), new DateOnly(2027, 2, 15), "10/16", "Đang tuyển sinh")
         ]);
 
         FilterData();
@@ -231,7 +231,7 @@ public partial class UcCourses : UserControl
                 DateOnly.FromDateTime(DateTime.Today.AddDays(15)),
                 DateOnly.FromDateTime(DateTime.Today.AddMonths(3)),
                 "0/20",
-                "🟢 Đang tuyển sinh"
+                "Đang tuyển sinh"
             );
             _courses.Insert(0, newCourse);
             FilterData();

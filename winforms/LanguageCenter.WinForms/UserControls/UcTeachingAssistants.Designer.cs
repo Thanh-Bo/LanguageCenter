@@ -34,13 +34,13 @@ partial class UcTeachingAssistants
         txtSearch = UI.UiHelpers.CreateTextBox(260);
         cboTrangThai = UI.UiHelpers.CreateComboBox(160);
         btnSearch = UI.UiHelpers.CreatePrimaryButton("Tìm kiếm", 100, 32);
-        btnRefresh = UI.UiHelpers.CreateSecondaryButton("⟳", 42, 32);
+        btnRefresh = UI.UiHelpers.CreateSecondaryButton("Làm mới", 80, 32);
         btnAdd = UI.UiHelpers.CreatePrimaryButton("+ Thêm trợ giảng", 160, 32);
         dgvAssistants = new DataGridView();
         pnlFooter = new Panel();
         lblPageInfo = new Label();
-        btnPrevPage = UI.UiHelpers.CreateSecondaryButton("‹ Trước", 90, 30);
-        btnNextPage = UI.UiHelpers.CreateSecondaryButton("Sau ›", 90, 30);
+        btnPrevPage = UI.UiHelpers.CreateSecondaryButton("Trước", 90, 30);
+        btnNextPage = UI.UiHelpers.CreateSecondaryButton("Sau", 90, 30);
         lblStatus = new Label();
 
         SuspendLayout();
@@ -64,7 +64,7 @@ partial class UcTeachingAssistants
         btnRefresh.Location = new Point(552, 1);
         btnRefresh.Click += async (_, _) => await ReloadAsync(resetPage: false);
 
-        btnAdd.Location = new Point(604, 1);
+        btnAdd.Location = new Point(640, 1);
         btnAdd.Click += BtnAdd_Click;
 
         pnlToolbar.Resize += (_, _) =>

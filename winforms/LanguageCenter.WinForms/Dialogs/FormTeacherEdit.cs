@@ -2,13 +2,11 @@ using LanguageCenter.WinForms.Api;
 
 namespace LanguageCenter.WinForms.Dialogs;
 
-/// <summary>
 /// Thêm mới hoặc sửa hồ sơ giáo viên / trợ giảng.
 /// Constructor không tham số → chế độ TẠO MỚI (chọn được Loại giáo viên).
 /// Constructor(teacherId) → chế độ SỬA (Loại giáo viên khóa cứng — xem ghi chú trong
 /// UpdateTeacherRequest của backend: đổi loại sẽ làm hỏng mã GV/TG và dữ liệu lịch sử;
 /// hiện thêm khối trạng thái làm việc và Bằng cấp/Chứng chỉ chỉ đọc, Phase 3 chưa có CRUD).
-/// </summary>
 public partial class FormTeacherEdit : Form
 {
     private readonly string? _teacherId;
@@ -16,7 +14,7 @@ public partial class FormTeacherEdit : Form
 
     public bool DataChanged { get; private set; }
 
-    /// <summary>Chế độ tạo mới.</summary>
+    /// Chế độ tạo mới.
     public FormTeacherEdit()
     {
         _isEditMode = false;
@@ -24,7 +22,7 @@ public partial class FormTeacherEdit : Form
         ConfigureForCreateMode();
     }
 
-    /// <summary>Chế độ sửa.</summary>
+    /// Chế độ sửa.
     public FormTeacherEdit(string teacherId)
     {
         _teacherId = teacherId;
@@ -131,7 +129,7 @@ public partial class FormTeacherEdit : Form
         {
             lines.Add("Bằng cấp:");
             lines.AddRange(teacher.BangCaps.Select(b =>
-                $"  • {b.TenBangCap}" + (b.ChuyenNganh is null ? "" : $" — {b.ChuyenNganh}")
+                $"  - {b.TenBangCap}" + (b.ChuyenNganh is null ? "" : $" — {b.ChuyenNganh}")
                     + (b.NamTotNghiep is null ? "" : $" ({b.NamTotNghiep})")));
         }
 
@@ -140,7 +138,7 @@ public partial class FormTeacherEdit : Form
             if (lines.Count > 0) lines.Add(string.Empty);
             lines.Add("Chứng chỉ:");
             lines.AddRange(teacher.ChungChis.Select(c =>
-                $"  • {c.TenChungChi}" + (c.KetQua is null ? "" : $" — {c.KetQua}")
+                $"  - {c.TenChungChi}" + (c.KetQua is null ? "" : $" — {c.KetQua}")
                     + (c.NgayHetHan is null ? "" : $" (hạn {UI.UiHelpers.FormatDate(c.NgayHetHan)})")));
         }
 

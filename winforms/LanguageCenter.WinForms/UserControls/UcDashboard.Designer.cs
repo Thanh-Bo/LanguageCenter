@@ -13,7 +13,7 @@ partial class UcDashboard
     private Label lblHeroServer = null!;
     private Button btnRefresh = null!;
 
-    // Section 1: Stats Header & Cards (100% Full Width)
+    // Section 1: Stats Header & Cards 
     private FlowLayoutPanel pnlStatsHeader = null!;
     private Label lblStatsHeaderTitle = null!;
     private Label lblLoading = null!;
@@ -30,7 +30,7 @@ partial class UcDashboard
     // Spacer
     private Panel pnlSectionSpacer = null!;
 
-    // Section 2: Main Split 2-Column Section (62% / 38% Full Width)
+    // Section 2: Main Split 2-Column Section 
     private TableLayoutPanel tblMainSection = null!;
 
     // Left Column (62%)
@@ -134,9 +134,7 @@ partial class UcDashboard
         AutoScroll = true;
         BackColor = UI.Theme.ContentBackground;
 
-        // ====================================================================
         // 1. HERO BANNER (Full width, gradient vibrant royal blue)
-        // ====================================================================
         pnlHero.Dock = DockStyle.Top;
         pnlHero.Height = 125;
         pnlHero.BackColor = UI.Theme.Primary;
@@ -147,19 +145,19 @@ partial class UcDashboard
         pnlHeroRight.Width = 240;
         pnlHeroRight.BackColor = Color.Transparent;
 
-        lblHeroClock.Text = $"📅 {DateTime.Now:dd/MM/yyyy}";
+        lblHeroClock.Text = $" {DateTime.Now:dd/MM/yyyy}";
         lblHeroClock.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         lblHeroClock.ForeColor = Color.FromArgb(219, 234, 254);
         lblHeroClock.AutoSize = true;
         lblHeroClock.Location = new Point(10, 8);
 
-        lblHeroServer.Text = "🟢 Hệ thống sẵn sàng (Online)";
+        lblHeroServer.Text = "Hệ thống sẵn sàng (Online)";
         lblHeroServer.Font = new Font("Segoe UI", 8.5f);
         lblHeroServer.ForeColor = Color.FromArgb(167, 243, 208);
         lblHeroServer.AutoSize = true;
         lblHeroServer.Location = new Point(10, 32);
 
-        btnRefresh.Text = "⟳ Làm mới";
+        btnRefresh.Text = "Làm mới";
         btnRefresh.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         btnRefresh.ForeColor = UI.Theme.Primary;
         btnRefresh.BackColor = Color.White;
@@ -174,13 +172,13 @@ partial class UcDashboard
         pnlHeroRight.Controls.Add(lblHeroClock);
 
         // Hero Left Controls (Chỉ giữ lại 2 mục: Badge và Lời chào)
-        lblHeroBadge.Text = $"★ {Api.AppConfig.BrandShortName} ACADEMY — HỆ THỐNG QUẢN TRỊ ĐÀO TẠO & HỌC VIÊN";
+        lblHeroBadge.Text = $"{Api.AppConfig.BrandShortName} ACADEMY — HỆ THỐNG QUẢN TRỊ ĐÀO TẠO & HỌC VIÊN";
         lblHeroBadge.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold);
         lblHeroBadge.ForeColor = Color.FromArgb(219, 234, 254);
         lblHeroBadge.AutoSize = true;
         lblHeroBadge.Location = new Point(20, 18);
 
-        lblHeroTitle.Text = $"Chào mừng bạn đến với {Api.AppConfig.BrandName} 🚀";
+        lblHeroTitle.Text = $"Chào mừng bạn đến với {Api.AppConfig.BrandName}";
         lblHeroTitle.Font = new Font("Segoe UI", 16f, FontStyle.Bold);
         lblHeroTitle.ForeColor = Color.White;
         lblHeroTitle.AutoSize = true;
@@ -190,16 +188,14 @@ partial class UcDashboard
         pnlHero.Controls.Add(lblHeroTitle);
         pnlHero.Controls.Add(lblHeroBadge);
 
-        // ====================================================================
-        // 2. STATS HEADER ROW (FlowLayoutPanel: Tiêu đề không bao giờ bị che)
-        // ====================================================================
+        // 2. STATS HEADER ROW (FlowLayoutPanel
         pnlStatsHeader.Dock = DockStyle.Top;
         pnlStatsHeader.Height = 44;
         pnlStatsHeader.WrapContents = false;
         pnlStatsHeader.FlowDirection = FlowDirection.LeftToRight;
         pnlStatsHeader.Padding = new Padding(2, 10, 0, 0);
 
-        lblStatsHeaderTitle.Text = "📊 CHỈ SỐ HOẠT ĐỘNG TOÀN HỆ THỐNG";
+        lblStatsHeaderTitle.Text = "CHỈ SỐ HOẠT ĐỘNG TOÀN HỆ THỐNG";
         lblStatsHeaderTitle.Font = UI.Theme.FontHeading;
         lblStatsHeaderTitle.ForeColor = UI.Theme.TextDark;
         lblStatsHeaderTitle.AutoSize = true;
@@ -214,9 +210,7 @@ partial class UcDashboard
         pnlStatsHeader.Controls.Add(lblStatsHeaderTitle);
         pnlStatsHeader.Controls.Add(lblLoading);
 
-        // ====================================================================
-        // 3. STATS CARDS (TableLayoutPanel 4 Columns, 25% each - Full Width)
-        // ====================================================================
+        // 3. STATS CARDS 
         tblCards.Dock = DockStyle.Top;
         tblCards.Height = 136;
         tblCards.ColumnCount = 4;
@@ -227,10 +221,10 @@ partial class UcDashboard
         tblCards.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
         tblCards.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
-        BuildStatMetricCard(cardAccounts, "Tổng tài khoản hệ thống", "👥", lblAccountsValue, UI.Theme.Primary, "Quản trị viên & Cán bộ");
-        BuildStatMetricCard(cardActiveAccounts, "Tài khoản đang hoạt động", "🟢", lblActiveAccountsValue, UI.Theme.Success, "✓ 100% Đang kích hoạt");
-        BuildStatMetricCard(cardStudents, "Hồ sơ học viên", "🎓", lblStudentsValue, UI.Theme.Purple, "Học viên các khoá học");
-        BuildStatMetricCard(cardTeachers, "Giáo viên & Trợ giảng", "👨‍🏫", lblTeachersValue, UI.Theme.Warning, "Giảng viên chuẩn CELTA/TESOL");
+        BuildStatMetricCard(cardAccounts, "Tổng tài khoản hệ thống", "", lblAccountsValue, UI.Theme.Primary, "Quản trị viên & Cán bộ");
+        BuildStatMetricCard(cardActiveAccounts, "Tài khoản đang hoạt động", "", lblActiveAccountsValue, UI.Theme.Success, " 100% Đang kích hoạt");
+        BuildStatMetricCard(cardStudents, "Hồ sơ học viên", "", lblStudentsValue, UI.Theme.Purple, "Học viên các khoá học");
+        BuildStatMetricCard(cardTeachers, "Giáo viên & Trợ giảng", "", lblTeachersValue, UI.Theme.Warning, "Giảng viên chuẩn CELTA/TESOL");
 
         cardAccounts.Dock = DockStyle.Fill;
         cardAccounts.Margin = new Padding(0, 0, 12, 0);
@@ -249,15 +243,11 @@ partial class UcDashboard
         tblCards.Controls.Add(cardStudents, 2, 0);
         tblCards.Controls.Add(cardTeachers, 3, 0);
 
-        // ====================================================================
         // SPACER GIỮA CHỈ SỐ VÀ KHU VỰC CHÍNH
-        // ====================================================================
         pnlSectionSpacer.Dock = DockStyle.Top;
         pnlSectionSpacer.Height = 18;
 
-        // ====================================================================
-        // 4. MAIN SPLIT 2-COLUMN SECTION (62% Left / 38% Right - Full Width)
-        // ====================================================================
+        // 4. MAIN SPLIT 2-COLUMN SECTION 
         tblMainSection.Dock = DockStyle.Top;
         tblMainSection.Height = 540;
         tblMainSection.ColumnCount = 2;
@@ -266,9 +256,7 @@ partial class UcDashboard
         tblMainSection.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 38F));
         tblMainSection.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
 
-        // --------------------------------------------------------------------
         // CỘT TRÁI (62%): Truy cập nhanh + Danh sách khóa học tiêu biểu
-        // --------------------------------------------------------------------
         pnlLeftCol.Dock = DockStyle.Fill;
         pnlLeftCol.Margin = new Padding(0, 0, 10, 0);
 
@@ -279,7 +267,7 @@ partial class UcDashboard
         pnlQuickActions.Padding = new Padding(20, 16, 20, 16);
         pnlQuickActions.Paint += UI.UiHelpers.PaintCardBorder;
 
-        lblQuickTitle.Text = "⚡ TRUY CẬP NHANH CÁC PHÂN HỆ";
+        lblQuickTitle.Text = " TRUY CẬP NHANH CÁC PHÂN HỆ";
         lblQuickTitle.Font = UI.Theme.FontHeading;
         lblQuickTitle.ForeColor = UI.Theme.TextDark;
         lblQuickTitle.AutoSize = true;
@@ -301,10 +289,10 @@ partial class UcDashboard
         tblQuickButtons.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
         tblQuickButtons.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
 
-        ConfigureQuickButton(btnGoTuition, "💳  Biểu phí & Khóa học (Figma) →", UI.Theme.Primary);
-        ConfigureQuickButton(btnGoStudents, "🎓  Quản lý học viên →", Color.FromArgb(71, 85, 105));
-        ConfigureQuickButton(btnGoTeachers, "👨‍🏫  Giáo viên & Trợ giảng →", Color.FromArgb(71, 85, 105));
-        ConfigureQuickButton(btnGoAccounts, "👤  Quản trị tài khoản →", Color.FromArgb(71, 85, 105));
+        ConfigureQuickButton(btnGoTuition, "Quản lý học phí", UI.Theme.Primary);
+        ConfigureQuickButton(btnGoStudents, "Quản lý học viên", Color.FromArgb(71, 85, 105));
+        ConfigureQuickButton(btnGoTeachers, "Quản lý giáo viên", Color.FromArgb(71, 85, 105));
+        ConfigureQuickButton(btnGoAccounts, "Quản lý tài khoản", Color.FromArgb(71, 85, 105));
 
         tblQuickButtons.Controls.Add(btnGoTuition, 0, 0);
         tblQuickButtons.Controls.Add(btnGoStudents, 1, 0);
@@ -327,13 +315,13 @@ partial class UcDashboard
         pnlCoursesHeader.Dock = DockStyle.Top;
         pnlCoursesHeader.Height = 36;
 
-        lblCoursesTitle.Text = "📚 CHƯƠNG TRÌNH ĐÀO TẠO TIÊU BIỂU (TÓM TẮT NHANH)";
+        lblCoursesTitle.Text = "CHƯƠNG TRÌNH ĐÀO TẠO TIÊU BIỂU";
         lblCoursesTitle.Font = UI.Theme.FontHeading;
         lblCoursesTitle.ForeColor = UI.Theme.TextDark;
         lblCoursesTitle.AutoSize = true;
         lblCoursesTitle.Location = new Point(0, 4);
 
-        lnkViewAllCourses.Text = "Xem toàn bộ biểu phí & chương trình →";
+        lnkViewAllCourses.Text = "Xem toàn bộ khóa học & chương trình";
         lnkViewAllCourses.Font = UI.Theme.FontBold;
         lnkViewAllCourses.LinkColor = UI.Theme.Primary;
         lnkViewAllCourses.ActiveLinkColor = UI.Theme.PrimaryDark;
@@ -359,9 +347,7 @@ partial class UcDashboard
         pnlLeftCol.Controls.Add(pnlLeftSpacer);
         pnlLeftCol.Controls.Add(pnlQuickActions);
 
-        // --------------------------------------------------------------------
         // CỘT PHẢI (38%): Thông báo vận hành & Nhắc việc
-        // --------------------------------------------------------------------
         pnlRightCol.Dock = DockStyle.Fill;
         pnlRightCol.Margin = new Padding(10, 0, 0, 0);
 
@@ -371,7 +357,7 @@ partial class UcDashboard
         pnlNotices.Padding = new Padding(20, 16, 20, 16);
         pnlNotices.Paint += UI.UiHelpers.PaintCardBorder;
 
-        lblNoticesTitle.Text = "🔔 THÔNG BÁO VẬN HÀNH & NHẮC VIỆC";
+        lblNoticesTitle.Text = " THÔNG BÁO VẬN HÀNH & NHẮC VIỆC";
         lblNoticesTitle.Font = UI.Theme.FontHeading;
         lblNoticesTitle.ForeColor = UI.Theme.TextDark;
         lblNoticesTitle.AutoSize = true;

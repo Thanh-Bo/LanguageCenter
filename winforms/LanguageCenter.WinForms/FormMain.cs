@@ -30,19 +30,19 @@ public partial class FormMain : Form
 
         if (role == RoleNames.GiaoVien)
         {
-            lblCurrentUser.Text = $"👨‍🏫 {user?.Username} (Giáo viên)";
-            btnNavAssistants.Text = "🔒  Quản lý trợ giảng";
-            btnNavAccounts.Text = "🔒  Quản lý tài khoản";
+            lblCurrentUser.Text = $"{user?.Username} (Giáo viên)";
+            btnNavAssistants.Text = "[Khóa] Quản lý trợ giảng";
+            btnNavAccounts.Text = "[Khóa] Quản lý tài khoản";
         }
         else if (role == RoleNames.TroGiang)
         {
-            lblCurrentUser.Text = $"🧑‍🏫 {user?.Username} (Trợ giảng)";
-            btnNavTeachers.Text = "🔒  Quản lý giáo viên";
-            btnNavAccounts.Text = "🔒  Quản lý tài khoản";
+            lblCurrentUser.Text = $"{user?.Username} (Trợ giảng)";
+            btnNavTeachers.Text = "[Khóa] Quản lý giáo viên";
+            btnNavAccounts.Text = "[Khóa] Quản lý tài khoản";
         }
         else
         {
-            lblCurrentUser.Text = $"👑 {user?.Username ?? "ADMIN001"} (Quản trị viên)";
+            lblCurrentUser.Text = $"{user?.Username ?? "ADMIN001"} (Quản trị viên)";
         }
 
         NavigateTo(NavItem.Dashboard);
@@ -57,7 +57,7 @@ public partial class FormMain : Form
         {
             MessageBox.Show(
                 this,
-                $"🚫 TRUY CẬP BỊ TỪ CHỐI!\n\n" +
+                $"TRUY CẬP BỊ TỪ CHỐI!\n\n" +
                 $"Trang \"Quản lý giáo viên\" chỉ dành riêng cho Giáo viên giảng dạy và Ban Quản trị trung tâm.\n" +
                 $"Tài khoản hiện tại ({AppSession.CurrentUser?.Username} — vai trò: {role}) không có thẩm quyền truy cập.",
                 "Phân quyền bảo mật",
@@ -70,7 +70,7 @@ public partial class FormMain : Form
         {
             MessageBox.Show(
                 this,
-                $"🚫 TRUY CẬP BỊ TỪ CHỐI!\n\n" +
+                $"TRUY CẬP BỊ TỪ CHỐI!\n\n" +
                 $"Trang \"Quản lý trợ giảng\" chỉ dành riêng cho Trợ giảng học vụ và Ban Quản trị trung tâm.\n" +
                 $"Tài khoản hiện tại ({AppSession.CurrentUser?.Username} — vai trò: {role}) không có thẩm quyền truy cập.",
                 "Phân quyền bảo mật",
@@ -83,7 +83,7 @@ public partial class FormMain : Form
         {
             MessageBox.Show(
                 this,
-                $"🚫 TRUY CẬP BỊ TỪ CHỐI!\n\n" +
+                $"TRUY CẬP BỊ TỪ CHỐI!\n\n" +
                 $"Trang \"Quản lý tài khoản\" là phân hệ bảo mật cấp cao, chỉ dành riêng cho Quản trị viên hệ thống.\n" +
                 $"Tài khoản hiện tại ({AppSession.CurrentUser?.Username} — vai trò: {role}) không có thẩm quyền truy cập.",
                 "Phân quyền bảo mật",
@@ -112,8 +112,8 @@ public partial class FormMain : Form
         lblPageTitle.Text = item switch
         {
             NavItem.Dashboard => "Tổng quan hệ thống đào tạo",
-            NavItem.Courses => "Quản lý khóa học & Chương trình đào tạo — LinguaHub",
-            NavItem.Tuition => "Quản lý biểu phí & Sổ cái học phí — LinguaHub",
+            NavItem.Courses => "Quản lý khóa học & Chương trình đào tạo — LanguageCenter",
+            NavItem.Tuition => "Quản lý học phí & Sổ cái thu chi — LanguageCenter",
             NavItem.Students => "Quản lý hồ sơ học viên",
             NavItem.Teachers => "Quản lý hồ sơ giáo viên giảng dạy",
             NavItem.Assistants => "Quản lý hồ sơ trợ giảng học vụ",
@@ -164,7 +164,7 @@ public partial class FormMain : Form
     {
         var confirm = MessageBox.Show(
             this,
-            "Bạn có chắc muốn đăng xuất khỏi hệ thống LinguaHub?",
+            "Bạn có chắc muốn đăng xuất khỏi hệ thống LanguageCenter?",
             "Xác nhận đăng xuất",
             MessageBoxButtons.YesNo,
             MessageBoxIcon.Question);

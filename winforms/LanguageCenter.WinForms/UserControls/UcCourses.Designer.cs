@@ -37,7 +37,7 @@ partial class UcCourses
         cboChuongTrinh = UI.UiHelpers.CreateComboBox(180);
         cboTrangThai = UI.UiHelpers.CreateComboBox(160);
         btnSearch = UI.UiHelpers.CreatePrimaryButton("Tìm kiếm", 100, 32);
-        btnRefresh = UI.UiHelpers.CreateSecondaryButton("⟳", 42, 32);
+        btnRefresh = UI.UiHelpers.CreateSecondaryButton("Làm mới", 80, 32);
         btnAdd = UI.UiHelpers.CreatePrimaryButton("+ Thêm khóa học", 160, 32);
         dgvCourses = new DataGridView();
         pnlFooter = new Panel();
@@ -81,10 +81,10 @@ partial class UcCourses
         btnSearch.Location = new Point(610, 1);
         btnSearch.Click += (_, _) => FilterData();
 
-        btnRefresh.Location = new Point(720, 1);
+        btnRefresh.Location = new Point(718, 1);
         btnRefresh.Click += (_, _) => ReloadData();
 
-        btnAdd.Location = new Point(772, 1);
+        btnAdd.Location = new Point(806, 1);
         btnAdd.Click += BtnAdd_Click;
 
         pnlToolbar.Resize += (_, _) =>

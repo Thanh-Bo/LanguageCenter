@@ -61,9 +61,7 @@ partial class FormLogin
 
         SuspendLayout();
 
-        // ====================================================================
         // pnlBrand (Thương hiệu & Thông tin hệ thống bên trái)
-        // ====================================================================
         pnlBrand.Dock = DockStyle.Left;
         pnlBrand.Width = 420;
         pnlBrand.BackColor = UI.Theme.Primary;
@@ -74,14 +72,14 @@ partial class FormLogin
         pnlBrand.Controls.Add(lblBrandBadge);
 
         // lblBrandBadge
-        lblBrandBadge.Text = $"★ {Api.AppConfig.BrandShortName} ACADEMY";
+        lblBrandBadge.Text = $"{Api.AppConfig.BrandShortName} ACADEMY";
         lblBrandBadge.ForeColor = Color.FromArgb(219, 234, 254);
         lblBrandBadge.Font = new Font("Segoe UI", 9f, FontStyle.Bold);
         lblBrandBadge.AutoSize = true;
         lblBrandBadge.Location = new Point(45, 45);
 
         // lblBrandTitle
-        lblBrandTitle.Text = $"Chinh phục\ntiếng Anh cùng\n{Api.AppConfig.BrandShortName} 🚀";
+        lblBrandTitle.Text = $"Chinh phục\ntiếng Anh cùng\n{Api.AppConfig.BrandShortName}";
         lblBrandTitle.ForeColor = Color.White;
         lblBrandTitle.Font = new Font("Segoe UI", 24f, FontStyle.Bold);
         lblBrandTitle.AutoSize = false;
@@ -89,7 +87,7 @@ partial class FormLogin
         lblBrandTitle.Size = new Size(340, 135);
 
         // lblBrandSubtitle
-        lblBrandSubtitle.Text = "Hệ thống quản trị đào tạo, học viên và biểu phí chuẩn quốc tế.";
+        lblBrandSubtitle.Text = "Hệ thống quản trị đào tạo, học viên và học phí chuẩn quốc tế.";
         lblBrandSubtitle.ForeColor = Color.FromArgb(238, 242, 255);
         lblBrandSubtitle.Font = new Font("Segoe UI", 10f);
         lblBrandSubtitle.AutoSize = false;
@@ -97,7 +95,7 @@ partial class FormLogin
         lblBrandSubtitle.Size = new Size(330, 48);
 
         // lblBrandStats (Chỉ số tin cậy)
-        lblBrandStats.Text = "✓ 15.000+ Học viên theo học\n✓ 98% Tỉ lệ đạt mục tiêu đầu ra\n✓ 12+ Chi nhánh toàn quốc\n✓ 4.9⭐ Đánh giá hài lòng";
+        lblBrandStats.Text = "- 15.000+ Học viên theo học\n- 98% Tỉ lệ đạt mục tiêu đầu ra\n- 12+ Chi nhánh toàn quốc\n- Đánh giá chất lượng hàng đầu";
         lblBrandStats.ForeColor = Color.FromArgb(219, 234, 254);
         lblBrandStats.Font = new Font("Segoe UI", 9.5f);
         lblBrandStats.AutoSize = false;
@@ -112,9 +110,7 @@ partial class FormLogin
         lblBrandCopyright.Location = new Point(45, 485);
         lblBrandCopyright.Size = new Size(330, 45);
 
-        // ====================================================================
         // pnlForm (Khung nhập liệu bên phải)
-        // ====================================================================
         pnlForm.Dock = DockStyle.Fill;
         pnlForm.BackColor = Color.White;
         pnlForm.Controls.Add(lblSecurityNote);
@@ -212,7 +208,7 @@ partial class FormLogin
         btnLogin.Click += BtnLogin_Click;
 
         // lblSecurityNote (Thông báo bảo mật phiên đăng nhập)
-        lblSecurityNote.Text = "🔒 Phiên đăng nhập được mã hóa và tự động kết thúc sau 30 phút không hoạt động.";
+        lblSecurityNote.Text = "Phiên đăng nhập được mã hóa và tự động kết thúc sau 30 phút không hoạt động.";
         lblSecurityNote.Font = new Font("Segoe UI", 8.2f);
         lblSecurityNote.ForeColor = UI.Theme.Muted;
         lblSecurityNote.AutoSize = false;
@@ -220,16 +216,14 @@ partial class FormLogin
         lblSecurityNote.Size = new Size(340, 34);
 
         // lblHint
-        lblHint.Text = "💡 Mật khẩu: 1 | Demo: ADMIN001 (Quản trị) | GV001 (Giáo viên) | TG001 (Trợ giảng)";
+        lblHint.Text = "Mật khẩu: 1 | Demo: ADMIN001 (Quản trị) | GV001 (Giáo viên) | TG001 (Trợ giảng)";
         lblHint.Font = new Font("Segoe UI", 8.2f, FontStyle.Italic);
         lblHint.ForeColor = UI.Theme.Primary;
         lblHint.AutoSize = false;
         lblHint.Location = new Point(60, 425);
         lblHint.Size = new Size(340, 32);
 
-        // ====================================================================
         // FormLogin
-        // ====================================================================
         AutoScaleDimensions = new SizeF(96F, 96F);
         AutoScaleMode = AutoScaleMode.Dpi;
         ClientSize = new Size(920, 560);

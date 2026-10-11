@@ -2,12 +2,10 @@ using LanguageCenter.WinForms.Api;
 
 namespace LanguageCenter.WinForms.Dialogs;
 
-/// <summary>
 /// Thêm mới hoặc sửa hồ sơ học viên.
 /// Constructor không tham số → chế độ TẠO MỚI (hiện khối phụ huynh có thể nhập).
 /// Constructor(studentId) → chế độ SỬA (hiện khối trạng thái học tập, phụ huynh chỉ đọc —
 /// backend Phase 3 chưa có endpoint cập nhật phụ huynh).
-/// </summary>
 public partial class FormStudentEdit : Form
 {
     private readonly string? _studentId;
@@ -23,7 +21,7 @@ public partial class FormStudentEdit : Form
         ConfigureForCreateMode();
     }
 
-    /// <summary>Chế độ sửa.</summary>
+    /// Chế độ sửa.
     public FormStudentEdit(string studentId)
     {
         _studentId = studentId;
@@ -55,7 +53,7 @@ public partial class FormStudentEdit : Form
         cboGioiTinh.Items.AddRange(["Nam", "Nữ", "Khác"]);
         cboTrangThaiHocTap.Items.AddRange(StudentStatuses.All.ToArray());
 
-        // Phase 3 backend chưa hỗ trợ sửa phụ huynh qua API -> chỉ hiển thị, không cho nhập.
+        // backend chưa hỗ trợ sửa phụ huynh qua API -> chỉ hiển thị, không cho nhập.
         chkHasParent.Visible = false;
         pnlParentFields.Visible = false;
         lblParentReadonly.Visible = true;

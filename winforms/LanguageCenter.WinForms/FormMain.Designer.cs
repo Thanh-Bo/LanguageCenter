@@ -53,7 +53,7 @@ partial class FormMain
 
         SuspendLayout();
 
-        // pnlSidebar (LinguaHub Navy Sidebar)
+        // pnlSidebar (LanguageCenter Navy Sidebar)
         pnlSidebar.Dock = DockStyle.Left;
         pnlSidebar.Width = 250;
         pnlSidebar.BackColor = UI.Theme.SidebarBackground;
@@ -69,7 +69,7 @@ partial class FormMain
         pnlSidebar.Controls.Add(lblLogo);
 
         // lblLogo
-        lblLogo.Text = $"{Api.AppConfig.BrandShortName} 🚀";
+        lblLogo.Text = $"{Api.AppConfig.BrandShortName}";
         lblLogo.ForeColor = Color.White;
         lblLogo.Font = new Font("Segoe UI", 14f, FontStyle.Bold);
         lblLogo.AutoSize = false;
@@ -86,13 +86,13 @@ partial class FormMain
         lblLogoSub.Location = new Point(25, 54);
         lblLogoSub.Size = new Size(200, 20);
 
-        ConfigureNavButton(btnNavDashboard, "📊  Tổng quan hệ thống", 95);
-        ConfigureNavButton(btnNavCourses, "📚  Quản lý khóa học", 145);
-        ConfigureNavButton(btnNavTuition, "💳  Quản lý học phí", 195);
-        ConfigureNavButton(btnNavStudents, "🎓  Quản lý học viên", 245);
-        ConfigureNavButton(btnNavTeachers, "👨‍🏫  Quản lý giáo viên", 295);
-        ConfigureNavButton(btnNavAssistants, "🧑‍🏫  Quản lý trợ giảng", 345);
-        ConfigureNavButton(btnNavAccounts, "👤  Quản lý tài khoản", 395);
+        ConfigureNavButton(btnNavDashboard, "Tổng quan hệ thống", 95);
+        ConfigureNavButton(btnNavCourses, "Quản lý khóa học", 145);
+        ConfigureNavButton(btnNavTuition, "Quản lý học phí", 195);
+        ConfigureNavButton(btnNavStudents, "Quản lý học viên", 245);
+        ConfigureNavButton(btnNavTeachers, "Quản lý giáo viên", 295);
+        ConfigureNavButton(btnNavAssistants, "Quản lý trợ giảng", 345);
+        ConfigureNavButton(btnNavAccounts, "Quản lý tài khoản", 395);
 
         btnNavDashboard.Click += (_, _) => NavigateTo(NavItem.Dashboard);
         btnNavCourses.Click += (_, _) => NavigateTo(NavItem.Courses);
@@ -103,7 +103,7 @@ partial class FormMain
         btnNavAccounts.Click += (_, _) => NavigateTo(NavItem.Accounts);
 
         // btnNavLogout
-        btnNavLogout.Text = "🚪  Đăng xuất";
+        btnNavLogout.Text = "Đăng xuất";
         btnNavLogout.FlatStyle = FlatStyle.Flat;
         btnNavLogout.FlatAppearance.BorderSize = 0;
         btnNavLogout.BackColor = UI.Theme.SidebarBackground;
@@ -138,7 +138,7 @@ partial class FormMain
         lblPageTitle.Location = new Point(28, 20);
 
         // lblCampus
-        lblCampus.Text = $"📍 {Api.AppConfig.BrandShortName} Campus";
+        lblCampus.Text = $"{Api.AppConfig.BrandShortName} Campus";
         lblCampus.Font = new Font("Segoe UI", 9f);
         lblCampus.ForeColor = UI.Theme.Muted;
         lblCampus.AutoSize = true;

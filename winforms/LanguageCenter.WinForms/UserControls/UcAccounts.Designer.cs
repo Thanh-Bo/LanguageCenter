@@ -35,12 +35,12 @@ partial class UcAccounts
         cboRole = UI.UiHelpers.CreateComboBox(180);
         cboStatus = UI.UiHelpers.CreateComboBox(160);
         btnSearch = UI.UiHelpers.CreatePrimaryButton("Tìm kiếm", 110, 32);
-        btnRefresh = UI.UiHelpers.CreateSecondaryButton("⟳", 42, 32);
+        btnRefresh = UI.UiHelpers.CreateSecondaryButton("Làm mới", 80, 32);
         dgvAccounts = new DataGridView();
         pnlFooter = new Panel();
         lblPageInfo = new Label();
-        btnPrevPage = UI.UiHelpers.CreateSecondaryButton("‹ Trước", 90, 30);
-        btnNextPage = UI.UiHelpers.CreateSecondaryButton("Sau ›", 90, 30);
+        btnPrevPage = UI.UiHelpers.CreateSecondaryButton("Trước", 80, 30);
+        btnNextPage = UI.UiHelpers.CreateSecondaryButton("Sau", 80, 30);
         lblStatus = new Label();
 
         SuspendLayout();

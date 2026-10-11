@@ -1,11 +1,10 @@
 namespace LanguageCenter.WinForms.UI;
 
 /// <summary>
-/// Bảng màu và phong cách giao diện LinguaHub — đồng bộ với thiết kế template trung tâm ngoại ngữ.
-/// </summary>
+/// Bảng màu và phong cách giao diện 
 public static class Theme
 {
-    // Màu thương hiệu LinguaHub (Vibrant Royal Blue)
+    // Màu thương hiệu 
     public static readonly Color Primary = Color.FromArgb(30, 86, 240); // #1E56F0
     public static readonly Color PrimaryDark = Color.FromArgb(23, 67, 197); // #1743C5
     public static readonly Color PrimaryLight = Color.FromArgb(238, 244, 255); // #EEF4FF
@@ -50,7 +49,7 @@ public static class Theme
     public static readonly Font FontSub = new("Segoe UI", 8.5f);
 }
 
-/// <summary>Các hàm dựng/định dạng control lặp lại nhiều lần trong các màn hình.</summary>
+/// Các hàm dựng/định dạng control lặp lại nhiều lần trong các màn hình
 public static class UiHelpers
 {
     public static Button CreatePrimaryButton(string text, int width = 140, int height = 36)
