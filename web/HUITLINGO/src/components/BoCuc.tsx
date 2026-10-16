@@ -12,7 +12,6 @@ export default function BoCuc() {
   return (
     <div
       style={{
-        fontFamily: "'Inter', sans-serif",
         color: '#1E293B',
         background: '#fff',
         minHeight: '100vh',
@@ -38,6 +37,7 @@ export default function BoCuc() {
             alignItems: 'center',
             justifyContent: 'space-between',
             height: 68,
+            gap: 16,
           }}
         >
           {/* LOGO */}
@@ -48,6 +48,7 @@ export default function BoCuc() {
               alignItems: 'center',
               gap: 10,
               textDecoration: 'none',
+              flexShrink: 0,
             }}
           >
             <div
@@ -62,7 +63,7 @@ export default function BoCuc() {
                 fontSize: 22,
                 fontWeight: 900,
                 color: '#fff',
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif",
                 boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
               }}
             >
@@ -70,10 +71,11 @@ export default function BoCuc() {
             </div>
             <span
               style={{
-                fontFamily: "'Plus Jakarta Sans', sans-serif",
+                fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif",
                 fontWeight: 800,
                 fontSize: 20,
                 color: '#1E293B',
+                whiteSpace: 'nowrap',
               }}
             >
               HUIT <span style={{ color: '#2563EB' }}>LingoHub</span>
@@ -101,6 +103,7 @@ export default function BoCuc() {
                       ? '2px solid #2563EB'
                       : '2px solid transparent',
                     paddingBottom: 2,
+                    whiteSpace: 'nowrap',
                     transition: 'color 0.2s',
                   }}
                   onMouseEnter={(e) =>
@@ -117,7 +120,14 @@ export default function BoCuc() {
           </div>
 
           {/* RIGHT ACTIONS */}
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: 12,
+              alignItems: 'center',
+              flexShrink: 0,
+            }}
+          >
             {nguoiDung ? (
               <>
                 <Link
@@ -128,6 +138,7 @@ export default function BoCuc() {
                     textDecoration: 'none',
                     fontWeight: 700,
                     fontSize: 14,
+                    whiteSpace: 'nowrap',
                   }}
                 >
                   Vào Portal
@@ -143,6 +154,7 @@ export default function BoCuc() {
                     fontSize: 14,
                     cursor: 'pointer',
                     padding: 0,
+                    whiteSpace: 'nowrap',
                     transition: 'color 0.2s',
                   }}
                   onMouseEnter={(e) => (e.currentTarget.style.color = '#DC2626')}
@@ -162,6 +174,7 @@ export default function BoCuc() {
                   textDecoration: 'none',
                   fontWeight: 700,
                   fontSize: 14,
+                  whiteSpace: 'nowrap',
                 }}
               >
                 Đăng nhập
@@ -177,6 +190,8 @@ export default function BoCuc() {
                 textDecoration: 'none',
                 fontWeight: 700,
                 fontSize: 14,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
                 transition: 'background 0.2s',
               }}
               onMouseEnter={(e) =>
@@ -324,14 +339,14 @@ export default function BoCuc() {
                     fontSize: 18,
                     fontWeight: 900,
                     color: '#fff',
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif",
                   }}
                 >
                   L
                 </div>
                 <span
                   style={{
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif",
                     fontWeight: 800,
                     fontSize: 18,
                     color: '#fff',
@@ -417,7 +432,7 @@ export default function BoCuc() {
               <div key={col.title}>
                 <h4
                   style={{
-                    fontFamily: "'Plus Jakarta Sans', sans-serif",
+                    fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif",
                     fontWeight: 700,
                     color: '#fff',
                     fontSize: 15,

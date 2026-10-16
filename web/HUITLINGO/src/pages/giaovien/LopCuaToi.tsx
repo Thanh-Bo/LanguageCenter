@@ -1,41 +1,41 @@
-import { useEffect, useState } from 'react'
-import { Icon } from '../../components/BieuTuong'
-import { goiAPI, type ClassItem, type StudentItem } from '../../lib/goiAPI'
-import { dungXacThuc } from '../../contexts/NguCanhXacThuc'
+import { useEffect, useState } from "react";
+import { Icon } from "../../components/BieuTuong";
+import { goiAPI, type ClassItem, type StudentItem } from "../../lib/goiAPI";
+import { dungXacThuc } from "../../contexts/NguCanhXacThuc";
 
 export default function LopCuaToi() {
-  const { nguoiDung } = dungXacThuc()
-  const [dsLop, setDsLop] = useState<ClassItem[]>([])
-  const [dangTai, setDangTai] = useState(true)
-  const [lopChon, setLopChon] = useState<ClassItem | null>(null)
-  const [dsHocVien, setDsHocVien] = useState<StudentItem[]>([])
-  const [dangTaiHV, setDangTaiHV] = useState(false)
+  const { nguoiDung } = dungXacThuc();
+  const [dsLop, setDsLop] = useState<ClassItem[]>([]);
+  const [dangTai, setDangTai] = useState(true);
+  const [lopChon, setLopChon] = useState<ClassItem | null>(null);
+  const [dsHocVien, setDsHocVien] = useState<StudentItem[]>([]);
+  const [dangTaiHV, setDangTaiHV] = useState(false);
   const [boLoc, setBoLoc] = useState<
-    'Tất cả' | 'Đang học' | 'Sắp mở' | 'Sắp đầy'
-  >('Tất cả')
+    "Tất cả" | "Đang học" | "Sắp mở" | "Sắp đầy" | "Đã kết thúc"
+  >("Tất cả");
 
   // Load danh sách lớp khi vào trang
   useEffect(() => {
-    if (!nguoiDung) return
-    setDangTai(true)
+    if (!nguoiDung) return;
+    setDangTai(true);
     goiAPI.layLopCuaToi(nguoiDung.id).then((data) => {
-      setDsLop(data)
-      setDangTai(false)
-    })
-  }, [nguoiDung])
+      setDsLop(data);
+      setDangTai(false);
+    });
+  }, [nguoiDung]);
 
   // Load học viên khi chọn lớp
   useEffect(() => {
-    if (!lopChon) return
-    setDangTaiHV(true)
+    if (!lopChon) return;
+    setDangTaiHV(true);
     goiAPI.layHocVienTheoLop(lopChon.maLop).then((data) => {
-      setDsHocVien(data)
-      setDangTaiHV(false)
-    })
-  }, [lopChon])
+      setDsHocVien(data);
+      setDangTaiHV(false);
+    });
+  }, [lopChon]);
 
   const dsLoc =
-    boLoc === 'Tất cả' ? dsLop : dsLop.filter((l) => l.trangThai === boLoc)
+    boLoc === "Tất cả" ? dsLop : dsLop.filter((l) => l.trangThai === boLoc);
 
   return (
     <div className="p-4 sm:p-7">
@@ -53,14 +53,16 @@ export default function LopCuaToi() {
 
       {/* Bộ lọc */}
       <div className="mb-6 flex flex-wrap gap-2">
-        {(['Tất cả', 'Đang học', 'Sắp mở', 'Sắp đầy'] as const).map((f) => (
+        {(
+          ["Tất cả", "Đang học", "Sắp mở", "Sắp đầy", "Đã kết thúc"] as const
+        ).map((f) => (
           <button
             key={f}
             onClick={() => setBoLoc(f)}
             className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
               boLoc === f
-                ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
-                : 'border border-slate-200 bg-white text-slate-600 hover:border-blue-200'
+                ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                : "border border-slate-200 bg-white text-slate-600 hover:border-blue-200"
             }`}
           >
             {f}
@@ -96,11 +98,13 @@ export default function LopCuaToi() {
                 </div>
                 <span
                   className={`rounded-full px-2.5 py-1 text-xs font-bold ${
-                    lop.trangThai === 'Sắp đầy'
-                      ? 'bg-amber-100 text-amber-700'
-                      : lop.trangThai === 'Sắp mở'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-blue-600 text-white'
+                    lop.trangThai === "Sắp đầy"
+                      ? "bg-amber-100 text-amber-700"
+                      : lop.trangThai === "Sắp mở"
+                        ? "bg-blue-100 text-blue-700"
+                        : lop.trangThai === "Đã kết thúc"
+                          ? "bg-slate-200 text-slate-600"
+                          : "bg-blue-600 text-white" // Đang học
                   }`}
                 >
                   {lop.trangThai}
@@ -243,9 +247,7 @@ export default function LopCuaToi() {
                           <td className="px-3 py-3 text-slate-500">
                             {hv.email}
                           </td>
-                          <td className="px-3 py-3 text-slate-500">
-                            {hv.sdt}
-                          </td>
+                          <td className="px-3 py-3 text-slate-500">{hv.sdt}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -257,5 +259,5 @@ export default function LopCuaToi() {
         </div>
       )}
     </div>
-  )
+  );
 }

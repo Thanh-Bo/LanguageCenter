@@ -1,6 +1,35 @@
 import type { SVGProps } from "react"
 
-export type IconName = "logo" | "grid" | "book" | "users" | "calendar" | "userPlus" | "bell" | "wallet" | "chart" | "settings" | "search" | "chevronDown" | "arrowUp" | "arrowRight" | "clock" | "room" | "check" | "alert" | "menu" | "close" | "mail" | "lock" | "eye" | "logout" | "sparkles" | "more" | "filter"
+export type IconName =
+  | "logo"
+  | "grid"
+  | "book"
+  | "users"
+  | "calendar"
+  | "userPlus"
+  | "bell"
+  | "wallet"
+  | "chart"
+  | "settings"
+  | "search"
+  | "chevronDown"
+  | "chevronLeft"
+  | "chevronRight"
+  | "arrowUp"
+  | "arrowRight"
+  | "clock"
+  | "room"
+  | "check"
+  | "alert"
+  | "menu"
+  | "close"
+  | "mail"
+  | "lock"
+  | "eye"
+  | "logout"
+  | "sparkles"
+  | "more"
+  | "filter"
 
 const paths: Record<IconName, React.ReactNode> = {
   logo: (
@@ -74,6 +103,8 @@ const paths: Record<IconName, React.ReactNode> = {
     </>
   ),
   chevronDown: <path d="m6 9 6 6 6-6" />,
+  chevronLeft: <path d="m15 6-6 6 6 6" />,
+  chevronRight: <path d="m9 6 6 6-6 6" />,
   arrowUp: (
     <>
       <path d="m18 15-6-6-6 6" />

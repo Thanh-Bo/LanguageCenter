@@ -1,36 +1,36 @@
-import { FormEvent, useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router'
-import { Icon } from '../components/BieuTuong'
-import { dungXacThuc, duongDanTheoVaiTro } from '../contexts/NguCanhXacThuc'
+import { FormEvent, useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router";
+import { Icon } from "../components/BieuTuong";
+import { dungXacThuc, duongDanTheoVaiTro } from "../contexts/NguCanhXacThuc";
 
-const SANS = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif"
+const SANS = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif";
 
 export default function DangNhap() {
-  const navigate = useNavigate()
-  const location = useLocation()
-  const { dangNhap } = dungXacThuc()
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { dangNhap } = dungXacThuc();
 
-  const [showPassword, setShowPassword] = useState(false)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [email, setEmail] = useState('lananh@lingohub.vn')
-  const [password, setPassword] = useState('123456')
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState("lananh@lingohub.vn");
+  const [password, setPassword] = useState("123456");
 
   const submit = async (event: FormEvent) => {
-    event.preventDefault()
-    setLoading(true)
-    setError(null)
+    event.preventDefault();
+    setLoading(true);
+    setError(null);
 
     try {
-      const nguoiDung = await dangNhap(email.trim(), password)
-      const from = (location.state as { from?: string } | null)?.from
-      navigate(from || duongDanTheoVaiTro(nguoiDung.vaiTro), { replace: true })
+      const nguoiDung = await dangNhap(email.trim(), password);
+      const from = (location.state as { from?: string } | null)?.from;
+      navigate(from || duongDanTheoVaiTro(nguoiDung.vaiTro), { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Đăng nhập thất bại')
+      setError(err instanceof Error ? err.message : "Đăng nhập thất bại");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <main className="min-h-screen bg-slate-50 lg:grid lg:grid-cols-[1.08fr_.92fr]">
@@ -39,7 +39,7 @@ export default function DangNhap() {
         className="relative hidden overflow-hidden p-12 text-white lg:flex lg:flex-col"
         style={{
           background:
-            'linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%)',
+            "linear-gradient(135deg, #1E3A8A 0%, #2563EB 50%, #3B82F6 100%)",
         }}
       >
         <div className="absolute -left-32 top-1/3 size-96 rounded-full bg-white/10 blur-3xl" />
@@ -83,9 +83,9 @@ export default function DangNhap() {
 
           <div className="mt-12 grid grid-cols-3 gap-6 border-t border-white/20 pt-8">
             {[
-              ['1.248', 'Học viên'],
-              ['42', 'Lớp đang học'],
-              ['98,2%', 'Dữ liệu đồng bộ'],
+              ["1.248", "Học viên"],
+              ["42", "Lớp đang học"],
+              ["98,2%", "Dữ liệu đồng bộ"],
             ].map(([value, label]) => (
               <div key={label}>
                 <div
@@ -115,10 +115,7 @@ export default function DangNhap() {
             <span className="grid size-10 place-items-center rounded-xl bg-blue-600 text-white">
               <Icon name="logo" className="size-5" />
             </span>
-            <span
-              className="text-xl font-bold"
-              style={{ fontFamily: SANS }}
-            >
+            <span className="text-xl font-bold" style={{ fontFamily: SANS }}>
               HUIT LingoHub
             </span>
           </Link>
@@ -162,7 +159,7 @@ export default function DangNhap() {
               <span className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50">
                 <Icon name="lock" className="size-5 text-slate-400" />
                 <input
-                  type={showPassword ? 'text' : 'password'}
+                  type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -185,11 +182,18 @@ export default function DangNhap() {
                   type="checkbox"
                   defaultChecked
                   className="size-4 accent-blue-600"
-                />{' '}
+                />{" "}
                 Ghi nhớ đăng nhập
               </label>
               <button
                 type="button"
+                onClick={() =>
+                  alert(
+                    "Vui lòng liên hệ trung tâm để được hỗ trợ đặt lại mật khẩu:\n\n" +
+                      "📞 Hotline: 028.1234.5678\n" +
+                      "✉️ Email: hotro@lingohub.vn",
+                  )
+                }
                 className="font-semibold text-blue-600 hover:text-blue-700"
               >
                 Quên mật khẩu?
@@ -207,17 +211,20 @@ export default function DangNhap() {
               disabled={loading}
               className="flex h-13 w-full items-center justify-center gap-2 rounded-xl font-bold text-white shadow-lg transition hover:brightness-110 disabled:opacity-70"
               style={{
-                background: 'linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)',
-                boxShadow: '0 10px 30px -10px rgba(37,99,235,0.5)',
+                background: "linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%)",
+                boxShadow: "0 10px 30px -10px rgba(37,99,235,0.5)",
               }}
             >
-              {loading ? 'Đang xác thực...' : 'Đăng nhập'}
+              {loading ? "Đang xác thực..." : "Đăng nhập"}
               {!loading && <Icon name="arrowRight" className="size-5" />}
             </button>
           </form>
 
           <div className="mt-8 flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm leading-6 text-blue-900">
-            <Icon name="lock" className="mt-0.5 size-4 shrink-0 text-blue-600" />
+            <Icon
+              name="lock"
+              className="mt-0.5 size-4 shrink-0 text-blue-600"
+            />
             <span>
               Phiên đăng nhập được mã hóa và tự động kết thúc sau 30 phút không
               hoạt động.
@@ -227,7 +234,7 @@ export default function DangNhap() {
           {/* Tài khoản demo */}
           <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm">
             <div className="mb-3 font-bold text-slate-700">
-              🔑 Tài khoản demo (mật khẩu:{' '}
+              🔑 Tài khoản demo (mật khẩu:{" "}
               <code className="rounded bg-slate-200 px-1.5 py-0.5">123456</code>
               )
             </div>
@@ -240,8 +247,8 @@ export default function DangNhap() {
               <button
                 type="button"
                 onClick={() => {
-                  setEmail('admin@lingohub.vn')
-                  setPassword('123456')
+                  setEmail("admin@lingohub.vn");
+                  setPassword("123456");
                 }}
                 className="block w-full rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
               >
@@ -256,17 +263,17 @@ export default function DangNhap() {
               </div>
               <div className="grid grid-cols-2 gap-1">
                 {[
-                  'lananh@lingohub.vn',
-                  'minhkhoa@lingohub.vn',
-                  'david@lingohub.vn',
-                  'emily@lingohub.vn',
+                  "lananh@lingohub.vn",
+                  "minhkhoa@lingohub.vn",
+                  "david@lingohub.vn",
+                  "emily@lingohub.vn",
                 ].map((e) => (
                   <button
                     key={e}
                     type="button"
                     onClick={() => {
-                      setEmail(e)
-                      setPassword('123456')
+                      setEmail(e);
+                      setPassword("123456");
                     }}
                     className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
                   >
@@ -283,17 +290,17 @@ export default function DangNhap() {
               </div>
               <div className="grid grid-cols-2 gap-1">
                 {[
-                  'khoa.hv@lingohub.vn',
-                  'ha.lt@lingohub.vn',
-                  'an.nv@lingohub.vn',
-                  'linh.pm@lingohub.vn',
+                  "khoa.hv@lingohub.vn",
+                  "ha.lt@lingohub.vn",
+                  "an.nv@lingohub.vn",
+                  "linh.pm@lingohub.vn",
                 ].map((e) => (
                   <button
                     key={e}
                     type="button"
                     onClick={() => {
-                      setEmail(e)
-                      setPassword('123456')
+                      setEmail(e);
+                      setPassword("123456");
                     }}
                     className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
                   >
@@ -306,5 +313,5 @@ export default function DangNhap() {
         </div>
       </section>
     </main>
-  )
+  );
 }

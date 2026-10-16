@@ -8,7 +8,7 @@ import {
   KHO_BANG_DIEM,
 } from './khoDuLieu'
 
-const API_BASE = import.meta.env.VITE_API_URL || 'https://localhost:5001/api'
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5204/api'
 const DUNG_MOCK = import.meta.env.VITE_USE_MOCK !== 'false'
 
 // ===== TYPES =====
@@ -235,5 +235,86 @@ export const goiAPI = {
       method: 'POST',
       body: JSON.stringify({ maLop, danhSach }),
     })
+  },
+  // ===== HỌC VIÊN =====
+  // Lấy lớp học viên đang theo học
+  async layLopCuaHocVien(maHocVien: string): Promise<ClassItem[]> {
+    if (DUNG_MOCK) {
+      await cho(400)
+      const maLopCuaHV = KHO_HOC_VIEN
+        .filter((hv) => hv.maHV === maHocVien)
+        .map((hv) => hv.maLop)
+      return KHO_LOP_HOC.filter((lop) => maLopCuaHV.includes(lop.maLop))
+    }
+    return request<ClassItem[]>(`/student/classes?studentId=${maHocVien}`)
+  },
+
+  // Lấy điểm của học viên
+  async layDiemCuaHocVien(maHocVien: string): Promise<
+    Array<{
+      maLop: string
+      tenLop: string
+      giuaKy: number | null
+      cuoiKy: number | null
+      baiTap: number | null
+      trungBinh: number | null
+    }>
+  > {
+    if (DUNG_MOCK) {
+      await cho(400)
+      const maLopCuaHV = KHO_HOC_VIEN
+        .filter((hv) => hv.maHV === maHocVien)
+        .map((hv) => hv.maLop)
+      const ketQua: Array<{
+        maLop: string
+        tenLop: string
+        giuaKy: number | null
+        cuoiKy: number | null
+        baiTap: number | null
+        trungBinh: number | null
+      }> = []
+      for (const maLop of maLopCuaHV) {
+        const lop = KHO_LOP_HOC.find((l) => l.maLop === maLop)
+        const diem = KHO_BANG_DIEM[maLop]?.find((d) => d.maHV === maHocVien)
+        if (lop && diem) {
+          const diemCo = [diem.giuaKy, diem.cuoiKy, diem.baiTap].filter(
+            (x): x is number => x !== null,
+          )
+          const tb = diemCo.length
+            ? diemCo.reduce((a, b) => a + b, 0) / diemCo.length
+            : null
+          ketQua.push({
+            maLop,
+            tenLop: lop.tenLop,
+            giuaKy: diem.giuaKy,
+            cuoiKy: diem.cuoiKy,
+            baiTap: diem.baiTap,
+            trungBinh: tb,
+          })
+        }
+      }
+      return ketQua
+    }
+    return request(`/student/grades?studentId=${maHocVien}`)
+  },
+
+  // Lấy lịch học của học viên (dựa vào lớp)
+  async layLichHocCuaHocVien(maHocVien: string): Promise<ScheduleItem[]> {
+    if (DUNG_MOCK) {
+      await cho(400)
+      const maLopCuaHV = KHO_HOC_VIEN
+        .filter((hv) => hv.maHV === maHocVien)
+        .map((hv) => hv.maLop)
+      const lopCuaHV = KHO_LOP_HOC.filter((l) => maLopCuaHV.includes(l.maLop))
+      return lopCuaHV.map((lop, i) => ({
+        id: `LH-${i}`,
+        gio: lop.lichHoc.split(' · ')[1] ?? lop.lichHoc,
+        tenLop: lop.tenLop,
+        phong: lop.phong,
+        siSo: lop.siSo,
+        thu: lop.lichHoc.split(' · ')[0] ?? '',
+      }))
+    }
+    return request<ScheduleItem[]>(`/student/schedule?studentId=${maHocVien}`)
   },
 }

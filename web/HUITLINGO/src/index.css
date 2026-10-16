@@ -1,5 +1,5 @@
 /* ========== FONTS ========== */
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Nunito:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600;700;800&family=Nunito:wght@400;600;700;800;900&display=swap');
 @import 'tailwindcss';
 
 /* ========== THEME ========== */
@@ -18,10 +18,10 @@
   --color-text: #1E293B;
   --color-muted: #64748B;
 
-  /* Font */
-  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
-  --font-nunito: 'Nunito', 'Plus Jakarta Sans', system-ui, sans-serif;
+  /* Font — Be Vietnam Pro hỗ trợ Unicode tiếng Việt đầy đủ */
+  --font-display: 'Be Vietnam Pro', 'Inter', system-ui, sans-serif;
+  --font-body: 'Be Vietnam Pro', 'Inter', system-ui, sans-serif;
+  --font-nunito: 'Nunito', 'Be Vietnam Pro', system-ui, sans-serif;
 }
 
 /* ========== BASE ========== */
@@ -34,8 +34,10 @@ body {
   color: var(--color-text);
   background: #ffffff;
   margin: 0;
-  font-size: 17px;              
-  line-height: 1.7;            
+  font-size: 17px;
+  line-height: 1.7;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+  text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -48,16 +50,16 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.01em;
 }
 
-h1 { font-size: 2.5rem; }   
-h2 { font-size: 2.25rem; }   
-h3 { font-size: 1.875rem; }  
-h4 { font-size: 1.5rem; }    
-h5 { font-size: 1.25rem; }   /* ⭐ Tăng từ 1 → 1.125rem (18px) */
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2.25rem; }
+h3 { font-size: 1.875rem; }
+h4 { font-size: 1.5rem; }
+h5 { font-size: 1.25rem; }
 
 /* ========== FORMS ========== */
 button, input, select, textarea {
   font: inherit;
-  font-size: 16px;              /* ⭐ Rõ ràng */
+  font-size: 16px;
 }
 
 button, select {
@@ -92,23 +94,23 @@ html {
 /* Chữ mô tả dễ đọc hơn */
 p {
   line-height: 1.7;
-  font-size: 17px;            
+  font-size: 17px;
 }
 
 /* Link trong footer to hơn */
 footer a {
-  font-size: 16px;              
+  font-size: 16px;
   transition: color 0.2s;
 }
 
 footer p {
-  font-size: 16px;            
+  font-size: 16px;
   line-height: 1.7;
 }
 
 /* Card description */
 .card-desc {
-  font-size: 17px;             
+  font-size: 17px;
   line-height: 1.7;
   color: var(--color-muted);
 }
