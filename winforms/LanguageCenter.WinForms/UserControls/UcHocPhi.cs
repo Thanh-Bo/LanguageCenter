@@ -25,12 +25,38 @@ public partial class UcHocPhi : UserControl
 {
     private const string AllOption = "— Tất cả —";
     private readonly List<TuitionFeeItem> _items = new();
+    private int _currentTab = 0; // 0: Sổ học phí, 1: Lịch sử thanh toán, 2: Quản lý biên nhận
 
     public UcHocPhi()
     {
         InitializeComponent();
+
+        UI.UiHelpers.StyleGrid(dgvTuition);
+        UI.UiHelpers.StyleGrid(dgvPayments);
+        UI.UiHelpers.StyleGrid(dgvReceipts);
+
+        btnTabTuition.Click += (_, _) => SwitchTab(0);
+        btnTabPayments.Click += (_, _) => SwitchTab(1);
+        btnTabReceipts.Click += (_, _) => SwitchTab(2);
+
+        txtSearch.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; FilterData(); } };
+        cboTrangThai.SelectedIndexChanged += (_, _) => FilterData();
+        cboPhuongThuc.SelectedIndexChanged += (_, _) => FilterData();
+        btnSearch.Click += (_, _) => FilterData();
+        btnRefresh.Click += (_, _) => ReloadData();
+        btnCollectFee.Click += BtnCollectFee_Click;
+        btnPrintReceipt.Click += BtnPrintReceipt_Click;
+        dgvTuition.CellDoubleClick += DgvTuition_CellDoubleClick;
+
+        pnlToolbar.Resize += (_, _) =>
+        {
+            btnPrintReceipt.Location = new Point(pnlToolbar.Width - btnPrintReceipt.Width - 4, 3);
+            btnCollectFee.Location = new Point(btnPrintReceipt.Left - btnCollectFee.Width - 8, 3);
+        };
+
         InitFilterOptions();
         LoadSampleData();
+        SwitchTab(0);
     }
 
     private void InitFilterOptions()
@@ -67,7 +93,7 @@ public partial class UcHocPhi : UserControl
             Dock = DockStyle.Fill,
             BackColor = Color.White,
             Padding = new Padding(12, 8, 12, 8),
-            Margin = new Padding(4, 0, 4, 0)
+            Margin = new Padding(4, 2, 4, 6)
         };
         panel.Paint += (s, e) =>
         {
@@ -80,9 +106,9 @@ public partial class UcHocPhi : UserControl
             }
         };
 
-        var lblT = new Label { Text = title, Font = new Font("Segoe UI", 8.5f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(12, 6) };
-        var lblV = new Label { Text = value, Font = new Font("Segoe UI", 15f, FontStyle.Bold), ForeColor = accent, AutoSize = true, Location = new Point(10, 24) };
-        var lblN = new Label { Text = note, Font = new Font("Segoe UI", 7.8f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(12, 53) };
+        var lblT = new Label { Text = title, Font = new Font("Segoe UI", 8.5f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(14, 6) };
+        var lblV = new Label { Text = value, Font = new Font("Segoe UI", 15f, FontStyle.Bold), ForeColor = accent, AutoSize = true, Location = new Point(12, 24) };
+        var lblN = new Label { Text = note, Font = new Font("Segoe UI", 8f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(14, 56) };
 
         panel.Controls.Add(lblN);
         panel.Controls.Add(lblV);
@@ -225,6 +251,37 @@ public partial class UcHocPhi : UserControl
         FilterData();
     }
 
+    private void SwitchTab(int tabIndex)
+    {
+        _currentTab = tabIndex;
+
+        btnTabTuition.BackColor = _currentTab == 0 ? Theme.Primary : Color.White;
+        btnTabTuition.ForeColor = _currentTab == 0 ? Color.White : Theme.TextDark;
+        btnTabTuition.Font = _currentTab == 0 ? Theme.FontBold : Theme.FontRegular;
+
+        btnTabPayments.BackColor = _currentTab == 1 ? Theme.Primary : Color.White;
+        btnTabPayments.ForeColor = _currentTab == 1 ? Color.White : Theme.TextDark;
+        btnTabPayments.Font = _currentTab == 1 ? Theme.FontBold : Theme.FontRegular;
+
+        btnTabReceipts.BackColor = _currentTab == 2 ? Theme.Primary : Color.White;
+        btnTabReceipts.ForeColor = _currentTab == 2 ? Color.White : Theme.TextDark;
+        btnTabReceipts.Font = _currentTab == 2 ? Theme.FontBold : Theme.FontRegular;
+
+        dgvTuition.Visible = _currentTab == 0;
+        dgvPayments.Visible = _currentTab == 1;
+        dgvReceipts.Visible = _currentTab == 2;
+
+        btnCollectFee.Visible = _currentTab == 0;
+        btnPrintReceipt.Text = _currentTab == 2 ? "In lại biên nhận" : "In biên lai";
+        btnPrintReceipt.Location = new Point(pnlToolbar.Width - btnPrintReceipt.Width - 4, 3);
+        btnCollectFee.Location = new Point(btnPrintReceipt.Left - btnCollectFee.Width - 8, 3);
+
+        cboTrangThai.Visible = _currentTab == 0;
+        cboPhuongThuc.Visible = _currentTab != 2;
+
+        FilterData();
+    }
+
     private void FilterData()
     {
         UpdateStats();
@@ -233,60 +290,122 @@ public partial class UcHocPhi : UserControl
         var status = cboTrangThai.SelectedItem?.ToString();
         var method = cboPhuongThuc.SelectedItem?.ToString();
 
-        var query = _items.AsEnumerable();
-
-        if (!string.IsNullOrWhiteSpace(search))
+        if (_currentTab == 0)
         {
-            query = query.Where(x => x.MaHocPhi.Contains(search, StringComparison.OrdinalIgnoreCase)
-                                  || x.MaHocVien.Contains(search, StringComparison.OrdinalIgnoreCase)
-                                  || x.HoTenHocVien.Contains(search, StringComparison.OrdinalIgnoreCase)
-                                  || x.TenKhoaLop.Contains(search, StringComparison.OrdinalIgnoreCase)
-                                  || x.SoBienNhan.Contains(search, StringComparison.OrdinalIgnoreCase));
-        }
+            var query = _items.AsEnumerable();
 
-        if (!string.IsNullOrWhiteSpace(status) && status != AllOption)
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(x => x.MaHocPhi.Contains(search, StringComparison.OrdinalIgnoreCase)
+                                      || x.MaHocVien.Contains(search, StringComparison.OrdinalIgnoreCase)
+                                      || x.HoTenHocVien.Contains(search, StringComparison.OrdinalIgnoreCase)
+                                      || x.TenKhoaLop.Contains(search, StringComparison.OrdinalIgnoreCase)
+                                      || x.SoBienNhan.Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrWhiteSpace(status) && status != AllOption)
+            {
+                query = query.Where(x => x.TrangThaiHocPhi == status);
+            }
+
+            if (!string.IsNullOrWhiteSpace(method) && method != AllOption)
+            {
+                query = query.Where(x => x.PhuongThuc == method);
+            }
+
+            var list = query.ToList();
+            dgvTuition.Rows.Clear();
+
+            foreach (var item in list)
+            {
+                var idx = dgvTuition.Rows.Add(
+                    item.MaHocPhi,
+                    item.MaHocVien,
+                    item.HoTenHocVien,
+                    item.TenKhoaLop,
+                    $"{item.SoTienGoc:N0} ₫",
+                    item.SoTienGiam > 0 ? $"-{item.SoTienGiam:N0} ₫" : "0 ₫",
+                    $"{item.SoTienPhaiDong:N0} ₫",
+                    $"{item.SoTienDaDong:N0} ₫",
+                    $"{item.SoTienConThieu:N0} ₫",
+                    item.TrangThaiHocPhi,
+                    item.PhuongThuc,
+                    item.SoBienNhan,
+                    item.HanThanhToan.ToString("dd/MM/yyyy")
+                );
+
+                if (item.TrangThaiHocPhi.Contains("hoàn thành"))
+                    dgvTuition.Rows[idx].Cells["TrangThaiHocPhi"].Style.ForeColor = Theme.Success;
+                else if (item.TrangThaiHocPhi.Contains("Đóng đợt 1"))
+                    dgvTuition.Rows[idx].Cells["TrangThaiHocPhi"].Style.ForeColor = Theme.Warning;
+                else
+                    dgvTuition.Rows[idx].Cells["TrangThaiHocPhi"].Style.ForeColor = Theme.Danger;
+
+                if (item.SoTienConThieu > 0)
+                    dgvTuition.Rows[idx].Cells["SoTienConThieu"].Style.ForeColor = Theme.Danger;
+            }
+
+            lblSummary.Text = $"Hiển thị {list.Count} / {_items.Count} phiếu học phí học viên (Mock Data trực tiếp)";
+        }
+        else if (_currentTab == 1)
         {
-            query = query.Where(x => x.TrangThaiHocPhi == status);
-        }
+            var query = Api.MockDataStore.GetPayments().AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(p => p.TenHocVien.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                         p.MaHocVien.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                         (p.MaGiaoDich != null && p.MaGiaoDich.Contains(search, StringComparison.OrdinalIgnoreCase)));
+            }
 
-        if (!string.IsNullOrWhiteSpace(method) && method != AllOption)
+            var list = query.ToList();
+            dgvPayments.Rows.Clear();
+            foreach (var p in list)
+            {
+                var idx = dgvPayments.Rows.Add(
+                    $"GD-{p.MaThanhToan:D4}",
+                    p.MaHocVien,
+                    p.TenHocVien,
+                    $"{p.SoTien:N0} ₫",
+                    UiHelpers.FormatDateTime(p.NgayThanhToan),
+                    p.PhuongThucThanhToan,
+                    p.MaGiaoDich ?? "—",
+                    p.MaNhanVienKeToan,
+                    p.TrangThai,
+                    p.GhiChu ?? "—"
+                );
+                dgvPayments.Rows[idx].Cells["TrangThai"].Style.ForeColor = Theme.Success;
+            }
+            lblSummary.Text = $"Hiển thị {list.Count} giao dịch thanh toán học phí";
+        }
+        else
         {
-            query = query.Where(x => x.PhuongThuc == method);
+            var query = Api.MockDataStore.GetReceipts().AsEnumerable();
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                query = query.Where(r => r.TenHocVien.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                         r.SoBienNhan.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                         r.MaHocVien.Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var list = query.ToList();
+            dgvReceipts.Rows.Clear();
+            foreach (var r in list)
+            {
+                var idx = dgvReceipts.Rows.Add(
+                    r.SoBienNhan,
+                    r.MaHocVien,
+                    r.TenHocVien,
+                    r.TenKhoaHoc,
+                    $"{r.SoTienXacNhan:N0} ₫",
+                    r.PhuongThuc,
+                    r.MaNhanVienLap,
+                    UiHelpers.FormatDateTime(r.NgayLap),
+                    r.TrangThai
+                );
+                dgvReceipts.Rows[idx].Cells["TrangThai"].Style.ForeColor = Theme.Success;
+            }
+            lblSummary.Text = $"Hiển thị {list.Count} biên nhận học phí chính thức";
         }
-
-        var list = query.ToList();
-        dgvTuition.Rows.Clear();
-
-        foreach (var item in list)
-        {
-            var idx = dgvTuition.Rows.Add(
-                item.MaHocPhi,
-                item.MaHocVien,
-                item.HoTenHocVien,
-                item.TenKhoaLop,
-                $"{item.SoTienGoc:N0} ₫",
-                item.SoTienGiam > 0 ? $"-{item.SoTienGiam:N0} ₫" : "0 ₫",
-                $"{item.SoTienPhaiDong:N0} ₫",
-                $"{item.SoTienDaDong:N0} ₫",
-                $"{item.SoTienConThieu:N0} ₫",
-                item.TrangThaiHocPhi,
-                item.PhuongThuc,
-                item.SoBienNhan,
-                item.HanThanhToan.ToString("dd/MM/yyyy")
-            );
-
-            if (item.TrangThaiHocPhi.Contains("hoàn thành"))
-                dgvTuition.Rows[idx].Cells["TrangThaiHocPhi"].Style.ForeColor = Theme.Success;
-            else if (item.TrangThaiHocPhi.Contains("Đóng đợt 1"))
-                dgvTuition.Rows[idx].Cells["TrangThaiHocPhi"].Style.ForeColor = Theme.Warning;
-            else
-                dgvTuition.Rows[idx].Cells["TrangThaiHocPhi"].Style.ForeColor = Theme.Danger;
-
-            if (item.SoTienConThieu > 0)
-                dgvTuition.Rows[idx].Cells["SoTienConThieu"].Style.ForeColor = Theme.Danger;
-        }
-
-        lblSummary.Text = $"Hiển thị {list.Count} / {_items.Count} phiếu học phí & biên nhận (Mock Data trực tiếp)";
     }
 
     private void ReloadData()
@@ -458,7 +577,7 @@ public partial class UcHocPhi : UserControl
             BorderStyle = BorderStyle.FixedSingle,
             Text =
                 $"========================================================\r\n" +
-                $"          TRUNG TÂM NGOẠI NGỮ LANGUAGECENTER ACADEMY         \r\n" +
+                $"          TRUNG TÂM NGOẠI NGỮ HUIT LINGOHUB             \r\n" +
                 $"           HỆ THỐNG QUẢN LÝ ĐÀO TẠO TRUNG TÂM ANH NGỮ   \r\n" +
                 $"========================================================\r\n\r\n" +
                 $" Mã phiếu học phí : {item.MaHocPhi}\r\n" +

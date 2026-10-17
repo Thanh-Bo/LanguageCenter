@@ -19,7 +19,7 @@ public static class SwaggerExtensions
         {
             options.SwaggerDoc("v1", new()
             {
-                Title = "LanguageCenter API",
+                Title = "HUIT LingoHub API",
                 Version = "v1",
                 Description =
                     "Hệ thống quản lý trung tâm ngoại ngữ.\n\n" +
@@ -54,8 +54,8 @@ public static class SwaggerExtensions
 
         app.UseSwaggerUI(options =>
         {
-            options.SwaggerEndpoint("/swagger/v1/swagger.json", "LanguageCenter API v1");
-            options.DocumentTitle = "LanguageCenter API";
+            options.SwaggerEndpoint("/swagger/v1/swagger.json", "HUIT LingoHub API v1");
+            options.DocumentTitle = "HUIT LingoHub API";
             options.DisplayRequestDuration();
         });
 

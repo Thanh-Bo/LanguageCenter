@@ -9,11 +9,11 @@ public static class AppConfig
     // 1. TÊN THƯƠNG HIỆU & TIÊU ĐỀ
     // Khi nhóm chốt tên chính thức, bạn chỉ cần sửa ở 3 dòng dưới đây:
     // ========================================================================
-    public const string BrandName = "TRUNG TÂM NGOẠI NGỮ";
-    public const string BrandShortName = "LANGUAGE CENTER";
+    public const string BrandName = "TRUNG TÂM NGOẠI NGỮ HUIT LINGOHUB";
+    public const string BrandShortName = "HUIT LingoHub";
     public const string BrandSlogan = "Hệ thống Quản lý & Đào tạo Chuẩn Quốc tế";
 
-    public const string ApplicationTitle = $"{BrandName} — Quản trị viên";
+    public const string ApplicationTitle = "HUIT LingoHub — Quản trị trung tâm ngoại ngữ";
 
     // ========================================================================
     // 2. CHẾ ĐỘ DỮ LIỆU (MOCK DATA)

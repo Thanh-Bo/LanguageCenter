@@ -117,7 +117,7 @@ public sealed class ApiClient
             {
                 Success = false,
                 StatusCode = 0,
-                ErrorMessage = "Không thể kết nối tới máy chủ API. Kiểm tra LanguageCenter.Api đã chạy chưa và đường dẫn "
+                ErrorMessage = "Không thể kết nối tới máy chủ API HUIT LingoHub. Kiểm tra dịch vụ backend đã khởi động chưa và đường dẫn "
                     + $"'{AppConfig.ApiBaseUrl}' có đúng không.\n\nChi tiết: {ex.Message}"
             };
         }

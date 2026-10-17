@@ -54,6 +54,7 @@ logs/
 *.tmp
 build-output.txt
 .build-output.txt
+tempCodeRunnerFile.*
 
 # ============================================================
 # OS
