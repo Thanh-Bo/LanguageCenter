@@ -107,6 +107,81 @@ public static class UiHelpers
         return button;
     }
 
+    /// <summary>
+    /// Thẻ số liệu (KPI) ở đầu mỗi màn hình: tiêu đề nhỏ — số lớn — dòng ghi chú.
+    /// <para>
+    /// Dùng Dock=Top + AutoEllipsis thay vì Location/AutoSize cố định để:
+    /// tiếng Việt có dấu không bị cắt, và khi cửa sổ hẹp thì hiện "..." thay vì mất chữ.
+    /// </para>
+    /// </summary>
+    public static Panel CreateStatCard(string title, string value, string note, Color accent)
+    {
+        var card = new Panel
+        {
+            Dock = DockStyle.Fill,
+            BackColor = Color.White,
+            Padding = new Padding(14, 10, 12, 10),
+            Margin = new Padding(4, 2, 4, 6)
+        };
+
+        card.Paint += (s, e) =>
+        {
+            if (s is not Control ctrl)
+            {
+                return;
+            }
+
+            using var borderPen = new Pen(Theme.BorderColor);
+            e.Graphics.DrawRectangle(borderPen, 0, 0, ctrl.Width - 1, ctrl.Height - 1);
+
+            using var accentBrush = new SolidBrush(accent);
+            e.Graphics.FillRectangle(accentBrush, 0, 0, 4, ctrl.Height);
+        };
+
+        var lblTitle = new Label
+        {
+            Text = title,
+            Font = new Font("Segoe UI", 8.5f),
+            ForeColor = Theme.Muted,
+            AutoSize = false,
+            AutoEllipsis = true,
+            Dock = DockStyle.Top,
+            Height = 20,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+
+        var lblValue = new Label
+        {
+            Text = value,
+            Font = new Font("Segoe UI", 15f, FontStyle.Bold),
+            ForeColor = accent,
+            AutoSize = false,
+            AutoEllipsis = true,
+            Dock = DockStyle.Top,
+            Height = 36,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+
+        var lblNote = new Label
+        {
+            Text = note,
+            Font = new Font("Segoe UI", 8f),
+            ForeColor = Theme.Muted,
+            AutoSize = false,
+            AutoEllipsis = true,
+            Dock = DockStyle.Top,
+            Height = 20,
+            TextAlign = ContentAlignment.MiddleLeft
+        };
+
+        // Dock=Top xếp theo z-order ngược → add ngược lại để tiêu đề nằm trên cùng.
+        card.Controls.Add(lblNote);
+        card.Controls.Add(lblValue);
+        card.Controls.Add(lblTitle);
+
+        return card;
+    }
+
     public static void StyleGrid(DataGridView grid)
     {
         grid.BorderStyle = BorderStyle.None;

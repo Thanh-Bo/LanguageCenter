@@ -1,0 +1,26 @@
+﻿URL=http://localhost:5204/swagger/v1/swagger.json STATUS=200 LEN=475250
+URL=http://localhost:5204/swagger/index.html STATUS=200 LEN=742
+  BODY: <!-- HTML for static distribution bundle build -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HUIT LingoHub API</title>
+    <link rel="stylesheet" type="text/css" href="./swagger-ui.css">
+    <link rel="stylesheet" type="text/css" href="./index.css">
+    <link rel="icon" type="image/png" href="./favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="./favicon-16x16.png" sizes="16x16" />
+       
+</head>
+
+<body>
+    <div id="swagger-ui"></div>
+
+    <script src="./swagger-ui-bundle.js" charset="utf-8"></script>
+    <script src="./swagger-ui-standalone-preset.js" charset="utf-8"></script>
+    <script src="index.js" charset="utf-8"></script>
+</body>
+</html>
+
+URL=http://localhost:5204/api/development/database-info STATUS=200 LEN=196
+  BODY: {"database":"QuanLyTrungTamNgoaiNgu","status":"Connected","provider":"Microsoft.EntityFrameworkCore.SqlServer","sqlServerVersion":"11.00.6020","vaiTroCount":7,"taiKhoanCount":32,"hocVienCount":14}

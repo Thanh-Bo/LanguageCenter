@@ -7,6 +7,12 @@ public partial class UcBaoCao : UserControl
 {
     private int _currentReportIndex = 0;
 
+    private IReadOnlyList<ClassListItemDto> _classes = Array.Empty<ClassListItemDto>();
+    private IReadOnlyList<TuitionItemDto> _tuition = Array.Empty<TuitionItemDto>();
+    private IReadOnlyList<AcademicReportDto> _academics = Array.Empty<AcademicReportDto>();
+    private FinanceReportDto? _finance;
+    private ReportOverviewDto? _overview;
+
     public UcBaoCao()
     {
         InitializeComponent();
@@ -96,64 +102,84 @@ public partial class UcBaoCao : UserControl
 
     public void ReloadData()
     {
+        _ = ReloadAsync();
+    }
+
+    /// <summary>Tải toàn bộ số liệu báo cáo từ API rồi dựng lại 4 bảng.</summary>
+    private async Task ReloadAsync()
+    {
+        lblSummary.Text = "Đang tổng hợp số liệu báo cáo...";
+        UseWaitCursor = true;
+
+        var classesTask = AppSession.Api.GetAsync<PagedResult<ClassListItemDto>>(
+            QueryStringBuilder.Build("admin/classes", ("page", "1"), ("pageSize", "500")));
+        var tuitionTask = AppSession.Api.GetAsync<PagedResult<TuitionItemDto>>(
+            QueryStringBuilder.Build("admin/tuition-fees", ("page", "1"), ("pageSize", "500")));
+        var financeTask = AppSession.Api.GetAsync<FinanceReportDto>("admin/tuition-fees/reports/summary");
+        var overviewTask = AppSession.Api.GetAsync<ReportOverviewDto>("admin/reports/overview");
+
+        await Task.WhenAll(classesTask, tuitionTask, financeTask, overviewTask);
+
+        _classes = classesTask.Result.Data?.Items ?? Array.Empty<ClassListItemDto>();
+        _tuition = tuitionTask.Result.Data?.Items ?? Array.Empty<TuitionItemDto>();
+        _finance = financeTask.Result.Data;
+        _overview = overviewTask.Result.Data;
+
+        // Bảng chất lượng đào tạo: tổng hợp báo cáo học tập của từng lớp
+        var dsHocTap = new List<AcademicReportDto>();
+        foreach (var c in _classes)
+        {
+            var r = await AppSession.Api.GetAsync<AcademicReportDto>(
+                QueryStringBuilder.Build("admin/reports/academic", ("maLopHoc", c.MaLopHoc.ToString())));
+
+            if (r.Success && r.Data is not null)
+            {
+                dsHocTap.Add(r.Data);
+            }
+        }
+        _academics = dsHocTap;
+
+        UseWaitCursor = false;
+
         InitStats();
         LoadRevenueTable();
         LoadQualityTable();
         LoadFinancialTable();
         LoadClassesStatsTable();
-        lblSummary.Text = $"Dữ liệu báo cáo tự động tổng hợp từ toàn hệ thống đào tạo HUIT LingoHub — Cập nhật lúc {DateTime.Now:HH:mm dd/MM/yyyy}";
+
+        lblSummary.Text = $"Dữ liệu báo cáo tổng hợp từ API HUIT LingoHub — Cập nhật lúc {DateTime.Now:HH:mm dd/MM/yyyy}";
     }
 
     private void InitStats()
     {
-        var rev = MockDataStore.GetRevenueReports();
-        var totalRev = rev.Sum(r => r.TongHocPhi);
-        var totalCollected = rev.Sum(r => r.DaThu);
-        var totalStudents = rev.Sum(r => r.SoHocVien);
-        var totalClasses = rev.Sum(r => r.SoLop);
-        var rate = totalRev > 0 ? Math.Round(totalCollected / totalRev * 100, 1) : 0;
+        var daThu = _finance?.TongDaThu ?? 0m;
+        var phaiThu = _finance?.TongPhaiThu ?? 0m;
+        var tyLe = phaiThu > 0 ? Math.Round(daThu / phaiThu * 100, 1) : 0m;
 
         tblStats.Controls.Clear();
-        tblStats.Controls.Add(CreateStatCard("Tổng doanh thu học phí", $"{totalCollected:N0} ₫", $"Chỉ tiêu toàn khóa: {totalRev:N0} ₫", Theme.Primary), 0, 0);
-        tblStats.Controls.Add(CreateStatCard("Tỷ lệ thu học phí", $"{rate}%", "Đạt tiến độ tài chính kỳ học", Theme.Success), 1, 0);
-        tblStats.Controls.Add(CreateStatCard("Học viên đang học", $"{totalStudents} Học viên", $"{totalClasses} lớp học đang mở", Theme.Purple), 2, 0);
-        tblStats.Controls.Add(CreateStatCard("Tỷ lệ tốt nghiệp / Đạt", "94.6%", "Cam kết chuẩn đầu ra quốc tế", Theme.Warning), 3, 0);
-    }
-
-    private static Panel CreateStatCard(string title, string value, string note, Color accent)
-    {
-        var panel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            Padding = new Padding(12, 8, 12, 8),
-            Margin = new Padding(4, 2, 4, 6)
-        };
-        panel.Paint += (s, e) =>
-        {
-            if (s is Control ctrl)
-            {
-                using var borderPen = new Pen(Theme.BorderColor);
-                e.Graphics.DrawRectangle(borderPen, 0, 0, ctrl.Width - 1, ctrl.Height - 1);
-                using var accentBrush = new SolidBrush(accent);
-                e.Graphics.FillRectangle(accentBrush, 0, 0, 4, ctrl.Height);
-            }
-        };
-
-        var lblT = new Label { Text = title, Font = new Font("Segoe UI", 8.5f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(14, 6) };
-        var lblV = new Label { Text = value, Font = new Font("Segoe UI", 15f, FontStyle.Bold), ForeColor = accent, AutoSize = true, Location = new Point(12, 24) };
-        var lblN = new Label { Text = note, Font = new Font("Segoe UI", 8f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(14, 56) };
-
-        panel.Controls.Add(lblN);
-        panel.Controls.Add(lblV);
-        panel.Controls.Add(lblT);
-        return panel;
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tổng doanh thu học phí", $"{daThu:N0} ₫", $"Chỉ tiêu toàn khóa: {phaiThu:N0} ₫", Theme.Primary), 0, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tỷ lệ thu học phí", $"{tyLe}%", "Tiến độ thu trên tổng phải thu", Theme.Success), 1, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Học viên đang học", $"{_overview?.SoHocVienDangHoc ?? 0} Học viên", $"{_overview?.TongLopHoc ?? 0} lớp học trên hệ thống", Theme.Purple), 2, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Học viên còn nợ", $"{_finance?.SoHocVienConNo ?? 0} Học viên", $"Công nợ: {_finance?.TongConThieu ?? 0:N0} ₫", Theme.Warning), 3, 0);
     }
 
     private void LoadRevenueTable()
     {
         dgvRevenue.Rows.Clear();
-        var list = MockDataStore.GetRevenueReports();
+
+        var nhom = _tuition
+            .GroupBy(t => t.TenKhoaHoc)
+            .Select(g => new
+            {
+                ChuongTrinh = g.Key,
+                SoLop = g.Where(x => x.MaLopHoc.HasValue).Select(x => x.MaLopHoc!.Value).Distinct().Count(),
+                SoHocVien = g.Select(x => x.MaHocVien).Distinct().Count(),
+                Tong = g.Sum(x => x.SoTienPhaiDong),
+                Thu = g.Sum(x => x.SoTienDaDong),
+                No = g.Sum(x => x.SoTienConThieu)
+            })
+            .OrderByDescending(x => x.Tong)
+            .ToList();
 
         decimal sumTong = 0;
         decimal sumThu = 0;
@@ -161,30 +187,37 @@ public partial class UcBaoCao : UserControl
         int sumLop = 0;
         int sumHV = 0;
 
-        foreach (var r in list)
+        foreach (var r in nhom)
         {
-            sumTong += r.TongHocPhi;
-            sumThu += r.DaThu;
-            sumNo += r.ConNo;
+            sumTong += r.Tong;
+            sumThu += r.Thu;
+            sumNo += r.No;
             sumLop += r.SoLop;
             sumHV += r.SoHocVien;
+
+            var tyLe = r.Tong > 0 ? Math.Round(r.Thu / r.Tong * 100, 1) : 0m;
 
             var rowIdx = dgvRevenue.Rows.Add(
                 r.ChuongTrinh,
                 r.SoLop,
                 r.SoHocVien,
-                $"{r.TongHocPhi:N0} ₫",
-                $"{r.DaThu:N0} ₫",
-                $"{r.ConNo:N0} ₫",
-                $"{r.TyLeThu}%"
+                $"{r.Tong:N0} ₫",
+                $"{r.Thu:N0} ₫",
+                $"{r.No:N0} ₫",
+                $"{tyLe}%"
             );
 
-            if (r.ConNo > 0) dgvRevenue.Rows[rowIdx].Cells["ConNo"].Style.ForeColor = Theme.Danger;
+            if (r.No > 0) dgvRevenue.Rows[rowIdx].Cells["ConNo"].Style.ForeColor = Theme.Danger;
             dgvRevenue.Rows[rowIdx].Cells["TyLeThu"].Style.ForeColor = Theme.Success;
             dgvRevenue.Rows[rowIdx].Cells["TyLeThu"].Style.Font = Theme.FontBold;
         }
 
-        // Summary row
+        if (nhom.Count == 0)
+        {
+            return;
+        }
+
+        // Dòng tổng cộng
         var totalRate = sumTong > 0 ? Math.Round(sumThu / sumTong * 100, 1) : 0;
         var totalRowIdx = dgvRevenue.Rows.Add(
             "TỔNG CỘNG",
@@ -203,17 +236,45 @@ public partial class UcBaoCao : UserControl
     {
         dgvQuality.Rows.Clear();
 
-        var rows = new[]
-        {
-            new { Khoa = "IELTS Intensive 6.5 Cấp tốc", SiSo = 18, XuatSac = 4, Gioi = 8, Kha = 5, Dat = 1, TyLe = "100%", DanhGia = "Đạt chỉ tiêu cam kết đầu ra" },
-            new { Khoa = "IELTS Master 7.5+ Chuyên sâu", SiSo = 14, XuatSac = 6, Gioi = 6, Kha = 2, Dat = 0, TyLe = "100%", DanhGia = "Chất lượng vượt trội" },
-            new { Khoa = "Tiếng Anh Giao tiếp phản xạ PRO", SiSo = 15, XuatSac = 3, Gioi = 7, Kha = 4, Dat = 1, TyLe = "100%", DanhGia = "Kỹ năng phản xạ tiến bộ rõ rệt" },
-            new { Khoa = "Luyện thi TOEIC Mục tiêu 650+", SiSo = 16, XuatSac = 2, Gioi = 6, Kha = 6, Dat = 2, TyLe = "100%", DanhGia = "Đạt mục tiêu điểm thi TOEIC" },
-            new { Khoa = "Tiếng Anh Thiếu nhi Starters", SiSo = 12, XuatSac = 5, Gioi = 5, Kha = 2, Dat = 0, TyLe = "100%", DanhGia = "Đạt 12-15 khiên Cambridge" }
-        };
+        var nhom = _academics
+            .GroupBy(a => a.TenKhoaHoc)
+            .Select(g =>
+            {
+                var coDiem = g.SelectMany(a => a.HocViens).Where(x => x.DiemTongKet.HasValue).ToList();
 
-        foreach (var r in rows)
+                int Dem(decimal min, decimal max) =>
+                    coDiem.Count(x => x.DiemTongKet!.Value >= min && x.DiemTongKet!.Value <= max);
+
+                var xuatSac = Dem(8.5m, 10m);
+                var gioi = Dem(7.0m, 8.49m);
+                var kha = Dem(6.0m, 6.99m);
+                var dat = Dem(5.0m, 5.99m);
+                var khongDat = Math.Max(coDiem.Count - xuatSac - gioi - kha - dat, 0);
+                var tyLe = coDiem.Count > 0
+                    ? Math.Round((decimal)(coDiem.Count - khongDat) / coDiem.Count * 100, 1)
+                    : 0m;
+
+                return new
+                {
+                    Khoa = g.Key,
+                    SiSo = g.Sum(a => a.SoHocVien),
+                    XuatSac = xuatSac,
+                    Gioi = gioi,
+                    Kha = kha,
+                    Dat = dat,
+                    KhongDat = khongDat,
+                    TyLe = tyLe
+                };
+            })
+            .OrderByDescending(x => x.SiSo)
+            .ToList();
+
+        foreach (var r in nhom)
         {
+            var danhGia = r.KhongDat > 0
+                ? $"{r.KhongDat} học viên chưa đạt đầu ra"
+                : "Đạt chỉ tiêu cam kết đầu ra";
+
             var rowIdx = dgvQuality.Rows.Add(
                 r.Khoa,
                 $"{r.SiSo} HV",
@@ -221,8 +282,8 @@ public partial class UcBaoCao : UserControl
                 $"{r.Gioi} HV",
                 $"{r.Kha} HV",
                 $"{r.Dat} HV",
-                r.TyLe,
-                r.DanhGia
+                $"{r.TyLe}%",
+                danhGia
             );
 
             dgvQuality.Rows[rowIdx].Cells["TyLeDat"].Style.Font = Theme.FontBold;
@@ -235,29 +296,27 @@ public partial class UcBaoCao : UserControl
     {
         dgvFinancial.Rows.Clear();
 
-        var rows = new[]
+        if (_finance is null)
         {
-            new { Muc = "Doanh thu học phí đào tạo toàn trung tâm", KyTruoc = "1.250.000.000 ₫", KyNay = "1.580.000.000 ₫", TangTruong = "+26.4%", KeHoach = "1.500.000.000 ₫", HoanThanh = "105.3%", GhiChu = "Vượt chỉ tiêu kế hoạch quý" },
-            new { Muc = "Chi phí thù lao giảng viên & trợ giảng", KyTruoc = "380.000.000 ₫", KyNay = "440.000.000 ₫", TangTruong = "+15.8%", KeHoach = "450.000.000 ₫", HoanThanh = "97.8%", GhiChu = "Đảm bảo đúng định mức tiết dạy" },
-            new { Muc = "Chi phí vận hành phòng lab & cơ sở vật chất", KyTruoc = "110.000.000 ₫", KyNay = "125.000.000 ₫", TangTruong = "+13.6%", KeHoach = "130.000.000 ₫", HoanThanh = "96.2%", GhiChu = "Tiết kiệm 3.8% ngân sách được duyệt" },
-            new { Muc = "Chi phí bản quyền giáo trình & đề thi thử chuẩn", KyTruoc = "65.000.000 ₫", KyNay = "80.000.000 ₫", TangTruong = "+23.1%", KeHoach = "85.000.000 ₫", HoanThanh = "94.1%", GhiChu = "Đã cập nhật bộ tài liệu bản quyền mới" },
-            new { Muc = "Lợi nhuận gộp từ hoạt động đào tạo", KyTruoc = "695.000.000 ₫", KyNay = "935.000.000 ₫", TangTruong = "+34.5%", KeHoach = "835.000.000 ₫", HoanThanh = "112.0%", GhiChu = "Tăng trưởng tài chính lành mạnh và ổn định" }
+            return;
+        }
+
+        var f = _finance;
+        var tyLeThu = f.TongPhaiThu > 0 ? Math.Round(f.TongDaThu / f.TongPhaiThu * 100, 1) : 0m;
+
+        var rows = new (string Muc, string KyNay, string TyLe, string GhiChu)[]
+        {
+            ("Tổng học phí phải thu", $"{f.TongPhaiThu:N0} ₫", "100%", $"{f.TongSoHocPhi} phiếu học phí trên hệ thống"),
+            ("Đã thực thu vào quỹ", $"{f.TongDaThu:N0} ₫", $"{tyLeThu}%", $"{f.SoDaThanhToan} phiếu đã tất toán"),
+            ("Công nợ còn lại", $"{f.TongConThieu:N0} ₫", $"{Math.Round(100 - tyLeThu, 1)}%", $"{f.SoHocVienConNo} học viên còn nợ học phí"),
+            ("Phiếu quá hạn thanh toán", $"{f.SoQuaHan} phiếu", "—", $"{f.SoChuaThanhToan} phiếu chưa thanh toán"),
+            ("Phiếu thanh toán một phần", $"{f.SoThanhToanMotPhan} phiếu", "—", "Cần thu nốt phần còn thiếu")
         };
 
         foreach (var r in rows)
         {
-            var rowIdx = dgvFinancial.Rows.Add(
-                r.Muc,
-                r.KyTruoc,
-                r.KyNay,
-                r.TangTruong,
-                r.KeHoach,
-                r.HoanThanh,
-                r.GhiChu
-            );
+            var rowIdx = dgvFinancial.Rows.Add(r.Muc, "—", r.KyNay, "—", "—", r.TyLe, r.GhiChu);
 
-            dgvFinancial.Rows[rowIdx].Cells["TangTruong"].Style.ForeColor = r.TangTruong.StartsWith('+') ? Theme.Success : Theme.Danger;
-            dgvFinancial.Rows[rowIdx].Cells["TangTruong"].Style.Font = Theme.FontBold;
             dgvFinancial.Rows[rowIdx].Cells["TyLeHoanThanh"].Style.Font = Theme.FontBold;
             dgvFinancial.Rows[rowIdx].Cells["TyLeHoanThanh"].Style.ForeColor = Theme.PrimaryDark;
         }
@@ -267,25 +326,45 @@ public partial class UcBaoCao : UserControl
     {
         dgvClasses.Rows.Clear();
 
-        var rows = new[]
-        {
-            new { ChuongTrinh = "IELTS Chuyên sâu (Foundation - Master)", SoLop = "8 lớp", SiSoBQ = "16.5 HV/lớp", LopDay = "6 lớp", ChoTrong = "12 chỗ", TyLe = "91.7%", TrangThai = "Sắp hết chỗ — Đang mở thêm ca tối" },
-            new { ChuongTrinh = "Tiếng Anh Giao tiếp quốc tế (PRO)", SoLop = "6 lớp", SiSoBQ = "17.2 HV/lớp", LopDay = "5 lớp", ChoTrong = "8 chỗ", TyLe = "93.3%", TrangThai = "Đạt hiệu suất tối ưu phòng học" },
-            new { ChuongTrinh = "Luyện thi TOEIC Chuẩn đầu ra Đại học", SoLop = "5 lớp", SiSoBQ = "18.0 HV/lớp", LopDay = "4 lớp", ChoTrong = "10 chỗ", TyLe = "90.0%", TrangThai = "Tuyển sinh ổn định theo định mức" },
-            new { ChuongTrinh = "Tiếng Anh Thiếu nhi & Thiếu niên (Cambridge)", SoLop = "4 lớp", SiSoBQ = "14.0 HV/lớp", LopDay = "2 lớp", ChoTrong = "14 chỗ", TyLe = "80.0%", TrangThai = "Đang tiếp nhận hồ sơ đăng ký mới" },
-            new { ChuongTrinh = "Tiếng Anh Thương mại Doanh nghiệp", SoLop = "3 lớp", SiSoBQ = "15.0 HV/lớp", LopDay = "2 lớp", ChoTrong = "6 chỗ", TyLe = "88.2%", TrangThai = "Theo hợp đồng đào tạo chuyên đề" }
-        };
+        var nhom = _classes
+            .GroupBy(c => c.TenKhoaHoc)
+            .Select(g =>
+            {
+                var tongLop = g.Count();
+                var siSo = g.Sum(c => c.SiSoHienTai);
+                var toiDa = g.Sum(c => c.SiSoToiDa);
+                var day = g.Count(c => c.SiSoHienTai >= c.SiSoToiDa);
+                var conTrong = Math.Max(toiDa - siSo, 0);
+                var tyLe = toiDa > 0 ? Math.Round((decimal)siSo / toiDa * 100, 1) : 0m;
+                var binhQuan = tongLop > 0 ? Math.Round((decimal)siSo / tongLop, 1) : 0m;
+                var tinhTrang = conTrong == 0
+                    ? "Đã đầy — cần mở thêm lớp"
+                    : (tyLe >= 80 ? "Sắp hết chỗ" : "Đang tiếp nhận hồ sơ");
 
-        foreach (var r in rows)
+                return new
+                {
+                    ChuongTrinh = g.Key,
+                    TongSoLop = tongLop,
+                    BinhQuan = binhQuan,
+                    Day = day,
+                    ConTrong = conTrong,
+                    TyLe = tyLe,
+                    TinhTrang = tinhTrang
+                };
+            })
+            .OrderByDescending(x => x.TongSoLop)
+            .ToList();
+
+        foreach (var r in nhom)
         {
             var rowIdx = dgvClasses.Rows.Add(
                 r.ChuongTrinh,
-                r.SoLop,
-                r.SiSoBQ,
-                r.LopDay,
-                r.ChoTrong,
-                r.TyLe,
-                r.TrangThai
+                $"{r.TongSoLop} lớp",
+                $"{r.BinhQuan} HV/lớp",
+                $"{r.Day} lớp",
+                $"{r.ConTrong} chỗ",
+                $"{r.TyLe}%",
+                r.TinhTrang
             );
 
             dgvClasses.Rows[rowIdx].Cells["TyLeLapDay"].Style.Font = Theme.FontBold;

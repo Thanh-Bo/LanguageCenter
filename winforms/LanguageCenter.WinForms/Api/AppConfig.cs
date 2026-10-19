@@ -20,7 +20,7 @@ public static class AppConfig
     // - true  : Chạy độc lập với dữ liệu mẫu trong bộ nhớ (KHÔNG cần bật backend hay SQL Server).
     // - false : Kết nối vào Backend API thật tại ApiBaseUrl.
     // ========================================================================
-    public static bool UseMockData = true;
+    public static bool UseMockData = false;
 
     public const string ApiBaseUrl = "http://localhost:5204/api/";
 }

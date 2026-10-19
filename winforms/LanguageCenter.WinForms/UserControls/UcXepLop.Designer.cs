@@ -25,6 +25,7 @@ partial class UcXepLop
     private TextBox txtSearchPending = null!;
     private ComboBox cboFilterCourse = null!;
     private Button btnEnrollSelectedPending = null!;
+    private Button btnTuChoiDangKy = null!;
 
     private Panel pnlGridContainer = null!;
     private DataGridView dgvInClass = null!;
@@ -67,6 +68,7 @@ partial class UcXepLop
         txtSearchPending = new TextBox();
         cboFilterCourse = new ComboBox();
         btnEnrollSelectedPending = new Button();
+        btnTuChoiDangKy = new Button();
 
         pnlGridContainer = new Panel();
         dgvInClass = new DataGridView();
@@ -220,12 +222,24 @@ partial class UcXepLop
         btnEnrollSelectedPending.Cursor = Cursors.Hand;
         btnEnrollSelectedPending.Location = new Point(920, 9);
 
+        btnTuChoiDangKy.Text = "Từ chối đăng ký";
+        btnTuChoiDangKy.Size = new Size(150, 34);
+        btnTuChoiDangKy.FlatStyle = FlatStyle.Flat;
+        btnTuChoiDangKy.FlatAppearance.BorderSize = 1;
+        btnTuChoiDangKy.FlatAppearance.BorderColor = Color.FromArgb(252, 165, 165);
+        btnTuChoiDangKy.BackColor = Color.White;
+        btnTuChoiDangKy.ForeColor = Color.FromArgb(239, 68, 68);
+        btnTuChoiDangKy.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
+        btnTuChoiDangKy.Cursor = Cursors.Hand;
+        btnTuChoiDangKy.Location = new Point(720, 9);
+
         pnlToolbar.Controls.Add(txtSearchInClass);
         pnlToolbar.Controls.Add(btnOpenEnrollDialog);
         pnlToolbar.Controls.Add(btnRemoveFromClass);
         pnlToolbar.Controls.Add(txtSearchPending);
         pnlToolbar.Controls.Add(cboFilterCourse);
         pnlToolbar.Controls.Add(btnEnrollSelectedPending);
+        pnlToolbar.Controls.Add(btnTuChoiDangKy);
 
         // 4. GRID CONTAINER
         pnlGridContainer.Dock = DockStyle.Fill;

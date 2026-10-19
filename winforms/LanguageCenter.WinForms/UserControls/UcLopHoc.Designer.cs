@@ -55,7 +55,7 @@ partial class UcLopHoc
 
         // 1. STATS BANNER
         pnlHeaderStats.Dock = DockStyle.Top;
-        pnlHeaderStats.Height = 118;
+        pnlHeaderStats.Height = 132;
         pnlHeaderStats.Padding = new Padding(0, 0, 0, 6);
 
         tblStats.Dock = DockStyle.Fill;
@@ -130,15 +130,13 @@ partial class UcLopHoc
         // 3. DATAGRIDVIEW
         dgvClasses.Dock = DockStyle.Fill;
         dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaLop", HeaderText = "Mã lớp", FillWeight = 90 });
-        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenLop", HeaderText = "Tên lớp học", FillWeight = 160 });
-        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenKhoaHoc", HeaderText = "Khóa học", FillWeight = 160 });
-        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenGiaoVienChinh", HeaderText = "Giảng viên chính", FillWeight = 130 });
-        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenTroGiang", HeaderText = "Trợ giảng", FillWeight = 110 });
-        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenPhongHoc", HeaderText = "Phòng học", FillWeight = 90 });
-        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "LichHoc", HeaderText = "Lịch học tuần", FillWeight = 140 });
+        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenLop", HeaderText = "Tên lớp học", FillWeight = 170 });
+        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenKhoaHoc", HeaderText = "Khóa học", FillWeight = 170 });
+        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenNhanVienHocVu", HeaderText = "Học vụ phụ trách", FillWeight = 150 });
         dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "SiSo", HeaderText = "Sĩ số", FillWeight = 75 });
-        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayBatDau", HeaderText = "Ngày bắt đầu", FillWeight = 85 });
-        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayKetThuc", HeaderText = "Ngày kết thúc", FillWeight = 85 });
+        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "SoCaHoc", HeaderText = "Ca học", FillWeight = 80 });
+        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayBatDau", HeaderText = "Ngày bắt đầu", FillWeight = 95 });
+        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayKetThuc", HeaderText = "Kết thúc dự kiến", FillWeight = 105 });
         dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrangThai", HeaderText = "Trạng thái", FillWeight = 95 });
 
         // 4. FOOTER

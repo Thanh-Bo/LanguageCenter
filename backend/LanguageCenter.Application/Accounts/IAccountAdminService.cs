@@ -10,6 +10,18 @@ public interface IAccountAdminService
 
     Task<OperationResult<AccountDetailDto>> GetDetailAsync(int maTaiKhoan, CancellationToken cancellationToken);
 
+    /// <summary>Tạo tài khoản mới (không kèm hồ sơ) — dùng cho Nhân viên / Kế toán / Tư vấn.</summary>
+    Task<OperationResult<AccountDetailDto>> CreateAsync(
+        CreateAccountRequest request,
+        CancellationToken cancellationToken);
+
+    /// <summary>Cập nhật email / vai trò / trạng thái / mật khẩu (tham số null = giữ nguyên).</summary>
+    Task<OperationResult<AccountDetailDto>> UpdateAsync(
+        int maTaiKhoan,
+        UpdateAccountRequest request,
+        int currentUserMaTaiKhoan,
+        CancellationToken cancellationToken);
+
     Task<OperationResult<AccountDetailDto>> UpdateStatusAsync(
         int maTaiKhoan,
         UpdateAccountStatusRequest request,

@@ -13,8 +13,8 @@ export default function DangNhap() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [email, setEmail] = useState("lananh@lingohub.vn");
-  const [password, setPassword] = useState("123456");
+  const [tenDangNhap, setTenDangNhap] = useState("ADMIN001");
+  const [password, setPassword] = useState("LanguageCenter@2026");
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -22,7 +22,7 @@ export default function DangNhap() {
     setError(null);
 
     try {
-      const nguoiDung = await dangNhap(email.trim(), password);
+      const nguoiDung = await dangNhap(tenDangNhap.trim(), password);
       const from = (location.state as { from?: string } | null)?.from;
       navigate(from || duongDanTheoVaiTro(nguoiDung.vaiTro), { replace: true });
     } catch (err) {
@@ -138,15 +138,16 @@ export default function DangNhap() {
           <form onSubmit={submit} className="space-y-5">
             <label className="block">
               <span className="mb-2 block text-sm font-semibold text-slate-700">
-                Email hoặc tên đăng nhập
+                Tên đăng nhập
               </span>
               <span className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm transition focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-50">
                 <Icon name="mail" className="size-5 text-slate-400" />
                 <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  type="text"
+                  value={tenDangNhap}
+                  onChange={(e) => setTenDangNhap(e.target.value)}
                   required
+                  autoComplete="username"
                   className="h-13 min-w-0 flex-1 border-0 bg-transparent text-sm outline-none"
                 />
               </span>
@@ -190,8 +191,8 @@ export default function DangNhap() {
                 onClick={() =>
                   alert(
                     "Vui lòng liên hệ trung tâm để được hỗ trợ đặt lại mật khẩu:\n\n" +
-                      "📞 Hotline: 028.1234.5678\n" +
-                      "✉️ Email: hotro@lingohub.vn",
+                      "Hotline: 028.1234.5678\n" +
+                      "Email: hotro@lingohub.vn",
                   )
                 }
                 className="font-semibold text-blue-600 hover:text-blue-700"
@@ -226,54 +227,54 @@ export default function DangNhap() {
               className="mt-0.5 size-4 shrink-0 text-blue-600"
             />
             <span>
-              Phiên đăng nhập được mã hóa và tự động kết thúc sau 30 phút không
-              hoạt động.
+              Phiên đăng nhập có hiệu lực 60 phút. Hết hạn bạn sẽ được yêu cầu
+              đăng nhập lại.
             </span>
           </div>
 
           {/* Tài khoản demo */}
           <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm">
-            <div className="mb-3 font-bold text-slate-700">
-              🔑 Tài khoản demo (mật khẩu:{" "}
-              <code className="rounded bg-slate-200 px-1.5 py-0.5">123456</code>
+            <div className="mb-3 flex items-center gap-1.5 font-bold text-slate-700">
+              <Icon name="lock" className="size-3.5" /> Tài khoản mẫu (mật khẩu:{" "}
+              <code className="rounded bg-slate-200 px-1.5 py-0.5">LanguageCenter@2026</code>
               )
             </div>
 
             {/* Quản trị viên */}
             <div className="mb-3">
-              <div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
-                👨‍💼 Quản trị viên
+              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <Icon name="shield" className="size-3.5" /> Quản trị viên
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  setEmail("admin@lingohub.vn");
-                  setPassword("123456");
+                  setTenDangNhap("ADMIN001");
+                  setPassword("LanguageCenter@2026");
                 }}
                 className="block w-full rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
               >
-                admin@lingohub.vn
+                ADMIN001
               </button>
             </div>
 
             {/* Giáo viên */}
             <div className="mb-3">
-              <div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
-                👨‍🏫 Giáo viên
+              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <Icon name="presentation" className="size-3.5" /> Giáo viên
               </div>
               <div className="grid grid-cols-2 gap-1">
                 {[
-                  "lananh@lingohub.vn",
-                  "minhkhoa@lingohub.vn",
-                  "david@lingohub.vn",
-                  "emily@lingohub.vn",
+                  "GV001",
+                  "GV002",
+                  "GV003",
+                  "TG001",
                 ].map((e) => (
                   <button
                     key={e}
                     type="button"
                     onClick={() => {
-                      setEmail(e);
-                      setPassword("123456");
+                      setTenDangNhap(e);
+                      setPassword("LanguageCenter@2026");
                     }}
                     className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
                   >
@@ -285,22 +286,22 @@ export default function DangNhap() {
 
             {/* Học viên */}
             <div>
-              <div className="mb-1 text-xs font-bold uppercase tracking-wider text-slate-500">
-                👩‍🎓 Học viên
+              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                <Icon name="bookUser" className="size-3.5" /> Học viên
               </div>
               <div className="grid grid-cols-2 gap-1">
                 {[
-                  "khoa.hv@lingohub.vn",
-                  "ha.lt@lingohub.vn",
-                  "an.nv@lingohub.vn",
-                  "linh.pm@lingohub.vn",
+                  "HV001",
+                  "HV002",
+                  "HV003",
+                  "HV004",
                 ].map((e) => (
                   <button
                     key={e}
                     type="button"
                     onClick={() => {
-                      setEmail(e);
-                      setPassword("123456");
+                      setTenDangNhap(e);
+                      setPassword("LanguageCenter@2026");
                     }}
                     className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
                   >

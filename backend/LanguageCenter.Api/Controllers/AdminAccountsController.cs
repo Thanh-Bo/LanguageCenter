@@ -39,6 +39,43 @@ public sealed class AdminAccountsController : ControllerBase
     public async Task<IActionResult> GetDetailAsync(int id, CancellationToken cancellationToken)
         => (await _accountAdminService.GetDetailAsync(id, cancellationToken)).ToActionResult();
 
+    /// <summary>Tạo tài khoản mới (không kèm hồ sơ) — dùng cho Nhân viên / Kế toán / Tư vấn.</summary>
+    [HttpPost]
+    [ProducesResponseType(typeof(AccountDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> CreateAsync(
+        [FromBody] CreateAccountRequest request,
+        CancellationToken cancellationToken)
+        => (await _accountAdminService.CreateAsync(request, cancellationToken)).ToActionResult();
+
+    /// <summary>Cập nhật email / vai trò / trạng thái / mật khẩu của tài khoản.</summary>
+    [HttpPatch("{id:int}")]
+    [ProducesResponseType(typeof(AccountDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> UpdateAsync(
+        int id,
+        [FromBody] UpdateAccountRequest request,
+        CancellationToken cancellationToken)
+    {
+        var currentUserMaTaiKhoan = User.GetMaTaiKhoan();
+
+        if (currentUserMaTaiKhoan is null)
+        {
+            return Unauthorized(new { message = "Token không hợp lệ." });
+        }
+
+        var result = await _accountAdminService.UpdateAsync(
+            id,
+            request,
+            currentUserMaTaiKhoan.Value,
+            cancellationToken);
+
+        return result.ToActionResult();
+    }
+
     /// <summary>Đổi trạng thái tài khoản: Hoạt động / Bị khóa / Ngừng sử dụng.</summary>
     [HttpPatch("{id:int}/status")]
     [ProducesResponseType(typeof(AccountDetailDto), StatusCodes.Status200OK)]

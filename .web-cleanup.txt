@@ -1,0 +1,15 @@
+﻿DELETED: lib\goiAPI.ts
+DELETED: lib\khoDuLieu.ts
+DELETED: pages\CongQuanLy.tsx
+DELETED: pages\giaovien\GiaoVienPortal.tsx
+DELETED: pages\giaovien\LopCuaToi.tsx
+DELETED: pages\giaovien\LichDay.tsx
+DELETED: pages\giaovien\DiemDanh.tsx
+DELETED: pages\giaovien\BangDiem.tsx
+DELETED: pages\giaovien\ThongBao.tsx
+DELETED: pages\hocvien\HocVienPortal.tsx
+DELETED: pages\hocvien\TongQuanHocVien.tsx
+DELETED: pages\hocvien\LichHoc.tsx
+DELETED: pages\hocvien\DiemSo.tsx
+DELETED: pages\hocvien\HoSoHocVien.tsx
+CLEANUP_DONE

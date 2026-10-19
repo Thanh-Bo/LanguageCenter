@@ -1,4 +1,5 @@
 using LanguageCenter.WinForms.Api;
+using LanguageCenter.WinForms.Dialogs;
 using LanguageCenter.WinForms.UI;
 
 namespace LanguageCenter.WinForms.UserControls;
@@ -7,227 +8,227 @@ public partial class UcDiemSo : UserControl
 {
     private const string AllOption = "— Tất cả —";
 
+    private IReadOnlyList<ClassListItemDto> _classes = Array.Empty<ClassListItemDto>();
+    private IReadOnlyList<TeacherListItemDto> _teachers = Array.Empty<TeacherListItemDto>();
+    private AcademicReportDto? _report;
+    private bool _dangNap;
+
     public UcDiemSo()
     {
         InitializeComponent();
 
         UI.UiHelpers.StyleGrid(dgvGrades);
-        dgvGrades.ReadOnly = false;
-        dgvGrades.CellValueChanged += DgvGrades_CellValueChanged;
+        dgvGrades.ReadOnly = true;
 
-        cboLopHoc.SelectedIndexChanged += (_, _) => LoadGradesForClass();
-        btnRefresh.Click += (_, _) => ReloadData();
-        btnCalculate.Click += (_, _) => CalculateGrades();
-        btnSave.Click += BtnSave_Click;
+        cboLopHoc.SelectedIndexChanged += (_, _) => { if (!_dangNap) _ = LoadGradesAsync(); };
+        btnRefresh.Click += async (_, _) => await ReloadAsync();
         btnExport.Click += BtnExport_Click;
 
-        InitClassOptions();
+        // Điểm tổng kết do backend tính theo trọng số; WinForms không cần nút tính lại.
+        btnCalculate.Visible = false;
+
+        // Nút "Lưu bảng điểm" cũ được dùng lại thành "Nhập điểm".
+        btnSave.Text = "Nhập điểm";
+        btnSave.Visible = true;
+        btnSave.Click += BtnNhapDiem_Click;
+
+        Load += async (_, _) => await ReloadAsync();
     }
 
-    private void InitClassOptions()
+    private async Task ReloadAsync()
     {
+        await LoadClassesAsync();
+        await LoadTeachersAsync();
+        await LoadGradesAsync();
+    }
+
+    private async Task LoadTeachersAsync()
+    {
+        var result = await AppSession.Api.GetAsync<PagedResult<TeacherListItemDto>>(
+            QueryStringBuilder.Build("admin/teachers", ("page", "1"), ("pageSize", "300")));
+
+        _teachers = result.Data?.Items ?? Array.Empty<TeacherListItemDto>();
+    }
+
+    private async Task LoadClassesAsync()
+    {
+        var result = await AppSession.Api.GetAsync<PagedResult<ClassListItemDto>>(
+            QueryStringBuilder.Build("admin/classes", ("page", "1"), ("pageSize", "500")));
+
+        _classes = result.Data?.Items ?? Array.Empty<ClassListItemDto>();
+
+        _dangNap = true;
+        var dangChon = cboLopHoc.SelectedItem?.ToString();
+
         cboLopHoc.Items.Clear();
         cboLopHoc.Items.Add(AllOption);
-        foreach (var c in MockDataStore.GetClasses())
+
+        foreach (var c in _classes.OrderBy(c => c.MaLop))
         {
             cboLopHoc.Items.Add($"{c.MaLop} — {c.TenLop}");
         }
 
-        if (cboLopHoc.Items.Count > 1) cboLopHoc.SelectedIndex = 1;
-        else cboLopHoc.SelectedIndex = 0;
+        var viTri = dangChon is null ? -1 : cboLopHoc.Items.IndexOf(dangChon);
+        cboLopHoc.SelectedIndex = viTri >= 0 ? viTri : (cboLopHoc.Items.Count > 1 ? 1 : 0);
+        _dangNap = false;
     }
 
-    private void LoadGradesForClass()
+    private async Task LoadGradesAsync()
     {
         var selected = cboLopHoc.SelectedItem?.ToString();
-        string? maLop = null;
-        if (!string.IsNullOrWhiteSpace(selected) && selected != AllOption)
+
+        var lop = selected is null || selected == AllOption
+            ? null
+            : _classes.FirstOrDefault(c => $"{c.MaLop} — {c.TenLop}" == selected);
+
+        if (lop is null)
         {
-            maLop = selected.Split(" — ")[0].Trim();
-        }
-
-        var list = MockDataStore.GetGrades(maLop);
-        dgvGrades.Rows.Clear();
-
-        foreach (var g in list)
-        {
-            var rowIdx = dgvGrades.Rows.Add(
-                g.MaHocVien,
-                g.TenHocVien,
-                g.DiemChuyenCan.ToString("F1"),
-                g.DiemGiuaKy.ToString("F1"),
-                g.DiemSpeaking.ToString("F1"),
-                g.DiemWriting.ToString("F1"),
-                g.DiemCuoiKy.ToString("F1"),
-                g.DiemTongKet.ToString("F1"),
-                g.XepLoai,
-                g.NhanXet ?? string.Empty
-            );
-
-            dgvGrades.Rows[rowIdx].Tag = g.MaDangKy;
-            StyleGradeRow(rowIdx, g.XepLoai);
-        }
-
-        UpdateStats(list);
-        lblSummary.Text = $"Hiển thị bảng điểm {list.Count} học viên (Có thể chỉnh sửa điểm trực tiếp và bấm 'Lưu bảng điểm')";
-    }
-
-    private void StyleGradeRow(int rowIdx, string xepLoai)
-    {
-        var cell = dgvGrades.Rows[rowIdx].Cells["XepLoai"];
-        cell.Style.Font = Theme.FontBold;
-        cell.Style.ForeColor = xepLoai switch
-        {
-            "Xuất sắc" => Theme.Purple,
-            "Giỏi" => Theme.Success,
-            "Khá" => Theme.Primary,
-            "Đạt" => Theme.Warning,
-            _ => Theme.Danger
-        };
-
-        dgvGrades.Rows[rowIdx].Cells["DiemTongKet"].Style.Font = Theme.FontBold;
-    }
-
-    private void UpdateStats(List<DiemSoHocVienDto> list)
-    {
-        tblStats.Controls.Clear();
-        if (list.Count == 0)
-        {
-            tblStats.Controls.Add(CreateStatCard("Sĩ số lớp", "0 HV", "Chưa có học viên", Theme.Primary), 0, 0);
-            tblStats.Controls.Add(CreateStatCard("Điểm TB lớp", "0.0", "Chưa có điểm", Theme.Success), 1, 0);
-            tblStats.Controls.Add(CreateStatCard("Tỷ lệ Đạt", "0%", "Tiêu chuẩn đầu ra", Theme.Warning), 2, 0);
-            tblStats.Controls.Add(CreateStatCard("Xếp loại cao nhất", "—", "Học viên xuất sắc", Theme.Purple), 3, 0);
+            _report = null;
+            dgvGrades.Rows.Clear();
+            UpdateStats(null);
+            lblSummary.Text = "Vui lòng chọn một lớp học để xem bảng điểm.";
             return;
         }
 
-        var avg = list.Average(g => g.DiemTongKet);
-        var passCount = list.Count(g => g.XepLoai != "Không đạt");
-        var passRate = Math.Round((double)passCount / list.Count * 100, 1);
-        var top = list.OrderByDescending(g => g.DiemTongKet).First();
+        lblSummary.Text = "Đang tải bảng điểm...";
+        UseWaitCursor = true;
 
-        tblStats.Controls.Add(CreateStatCard("Sĩ số lớp", $"{list.Count} Học viên", "Đang theo học lớp", Theme.Primary), 0, 0);
-        tblStats.Controls.Add(CreateStatCard("Điểm TB lớp", $"{avg:F1} Điểm", "Thang điểm 10 chuẩn đào tạo", Theme.Success), 1, 0);
-        tblStats.Controls.Add(CreateStatCard("Tỷ lệ Đạt", $"{passRate}%", $"{passCount}/{list.Count} học viên đạt chuẩn", Theme.Warning), 2, 0);
-        tblStats.Controls.Add(CreateStatCard("Xếp loại cao nhất", $"{top.TenHocVien} ({top.DiemTongKet:F1})", top.XepLoai, Theme.Purple), 3, 0);
+        var result = await AppSession.Api.GetAsync<AcademicReportDto>(
+            QueryStringBuilder.Build("admin/reports/academic", ("maLopHoc", lop.MaLopHoc.ToString())));
+
+        UseWaitCursor = false;
+
+        if (!result.Success || result.Data is null)
+        {
+            _report = null;
+            dgvGrades.Rows.Clear();
+            UpdateStats(null);
+            lblSummary.Text = result.ErrorMessage;
+            return;
+        }
+
+        _report = result.Data;
+        FillGrid(_report);
+        UpdateStats(_report);
     }
 
-    private static Panel CreateStatCard(string title, string value, string note, Color accent)
+    private void FillGrid(AcademicReportDto report)
     {
-        var panel = new Panel
+        RebuildColumns(report.ThanhPhan);
+
+        dgvGrades.Rows.Clear();
+
+        foreach (var hv in report.HocViens)
         {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            Padding = new Padding(12, 8, 12, 8),
-            Margin = new Padding(4, 2, 4, 6)
-        };
-        panel.Paint += (s, e) =>
-        {
-            if (s is Control ctrl)
+            var values = new List<object> { hv.MaHocVien, hv.HoTen };
+
+            foreach (var tp in report.ThanhPhan)
             {
-                using var borderPen = new Pen(Theme.BorderColor);
-                e.Graphics.DrawRectangle(borderPen, 0, 0, ctrl.Width - 1, ctrl.Height - 1);
-                using var accentBrush = new SolidBrush(accent);
-                e.Graphics.FillRectangle(accentBrush, 0, 0, 4, ctrl.Height);
+                var diem = hv.ThanhPhan.FirstOrDefault(x => x.MaLoaiDiem == tp.MaLoaiDiem)?.Diem;
+                values.Add(diem.HasValue ? diem.Value.ToString("0.0") : "—");
             }
-        };
 
-        var lblT = new Label { Text = title, Font = new Font("Segoe UI", 8.5f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(14, 6) };
-        var lblV = new Label { Text = value, Font = new Font("Segoe UI", 15f, FontStyle.Bold), ForeColor = accent, AutoSize = true, Location = new Point(12, 24) };
-        var lblN = new Label { Text = note, Font = new Font("Segoe UI", 8f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(14, 56) };
+            values.Add(hv.DiemTongKet.HasValue ? hv.DiemTongKet.Value.ToString("0.0") : "—");
+            values.Add(hv.DuDieuKien ? "Đủ điều kiện" : "Thiếu điểm");
 
-        panel.Controls.Add(lblN);
-        panel.Controls.Add(lblV);
-        panel.Controls.Add(lblT);
-        return panel;
-    }
+            var rowIdx = dgvGrades.Rows.Add(values.ToArray());
+            var row = dgvGrades.Rows[rowIdx];
+            row.Tag = hv;
 
-    private void DgvGrades_CellValueChanged(object? sender, DataGridViewCellEventArgs e)
-    {
-        if (e.RowIndex < 0) return;
-        var colName = dgvGrades.Columns[e.ColumnIndex].Name;
-        if (colName is "DiemChuyenCan" or "DiemGiuaKy" or "DiemSpeaking" or "DiemWriting" or "DiemCuoiKy")
-        {
-            CalculateRowGrade(e.RowIndex);
+            row.Cells["DiemTongKet"].Style.Font = Theme.FontBold;
+            row.Cells["KetQua"].Style.ForeColor = hv.DuDieuKien ? Theme.Success : Theme.Warning;
+            row.Cells["KetQua"].Style.Font = Theme.FontBold;
         }
+
+        lblSummary.Text = report.CanhBaoTrongSo
+            ? $"Bảng điểm {report.SoHocVien} học viên — CẢNH BÁO: tổng trọng số = {report.TongTrongSo}%"
+            : $"Bảng điểm {report.SoHocVien} học viên — tổng trọng số {report.TongTrongSo}%";
     }
 
-    private void CalculateRowGrade(int rowIdx)
+    /// <summary>Mở hộp thoại nhập điểm cho học viên đang chọn.</summary>
+    private async void BtnNhapDiem_Click(object? sender, EventArgs e)
     {
-        var row = dgvGrades.Rows[rowIdx];
-        decimal.TryParse(row.Cells["DiemChuyenCan"].Value?.ToString(), out var cc);
-        decimal.TryParse(row.Cells["DiemGiuaKy"].Value?.ToString(), out var gk);
-        decimal.TryParse(row.Cells["DiemSpeaking"].Value?.ToString(), out var sp);
-        decimal.TryParse(row.Cells["DiemWriting"].Value?.ToString(), out var wr);
-        decimal.TryParse(row.Cells["DiemCuoiKy"].Value?.ToString(), out var ck);
-
-        var tk = Math.Round(cc * 0.1m + gk * 0.2m + sp * 0.2m + wr * 0.2m + ck * 0.3m, 1);
-        var xl = tk switch
+        if (_report is null || dgvGrades.CurrentRow?.Tag is not AcademicStudentRowDto hocVien)
         {
-            >= 8.5m => "Xuất sắc",
-            >= 7.0m => "Giỏi",
-            >= 6.0m => "Khá",
-            >= 5.0m => "Đạt",
-            _ => "Không đạt"
-        };
-
-        row.Cells["DiemTongKet"].Value = tk.ToString("F1");
-        row.Cells["XepLoai"].Value = xl;
-        StyleGradeRow(rowIdx, xl);
-    }
-
-    private void CalculateGrades()
-    {
-        for (int i = 0; i < dgvGrades.Rows.Count; i++)
-        {
-            CalculateRowGrade(i);
+            MessageBox.Show(FindForm(),
+                "Vui lòng chọn một lớp và một học viên trong bảng điểm.",
+                "Chưa chọn học viên", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
         }
-        MessageBox.Show(FindForm(), "Đã tính toán lại toàn bộ điểm tổng kết và xếp loại của lớp học.", "Tính điểm thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-    }
 
-    private void BtnSave_Click(object? sender, EventArgs e)
-    {
-        for (int i = 0; i < dgvGrades.Rows.Count; i++)
+        var diemDaCo = await AppSession.Api.GetAsync<PagedResult<GradeRowDto>>(
+            QueryStringBuilder.Build(
+                "admin/grades",
+                ("maLopHoc", _report.MaLopHoc.ToString()),
+                ("page", "1"),
+                ("pageSize", "1000")));
+
+        var map = new Dictionary<int, int>();
+
+        if (diemDaCo.Success && diemDaCo.Data is not null)
         {
-            CalculateRowGrade(i);
-            var row = dgvGrades.Rows[i];
-            var regId = Convert.ToInt32(row.Tag ?? i + 1);
-
-            decimal.TryParse(row.Cells["DiemChuyenCan"].Value?.ToString(), out var cc);
-            decimal.TryParse(row.Cells["DiemGiuaKy"].Value?.ToString(), out var gk);
-            decimal.TryParse(row.Cells["DiemSpeaking"].Value?.ToString(), out var sp);
-            decimal.TryParse(row.Cells["DiemWriting"].Value?.ToString(), out var wr);
-            decimal.TryParse(row.Cells["DiemCuoiKy"].Value?.ToString(), out var ck);
-            decimal.TryParse(row.Cells["DiemTongKet"].Value?.ToString(), out var tk);
-
-            var item = new DiemSoHocVienDto
+            foreach (var g in diemDaCo.Data.Items.Where(x => x.MaDangKy == hocVien.MaDangKy))
             {
-                MaDangKy = regId,
-                MaHocVien = row.Cells["MaHocVien"].Value?.ToString() ?? "",
-                TenHocVien = row.Cells["TenHocVien"].Value?.ToString() ?? "",
-                MaLop = cboLopHoc.SelectedItem?.ToString()?.Split(" — ")[0].Trim() ?? "",
-                DiemChuyenCan = cc,
-                DiemGiuaKy = gk,
-                DiemSpeaking = sp,
-                DiemWriting = wr,
-                DiemCuoiKy = ck,
-                DiemTongKet = tk,
-                XepLoai = row.Cells["XepLoai"].Value?.ToString() ?? "Đạt",
-                NhanXet = row.Cells["NhanXet"].Value?.ToString(),
-                NgayCham = DateTime.Now
-            };
-
-            MockDataStore.SaveGrade(item);
+                map[g.MaLoaiDiem] = g.MaDiemSo;
+            }
         }
 
-        MessageBox.Show(FindForm(), "Bảng điểm đã được lưu thành công vào cơ sở dữ liệu hệ thống!", "Lưu thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        LoadGradesForClass();
+        using var dlg = new FormNhapDiem(hocVien, _report.ThanhPhan, map, _teachers);
+
+        if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+        {
+            await LoadGradesAsync();
+        }
+    }
+
+    /// <summary>Dựng lại cột điểm theo đúng thành phần điểm mà backend trả về.</summary>
+    private void RebuildColumns(IReadOnlyList<GradeComponentDto> thanhPhan)
+    {
+        dgvGrades.Columns.Clear();
+        dgvGrades.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaHocVien", HeaderText = "Mã HV", FillWeight = 70 });
+        dgvGrades.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenHocVien", HeaderText = "Họ và tên", FillWeight = 160 });
+
+        foreach (var tp in thanhPhan)
+        {
+            dgvGrades.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = $"TP{tp.MaLoaiDiem}",
+                HeaderText = $"{tp.TenLoaiDiem} ({tp.TrongSo}%)",
+                FillWeight = 90
+            });
+        }
+
+        dgvGrades.Columns.Add(new DataGridViewTextBoxColumn { Name = "DiemTongKet", HeaderText = "Tổng kết", FillWeight = 85 });
+        dgvGrades.Columns.Add(new DataGridViewTextBoxColumn { Name = "KetQua", HeaderText = "Kết quả", FillWeight = 120 });
+    }
+
+    private void UpdateStats(AcademicReportDto? report)
+    {
+        tblStats.Controls.Clear();
+
+        if (report is null || report.SoHocVien == 0)
+        {
+            tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Sĩ số lớp", "0 HV", "Chưa có học viên", Theme.Primary), 0, 0);
+            tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Điểm TB lớp", "—", "Chưa có điểm", Theme.Success), 1, 0);
+            tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Đủ điều kiện", "0 HV", "Tiêu chuẩn đầu ra", Theme.Warning), 2, 0);
+            tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Điểm cao nhất", "—", "Học viên xuất sắc", Theme.Purple), 3, 0);
+            return;
+        }
+
+        var tiLe = Math.Round((decimal)report.SoDuDieuKien / report.SoHocVien * 100, 1);
+
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Sĩ số lớp", $"{report.SoHocVien} Học viên", "Đang theo học lớp", Theme.Primary), 0, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Điểm TB lớp", report.DiemTongKetTrungBinh?.ToString("0.00") ?? "—", "Thang điểm 10 chuẩn đào tạo", Theme.Success), 1, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Đủ điều kiện", $"{report.SoDuDieuKien}/{report.SoHocVien}", $"{tiLe}% học viên đủ đầu điểm", Theme.Warning), 2, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Điểm cao nhất", report.DiemCaoNhat?.ToString("0.00") ?? "—", $"Thấp nhất: {report.DiemThapNhat?.ToString("0.00") ?? "—"}", Theme.Purple), 3, 0);
     }
 
     private void BtnExport_Click(object? sender, EventArgs e)
     {
         MessageBox.Show(
             FindForm(),
-            $"Bảng điểm chính thức đã được xuất ra định dạng báo cáo chuẩn.\nTổng số học viên: {dgvGrades.Rows.Count}.",
+            $"Bảng điểm lớp {_report?.TenLop ?? "—"} gồm {dgvGrades.Rows.Count} học viên.\n"
+            + "Chức năng xuất Excel/PDF được thực hiện trên bản Web (Báo cáo → Kết quả học tập).",
             "Xuất bảng điểm",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
@@ -235,7 +236,7 @@ public partial class UcDiemSo : UserControl
 
     private void ReloadData()
     {
-        LoadGradesForClass();
+        _ = ReloadAsync();
     }
 }
 

@@ -2,6 +2,75 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "web-install",
+      "detail": "npm install cho web/HUITLINGO (ghi ra .web-install.txt)",
+      "type": "shell",
+      "command": "npm --prefix '${workspaceFolder}/web/HUITLINGO' install 2>&1 | Out-File -FilePath '${workspaceFolder}/.web-install.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "web-remove-icons-shim",
+      "detail": "Xoá file icon tạm src/components/icons.tsx",
+      "type": "shell",
+      "command": "Remove-Item -Force '${workspaceFolder}/web/HUITLINGO/src/components/icons.tsx' -ErrorAction SilentlyContinue; Write-Output 'REMOVED' | Out-File -FilePath '${workspaceFolder}/.web-remove.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "web-install-lucide",
+      "detail": "Cài lucide-react cho web/HUITLINGO và ghi log ra .web-install.txt",
+      "type": "shell",
+      "command": "npm --prefix '${workspaceFolder}/web/HUITLINGO' install lucide-react --save --no-audit --no-fund 2>&1 | Tee-Object -FilePath '${workspaceFolder}/.web-install.txt'; Write-Output ('EXITCODE=' + $LASTEXITCODE) | Out-File -FilePath '${workspaceFolder}/.web-install.txt' -Append -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "run-winforms",
+      "detail": "Chạy ứng dụng WinForms (LanguageCenter.WinForms)",
+      "type": "shell",
+      "command": "dotnet run --project '${workspaceFolder}/winforms/LanguageCenter.WinForms/LanguageCenter.WinForms.csproj'",
+      "problemMatcher": []
+    },
+    {
+      "label": "winforms-build",
+      "detail": "Kill app WinForms đang chạy rồi build riêng project WinForms (ghi ra .winform-build.txt)",
+      "type": "shell",
+      "command": "Get-Process LanguageCenter.WinForms -ErrorAction SilentlyContinue | Stop-Process -Force; dotnet build '${workspaceFolder}/winforms/LanguageCenter.WinForms/LanguageCenter.WinForms.csproj' -v minimal 2>&1 | Out-File -FilePath '${workspaceFolder}/.winform-build.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "web-cleanup-mock",
+      "detail": "Xoá 14 file mock cũ của web HUITLINGO (ghi ra .web-cleanup.txt)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/web-cleanup-mock.ps1' 2>&1 | Out-File -FilePath '${workspaceFolder}/.web-cleanup.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "web-typecheck",
+      "detail": "tsc --noEmit cho web/HUITLINGO (ghi ra .web-typecheck.txt)",
+      "type": "shell",
+      "command": "node '${workspaceFolder}/web/HUITLINGO/node_modules/typescript/bin/tsc' --noEmit -p '${workspaceFolder}/web/HUITLINGO/tsconfig.json' 2>&1 | Out-File -FilePath '${workspaceFolder}/.web-typecheck.txt' -Encoding utf8; Write-Output ('EXITCODE=' + $LASTEXITCODE) | Out-File -FilePath '${workspaceFolder}/.web-typecheck.txt' -Append -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "web-build",
+      "detail": "Vite build cho web/HUITLINGO (ghi ra .web-build.txt)",
+      "type": "shell",
+      "command": "npm --prefix '${workspaceFolder}/web/HUITLINGO' run build 2>&1 | Out-File -FilePath '${workspaceFolder}/.web-build.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "web-dev",
+      "detail": "Chạy Vite dev server (http://localhost:5173)",
+      "type": "shell",
+      "command": "npm --prefix '${workspaceFolder}/web/HUITLINGO' run dev",
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "panel": "dedicated",
+        "reveal": "always",
+        "group": "web"
+      }
+    },
+    {
       "label": "build",
       "detail": "dotnet build LanguageCenter.sln",
       "command": "dotnet",
@@ -48,6 +117,55 @@
         "reveal": "always",
         "group": "api"
       }
+    },
+    {
+      "label": "swagger-probe",
+      "detail": "Kiểm tra Swagger có phản hồi không (ghi ra .vscode/swagger-probe-out.txt)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/swagger-probe.ps1' 2>&1 | Out-File -FilePath '${workspaceFolder}/.swagger-probe-out.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "port-clear",
+      "detail": "Giải phóng cổng 5204: kill mọi process đang listen + mọi LanguageCenter.Api",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/port-clear.ps1' 2>&1 | Out-File -FilePath '${workspaceFolder}/.port-clear.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "api-force-stop",
+      "detail": "Kill tiến trình LanguageCenter.Api đang giữ file DLL (ghi ra .api-stop.txt)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/api-force-stop.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "api-diagnose",
+      "detail": "Liệt kê tiến trình đang giữ cổng 5204 / dotnet (ghi ra .api-diag.txt)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/api-diagnose.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "api-fix-bin",
+      "detail": "Xoá DLL bị kẹt trong bin của API (ghi ra .api-fix-bin.txt)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/api-fix-bin.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "api-build-check",
+      "detail": "Build riêng LanguageCenter.Api và ghi lỗi ra .api-build.txt",
+      "type": "shell",
+      "command": "dotnet build '${workspaceFolder}/backend/LanguageCenter.Api/LanguageCenter.Api.csproj' -v minimal 2>&1 | Out-File -FilePath '${workspaceFolder}/.api-build.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "api-probe",
+      "detail": "Chẩn đoán: chạy API 20s và ghi toàn bộ output ra file",
+      "type": "shell",
+      "command": "powershell -NoProfile -Command \"Remove-Item -Force -ErrorAction SilentlyContinue '${workspaceFolder}/.api-out.txt','${workspaceFolder}/.api-err.txt'; $p = Start-Process -FilePath 'dotnet' -ArgumentList 'run','--project','${workspaceFolder}/backend/LanguageCenter.Api/LanguageCenter.Api.csproj','--launch-profile','http','--no-build' -RedirectStandardOutput '${workspaceFolder}/.api-out.txt' -RedirectStandardError '${workspaceFolder}/.api-err.txt' -PassThru -NoNewWindow; Start-Sleep -Seconds 20; Write-Output ('HAS_EXITED=' + $p.HasExited); if (-not $p.HasExited) { Stop-Process -Id $p.Id -Force }\"",
+      "problemMatcher": []
     },
     {
       "label": "phase1-cleanup",
@@ -194,6 +312,20 @@
       "detail": "Dọn script/output tạm của Phase 2",
       "type": "shell",
       "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase2-cleanup.ps1'",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase6-test",
+      "detail": "Phase 6 - test học phí / thanh toán / biên nhận (tự rollback dữ liệu test)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase6-test.ps1' 2>&1 | Out-File -FilePath '${workspaceFolder}/.vscode/phase6-test-out.txt' -Encoding utf8",
+      "problemMatcher": []
+    },
+    {
+      "label": "phase7-test",
+      "detail": "Phase 7 - test thông báo / khảo sát / báo cáo + regression (tự rollback dữ liệu test)",
+      "type": "shell",
+      "command": "powershell -NoProfile -ExecutionPolicy Bypass -File '${workspaceFolder}/.vscode/phase7-test.ps1' 2>&1 | Out-File -FilePath '${workspaceFolder}/.vscode/phase7-test-out.txt' -Encoding utf8",
       "problemMatcher": []
     }
   ]

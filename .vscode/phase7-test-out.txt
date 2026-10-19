@@ -1,0 +1,108 @@
+﻿============================================================
+ PHASE 7 - TEST SUITE (thong bao / khao sat / bao cao)
+============================================================
+Health check: HTTP 200
+  [PASS] LOGIN ADMIN001
+  [PASS] LOGIN NVHV001
+  [PASS] LOGIN GV001
+  [PASS] LOGIN HV001
+  [PASS] LOGIN HV002
+
+--- T01: thong bao - pham vi hien thi ---
+  [PASS] T01.1 HV001 GET /api/notifications -> 200
+  [PASS] T01.2 khong lo thong bao gui rieng cho nguoi khac
+  [PASS] T01.3 xem thong bao cua nguoi khac -> 404
+  [PASS] T01.4 GET summary -> 200
+  [PASS] T01.5 summary co tongSo >= 1
+  [PASS] T01.6 soChuaDoc = null (schema khong ho tro)
+  [PASS] T01.7 khong co token -> 401
+
+--- T02: thong bao - gui / thu hoi / xoa ---
+  [PASS] T02.1 admin gui thong bao -> 201
+  [PASS] T02.2 nguoi gui lay tu JWT (ADMIN001)
+  [PASS] T02.3 HV001 thay thong bao moi
+  [PASS] T02.4 thu hoi thong bao -> 200
+  [PASS] T02.5 thong bao da thu hoi khong con hien thi
+  [PASS] T02.6 thieu ca hai dich -> 400
+  [PASS] T02.7 tai khoan nhan khong ton tai -> 400
+  [PASS] T02.8 giao vien gui truc tiep cho tai khoan -> 403
+  [PASS] T02.9 giao vien gui cho lop phu trach -> 201
+  [PASS] T02.10 hoc vien gui thong bao -> 403
+  [PASS] T02.11 NVHV xoa thong bao -> 204
+
+--- T03: khao sat - tao moi ---
+  [PASS] T03.1 tao khao sat -> 201
+  [PASS] T03.2 trang thai mac dinh = Hoat dong
+  [PASS] T03.3 dangMo = true
+  [PASS] T03.4 tao cau hoi danh gia -> 201
+  [PASS] T03.5 tao cau hoi tu luan -> 201
+  [PASS] T03.6 thu tu cau hoi trung -> 409
+  [PASS] T03.7 chi tiet khao sat co 2 cau hoi
+
+--- T04: khao sat - tra loi ---
+  [PASS] T04.1 HV001 GET /students/me/surveys -> 200
+  [PASS] T04.2 danh sach co khao sat moi, chua tra loi
+  [PASS] T04.3 thieu cau tra loi bat buoc -> 400
+  [PASS] T04.4 tra loi sai kieu cau hoi -> 400
+  [PASS] T04.5 cau hoi khong thuoc khao sat -> 400
+  [PASS] T04.6 gui phan hoi hop le -> 201
+  [PASS] T04.7 phan hoi co 2 cau tra loi
+  [PASS] T04.8 tra loi lan 2 -> 409
+  [PASS] T04.9 GET phan hoi cua toi -> 200
+  [PASS] T04.10 phan hoi dung chu so huu
+
+--- T05: khao sat - thong ke ---
+  [PASS] T05.1 GET statistics -> 200
+  [PASS] T05.2 tongSoPhanHoi = 1
+  [PASS] T05.3 diemDanhGiaChungTrungBinh = 4.5
+  [PASS] T05.4 cau hoi danh gia co giaTriTrungBinh = 5
+  [PASS] T05.5 cau hoi tu luan co 1 noi dung
+  [PASS] T05.6 GET danh sach phan hoi -> 200
+  [PASS] T05.7 danh sach co >= 1 phan hoi
+  [PASS] T05.8 xoa khao sat da co phan hoi -> 409
+  [PASS] T05.9 ket thuc khao sat -> 200
+  [PASS] T05.10 khao sat da ket thuc -> khong nhan phan hoi (400)
+  [PASS] T05.11 HV002 xem khao sat khong con hoat dong -> 404
+  [PASS] T05.12 hoc vien GET /admin/surveys -> 403
+
+--- T06: bao cao ---
+  [PASS] T06.1 GET reports/overview (ADMIN) -> 200
+  [PASS] T06.2 overview co tongHocVien >= 1
+  [PASS] T06.3 overview co hocPhi
+  [PASS] T06.4 overview tongPhaiThu >= tongDaThu
+  [PASS] T06.5 NVHV xem overview -> 200
+  [PASS] T06.6 hoc vien xem overview -> 403
+  [PASS] T06.7 giao vien xem overview -> 403
+  [PASS] T06.8 GET reports/academic -> 200
+  [PASS] T06.9 academic co soHocVien >= 1
+  [PASS] T06.10 GET reports/attendance -> 200
+  [PASS] T06.11 attendance co danh sach hoc vien
+  [PASS] T06.12 academic thieu maLopHoc -> 400
+  [PASS] T06.13 academic lop khong ton tai -> 404
+  [PASS] T06.14 attendance khoang ngay sai -> 400
+  [PASS] T06.15 giao vien xem lop khong phu trach -> 403
+  [PASS] T06.16 GET reports/surveys -> 200
+  [PASS] T06.17 reports/surveys co tongKhaoSat >= 1
+  [PASS] T06.18 hoc vien xem reports/surveys -> 403
+
+--- T07: regression Phase 1-6 ---
+  [PASS] T07.1 /health -> 200
+  [PASS] T07.2 /health/database -> 200
+  [PASS] T07.3 Phase 2 /auth/me -> 200
+  [PASS] T07.4 Phase 3 /admin/students -> 200
+  [PASS] T07.5 Phase 4 /admin/courses -> 200
+  [PASS] T07.6 Phase 5 /students/me/grades -> 200
+  [PASS] T07.7 Phase 6 /students/me/tuition-fees -> 200
+  [PASS] T07.8 Phase 6 bao cao hoc phi -> 200
+  [PASS] T07.9 khong co token -> 401
+  [PASS] T07.10 Swagger JSON -> 200
+
+--- DON DEP DU LIEU TEST ---
+  da xoa khao sat test: 6
+  da xoa thong bao test: 10
+  con lai trong DB: KhaoSat=2 | ThongBao=3
+
+============================================================
+ KET QUA: PASS = 80 | FAIL = 0 | WARN = 0
+============================================================
+PHASE7_TEST_DONE pass=80 fail=0 warn=0

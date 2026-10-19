@@ -1,0 +1,148 @@
+﻿--- TIáº¾N TRÃŒNH THEO TÃŠN ---
+
+   Id ProcessName             Path                                               
+   -- -----------             ----                                               
+ 1056 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+ 3196 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+ 4020 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+ 5172 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+10856 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+12968 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+14988 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+16268 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+16284 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+17568 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+19428 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+19668 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+23300 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+28772 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+29064 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+29292 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+29436 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+31212 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+34200 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+34260 dotnet                  C:\Program Files\dotnet\dotnet.exe                 
+37436 LanguageCenter.WinForms D:\LanguageCenter\winforms\LanguageCenter.WinFor...
+
+
+
+--- WIN32_PROCESS (LanguageCenter) ---
+
+
+ProcessId      : 37436
+Name           : LanguageCenter.WinForms.exe
+ExecutablePath : D:\LanguageCenter\winforms\LanguageCenter.WinForms\bin\Debug\net
+                 10.0-windows\LanguageCenter.WinForms.exe
+CommandLine    : "D:\LanguageCenter\winforms\LanguageCenter.WinForms\bin\Debug\ne
+                 t10.0-windows\LanguageCenter.WinForms.exe"
+
+
+
+
+--- Cá»”NG 5204 ---
+KHÃ”NG CÃ“ Káº¾T Ná»I NÃ€O TRÃŠN Cá»”NG 5204
+--- DANH SÃCH dotnet ---
+
+
+ProcessId   : 16284
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" "c:\Users\Lenovo\.vscode\exten
+              sions\ms-dotnettools.csdevkit-3.40.210-win32-x64\components\CPS\pla
+              tforms\win32-x64\node_modules\@microsoft\visualstudio-projectsystem
+              -buildhost.win32-x64/Microsoft.VisualStudio.ProjectSystem.Server.Bu
+              ildHost.dll"
+
+ProcessId   : 23300
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" dnx 
+              Microsoft.GitHubCopilot.Upgrade.Mcp --yes --ignore-failed-sources
+
+ProcessId   : 14988
+CommandLine : "C:\Program Files\dotnet\dotnet.exe"  dnx 
+              "Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp" "--yes" 
+              "--ignore-failed-sources"
+
+ProcessId   : 16268
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" C:\Users\Lenovo\.nuget\package
+              s\microsoft.githubcopilot.upgrade.mcp\1.1.685\tools/net10.0/any/Mic
+              rosoft.GitHubCopilot.Upgrade.Mcp.dll
+
+ProcessId   : 19668
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" C:\Users\Lenovo\.nuget\package
+              s\microsoft.githubcopilot.upgrade.dotnet.mcp\1.1.685\tools/net10.0/
+              any/Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp.dll
+
+ProcessId   : 17568
+CommandLine : "C:\Program Files\dotnet\dotnet.exe"  dnx 
+              Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp --yes 
+              --ignore-failed-sources
+
+ProcessId   : 4020
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" C:\Users\Lenovo\.nuget\package
+              s\microsoft.githubcopilot.upgrade.dotnet.mcp\1.1.685\tools/net10.0/
+              any/Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp.dll
+
+ProcessId   : 3196
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" dnx 
+              Microsoft.GitHubCopilot.Modernization.Mcp@1.0.1161-preview1 --yes 
+              --ignore-failed-sources
+
+ProcessId   : 5172
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" C:\Users\Lenovo\.nuget\package
+              s\microsoft.githubcopilot.modernization.mcp\1.0.1161-preview1\tools
+              /net10.0/any/Microsoft.GitHubCopilot.Modernization.Mcp.dll
+
+ProcessId   : 12968
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" dnx 
+              Microsoft.GitHubCopilot.Upgrade.Mcp --yes --ignore-failed-sources
+
+ProcessId   : 28772
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" C:\Users\Lenovo\.nuget\package
+              s\microsoft.githubcopilot.upgrade.mcp\1.1.685\tools/net10.0/any/Mic
+              rosoft.GitHubCopilot.Upgrade.Mcp.dll
+
+ProcessId   : 29292
+CommandLine : "C:\Program Files\dotnet\dotnet.exe"  dnx 
+              Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp --yes 
+              --ignore-failed-sources
+
+ProcessId   : 29436
+CommandLine : "C:\Program Files\dotnet\dotnet.exe"  dnx 
+              "Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp" "--yes" 
+              "--ignore-failed-sources"
+
+ProcessId   : 10856
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" C:\Users\Lenovo\.nuget\package
+              s\microsoft.githubcopilot.upgrade.dotnet.mcp\1.1.685\tools/net10.0/
+              any/Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp.dll
+
+ProcessId   : 29064
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" C:\Users\Lenovo\.nuget\package
+              s\microsoft.githubcopilot.upgrade.dotnet.mcp\1.1.685\tools/net10.0/
+              any/Microsoft.GitHubCopilot.Upgrade.DotNet.Mcp.dll
+
+ProcessId   : 34200
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" "C:\Program 
+              Files\dotnet\sdk\10.0.100\MSBuild.dll" /noautoresponse /nologo 
+              /nodemode:1 /nodeReuse:true /low:false
+
+ProcessId   : 19428
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" "C:\Program 
+              Files\dotnet\sdk\10.0.100\MSBuild.dll" /noautoresponse /nologo 
+              /nodemode:1 /nodeReuse:true /low:false
+
+ProcessId   : 31212
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" "C:\Program 
+              Files\dotnet\sdk\10.0.100\MSBuild.dll" /noautoresponse /nologo 
+              /nodemode:1 /nodeReuse:true /low:false
+
+ProcessId   : 1056
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" "C:\Program 
+              Files\dotnet\sdk\10.0.100\MSBuild.dll" /noautoresponse /nologo 
+              /nodemode:1 /nodeReuse:true /low:false
+
+ProcessId   : 34260
+CommandLine : "C:\Program Files\dotnet\dotnet.exe" run
+
+
+
+
+DIAG_DONE

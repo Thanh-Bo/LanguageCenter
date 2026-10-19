@@ -1,5 +1,7 @@
 import { FormEvent, useState } from 'react'
 import { Icon } from './BieuTuong'
+import { authApi } from '../lib/api/endpoints'
+import { thongDiepLoi } from '../lib/useApi'
 
 type Props = {
   onDong: () => void
@@ -34,10 +36,15 @@ export default function ModalDoiMatKhau({ onDong }: Props) {
     }
 
     setDangXuLy(true)
-    // TODO: gọi API POST /api/auth/change-password khi backend xong
-    await new Promise((r) => setTimeout(r, 600))
-    setDangXuLy(false)
-    setThanhCong(true)
+
+    try {
+      await authApi.doiMatKhau(mkCu, mkMoi, mkXacNhan)
+      setThanhCong(true)
+    } catch (error) {
+      setLoi(thongDiepLoi(error))
+    } finally {
+      setDangXuLy(false)
+    }
   }
 
   return (

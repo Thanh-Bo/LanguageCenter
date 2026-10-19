@@ -21,6 +21,17 @@
       "sourceFileMap": {
         "/Views": "${workspaceFolder}/Views"
       }
+    },
+    {
+      "name": "LanguageCenter.WinForms",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build",
+      "program": "${workspaceFolder}/winforms/LanguageCenter.WinForms/bin/Debug/net10.0-windows/LanguageCenter.WinForms.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/winforms/LanguageCenter.WinForms",
+      "stopAtEntry": false,
+      "console": "internalConsole"
     }
   ]
 }

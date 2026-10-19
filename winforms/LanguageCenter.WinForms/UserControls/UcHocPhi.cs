@@ -1,3 +1,5 @@
+using LanguageCenter.WinForms.Api;
+using LanguageCenter.WinForms.Dialogs;
 using LanguageCenter.WinForms.UI;
 
 namespace LanguageCenter.WinForms.UserControls;
@@ -14,7 +16,7 @@ public class TuitionFeeItem
     public decimal SoTienPhaiDong { get; set; }
     public decimal SoTienDaDong { get; set; }
     public decimal SoTienConThieu { get; set; }
-    public DateOnly HanThanhToan { get; set; }
+    public DateOnly? HanThanhToan { get; set; }
     public string TrangThaiHocPhi { get; set; } = string.Empty;
     public string PhuongThuc { get; set; } = string.Empty;
     public string SoBienNhan { get; set; } = string.Empty;
@@ -25,7 +27,10 @@ public partial class UcHocPhi : UserControl
 {
     private const string AllOption = "— Tất cả —";
     private readonly List<TuitionFeeItem> _items = new();
+    private List<PaymentDto> _payments = new();
     private int _currentTab = 0; // 0: Sổ học phí, 1: Lịch sử thanh toán, 2: Quản lý biên nhận
+
+    private Button _btnTaoPhieu = null!;
 
     public UcHocPhi()
     {
@@ -43,33 +48,93 @@ public partial class UcHocPhi : UserControl
         cboTrangThai.SelectedIndexChanged += (_, _) => FilterData();
         cboPhuongThuc.SelectedIndexChanged += (_, _) => FilterData();
         btnSearch.Click += (_, _) => FilterData();
-        btnRefresh.Click += (_, _) => ReloadData();
+        btnRefresh.Click += async (_, _) => await ReloadAsync();
         btnCollectFee.Click += BtnCollectFee_Click;
         btnPrintReceipt.Click += BtnPrintReceipt_Click;
         dgvTuition.CellDoubleClick += DgvTuition_CellDoubleClick;
 
-        pnlToolbar.Resize += (_, _) =>
-        {
-            btnPrintReceipt.Location = new Point(pnlToolbar.Width - btnPrintReceipt.Width - 4, 3);
-            btnCollectFee.Location = new Point(btnPrintReceipt.Left - btnCollectFee.Width - 8, 3);
-        };
+        _btnTaoPhieu = UiHelpers.CreateSecondaryButton("Tạo phiếu học phí", 150, 34);
+        _btnTaoPhieu.Click += BtnTaoPhieu_Click;
+        pnlToolbar.Controls.Add(_btnTaoPhieu);
+
+        pnlToolbar.Resize += (_, _) => SapXepThanhCongCu();
+        SapXepThanhCongCu();
 
         InitFilterOptions();
-        LoadSampleData();
         SwitchTab(0);
+
+        Load += async (_, _) => await ReloadAsync();
     }
 
     private void InitFilterOptions()
     {
         cboTrangThai.Items.Clear();
         cboTrangThai.Items.Add(AllOption);
-        cboTrangThai.Items.AddRange(["Đã hoàn thành", "Đóng đợt 1", "Chưa thanh toán"]);
+        cboTrangThai.Items.AddRange(["Chưa thanh toán", "Thanh toán một phần", "Đã thanh toán"]);
         cboTrangThai.SelectedIndex = 0;
 
         cboPhuongThuc.Items.Clear();
         cboPhuongThuc.Items.Add(AllOption);
-        cboPhuongThuc.Items.AddRange(["Chuyển khoản (Vietcombank)", "Tiền mặt tại quầy", "VNPay-QR / Thẻ"]);
+        cboPhuongThuc.Items.AddRange(["Tiền mặt", "Chuyển khoản"]);
         cboPhuongThuc.SelectedIndex = 0;
+    }
+
+    /// <summary>Tải sổ học phí và toàn bộ giao dịch thanh toán từ API.</summary>
+    private async Task ReloadAsync()
+    {
+        lblSummary.Text = "Đang tải dữ liệu học phí...";
+        UseWaitCursor = true;
+
+        var tuitionTask = AppSession.Api.GetAsync<PagedResult<TuitionItemDto>>(
+            QueryStringBuilder.Build("admin/tuition-fees", ("page", "1"), ("pageSize", "500")));
+        var paymentsTask = AppSession.Api.GetAsync<PagedResult<PaymentDto>>(
+            QueryStringBuilder.Build("admin/payments", ("page", "1"), ("pageSize", "500")));
+
+        await Task.WhenAll(tuitionTask, paymentsTask);
+
+        UseWaitCursor = false;
+
+        _payments = paymentsTask.Result.Data?.Items?.ToList() ?? new List<PaymentDto>();
+
+        var dsHocPhi = tuitionTask.Result.Data?.Items;
+        if (dsHocPhi is null)
+        {
+            lblSummary.Text = tuitionTask.Result.ErrorMessage;
+            return;
+        }
+
+        _items.Clear();
+        foreach (var d in dsHocPhi)
+        {
+            // Giao dịch gần nhất của phiếu học phí này (để hiển thị phương thức + số biên nhận)
+            var gd = _payments
+                .Where(p => p.MaHocPhi == d.MaHocPhi)
+                .OrderByDescending(p => p.NgayThanhToan)
+                .FirstOrDefault();
+
+            _items.Add(new TuitionFeeItem
+            {
+                MaHocPhi = d.MaHocPhi.ToString(),
+                MaDangKy = d.MaDangKy.ToString(),
+                MaHocVien = d.MaHocVien,
+                HoTenHocVien = d.HoTenHocVien,
+                TenKhoaLop = string.IsNullOrWhiteSpace(d.MaLop)
+                    ? d.TenKhoaHoc
+                    : $"{d.TenKhoaHoc} (Lớp {d.MaLop})",
+                SoTienGoc = d.SoTienGoc,
+                SoTienGiam = d.SoTienGiam,
+                SoTienPhaiDong = d.SoTienPhaiDong,
+                SoTienDaDong = d.SoTienDaDong,
+                SoTienConThieu = d.SoTienConThieu,
+                HanThanhToan = d.HanThanhToan,
+                TrangThaiHocPhi = d.TrangThaiHocPhi,
+                PhuongThuc = gd?.PhuongThucThanhToan ?? "— Chưa nộp —",
+                SoBienNhan = gd?.BienNhan?.SoBienNhan ?? "—",
+                NgayThanhToan = gd?.NgayThanhToan
+            });
+        }
+
+        FilterData();
     }
 
     private void UpdateStats()
@@ -80,40 +145,10 @@ public partial class UcHocPhi : UserControl
         var rate = totalMustPay > 0 ? (totalCollected / totalMustPay) * 100m : 0m;
 
         tblStats.Controls.Clear();
-        tblStats.Controls.Add(CreateStatCard("Tổng học phí phải thu", $"{totalMustPay:N0} ₫", "Sau chiết khấu & ưu đãi", Theme.Primary), 0, 0);
-        tblStats.Controls.Add(CreateStatCard("Đã thực thu vào quỹ", $"{totalCollected:N0} ₫", "Tiền mặt & Chuyển khoản", Theme.Success), 1, 0);
-        tblStats.Controls.Add(CreateStatCard("Công nợ cần thu", $"{totalDebt:N0} ₫", "Học viên còn nợ học phí", Theme.Danger), 2, 0);
-        tblStats.Controls.Add(CreateStatCard("Tỷ lệ thu học phí", $"{rate:F1}%", "Chỉ tiêu thu kỳ hiện hành", Theme.Purple), 3, 0);
-    }
-
-    private static Panel CreateStatCard(string title, string value, string note, Color accent)
-    {
-        var panel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            Padding = new Padding(12, 8, 12, 8),
-            Margin = new Padding(4, 2, 4, 6)
-        };
-        panel.Paint += (s, e) =>
-        {
-            if (s is Control ctrl)
-            {
-                using var borderPen = new Pen(Theme.BorderColor);
-                e.Graphics.DrawRectangle(borderPen, 0, 0, ctrl.Width - 1, ctrl.Height - 1);
-                using var accentBrush = new SolidBrush(accent);
-                e.Graphics.FillRectangle(accentBrush, 0, 0, 4, ctrl.Height);
-            }
-        };
-
-        var lblT = new Label { Text = title, Font = new Font("Segoe UI", 8.5f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(14, 6) };
-        var lblV = new Label { Text = value, Font = new Font("Segoe UI", 15f, FontStyle.Bold), ForeColor = accent, AutoSize = true, Location = new Point(12, 24) };
-        var lblN = new Label { Text = note, Font = new Font("Segoe UI", 8f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(14, 56) };
-
-        panel.Controls.Add(lblN);
-        panel.Controls.Add(lblV);
-        panel.Controls.Add(lblT);
-        return panel;
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tổng học phí phải thu", $"{totalMustPay:N0} ₫", "Sau chiết khấu & ưu đãi", Theme.Primary), 0, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Đã thực thu vào quỹ", $"{totalCollected:N0} ₫", "Tiền mặt & Chuyển khoản", Theme.Success), 1, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Công nợ cần thu", $"{totalDebt:N0} ₫", "Học viên còn nợ học phí", Theme.Danger), 2, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tỷ lệ thu học phí", $"{rate:F1}%", "Chỉ tiêu thu kỳ hiện hành", Theme.Purple), 3, 0);
     }
 
     private void LoadSampleData()
@@ -273,13 +308,67 @@ public partial class UcHocPhi : UserControl
 
         btnCollectFee.Visible = _currentTab == 0;
         btnPrintReceipt.Text = _currentTab == 2 ? "In lại biên nhận" : "In biên lai";
-        btnPrintReceipt.Location = new Point(pnlToolbar.Width - btnPrintReceipt.Width - 4, 3);
-        btnCollectFee.Location = new Point(btnPrintReceipt.Left - btnCollectFee.Width - 8, 3);
+        if (_btnTaoPhieu is not null) _btnTaoPhieu.Visible = _currentTab == 0;
+        SapXepThanhCongCu();
 
         cboTrangThai.Visible = _currentTab == 0;
         cboPhuongThuc.Visible = _currentTab != 2;
 
         FilterData();
+    }
+
+    private void SapXepThanhCongCu()
+    {
+        var right = pnlToolbar.Width - 4;
+
+        foreach (var button in new[] { btnPrintReceipt, btnCollectFee, _btnTaoPhieu })
+        {
+            if (button is null || !button.Visible) continue;
+
+            right -= button.Width;
+            button.Location = new Point(right, 3);
+            right -= 8;
+        }
+    }
+
+    /// <summary>Tạo phiếu học phí cho các đăng ký chưa có phiếu.</summary>
+    private async void BtnTaoPhieu_Click(object? sender, EventArgs e)
+    {
+        UseWaitCursor = true;
+
+        var dangKy = await AppSession.Api.GetAsync<PagedResult<EnrollmentListItemDto>>(
+            QueryStringBuilder.Build("admin/enrollments", ("page", "1"), ("pageSize", "500")));
+
+        UseWaitCursor = false;
+
+        if (!dangKy.Success || dangKy.Data is null)
+        {
+            MessageBox.Show(FindForm(),
+                string.IsNullOrWhiteSpace(dangKy.ErrorMessage)
+                    ? "Không tải được danh sách đăng ký học."
+                    : dangKy.ErrorMessage,
+                "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        var chuaCoPhieu = dangKy.Data.Items
+            .Where(x => !_items.Any(i => i.MaDangKy == x.MaDangKy.ToString()))
+            .ToList();
+
+        if (chuaCoPhieu.Count == 0)
+        {
+            MessageBox.Show(FindForm(),
+                "Tất cả đăng ký học đều đã có phiếu học phí.",
+                "Không còn đăng ký nào", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dlg = new FormHocPhiMoi(chuaCoPhieu);
+
+        if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+        {
+            await ReloadAsync();
+        }
     }
 
     private void FilterData()
@@ -331,12 +420,12 @@ public partial class UcHocPhi : UserControl
                     item.TrangThaiHocPhi,
                     item.PhuongThuc,
                     item.SoBienNhan,
-                    item.HanThanhToan.ToString("dd/MM/yyyy")
+                    item.HanThanhToan?.ToString("dd/MM/yyyy") ?? "—"
                 );
 
-                if (item.TrangThaiHocPhi.Contains("hoàn thành"))
+                if (item.TrangThaiHocPhi == "Đã thanh toán")
                     dgvTuition.Rows[idx].Cells["TrangThaiHocPhi"].Style.ForeColor = Theme.Success;
-                else if (item.TrangThaiHocPhi.Contains("Đóng đợt 1"))
+                else if (item.TrangThaiHocPhi == "Thanh toán một phần")
                     dgvTuition.Rows[idx].Cells["TrangThaiHocPhi"].Style.ForeColor = Theme.Warning;
                 else
                     dgvTuition.Rows[idx].Cells["TrangThaiHocPhi"].Style.ForeColor = Theme.Danger;
@@ -345,31 +434,31 @@ public partial class UcHocPhi : UserControl
                     dgvTuition.Rows[idx].Cells["SoTienConThieu"].Style.ForeColor = Theme.Danger;
             }
 
-            lblSummary.Text = $"Hiển thị {list.Count} / {_items.Count} phiếu học phí học viên (Mock Data trực tiếp)";
+            lblSummary.Text = $"Hiển thị {list.Count} / {_items.Count} phiếu học phí học viên";
         }
         else if (_currentTab == 1)
         {
-            var query = Api.MockDataStore.GetPayments().AsEnumerable();
+            var query = _payments.AsEnumerable();
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(p => p.TenHocVien.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                query = query.Where(p => p.HoTenHocVien.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                                          p.MaHocVien.Contains(search, StringComparison.OrdinalIgnoreCase) ||
                                          (p.MaGiaoDich != null && p.MaGiaoDich.Contains(search, StringComparison.OrdinalIgnoreCase)));
             }
 
-            var list = query.ToList();
+            var list = query.OrderByDescending(p => p.NgayThanhToan).ToList();
             dgvPayments.Rows.Clear();
             foreach (var p in list)
             {
                 var idx = dgvPayments.Rows.Add(
                     $"GD-{p.MaThanhToan:D4}",
                     p.MaHocVien,
-                    p.TenHocVien,
+                    p.HoTenHocVien,
                     $"{p.SoTien:N0} ₫",
                     UiHelpers.FormatDateTime(p.NgayThanhToan),
                     p.PhuongThucThanhToan,
                     p.MaGiaoDich ?? "—",
-                    p.MaNhanVienKeToan,
+                    p.TenNhanVienKeToan,
                     p.TrangThai,
                     p.GhiChu ?? "—"
                 );
@@ -379,28 +468,29 @@ public partial class UcHocPhi : UserControl
         }
         else
         {
-            var query = Api.MockDataStore.GetReceipts().AsEnumerable();
+            var query = _payments.Where(p => p.BienNhan is not null).AsEnumerable();
             if (!string.IsNullOrWhiteSpace(search))
             {
-                query = query.Where(r => r.TenHocVien.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                                         r.SoBienNhan.Contains(search, StringComparison.OrdinalIgnoreCase) ||
-                                         r.MaHocVien.Contains(search, StringComparison.OrdinalIgnoreCase));
+                query = query.Where(p => p.HoTenHocVien.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                                         (p.BienNhan?.SoBienNhan.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                                         p.MaHocVien.Contains(search, StringComparison.OrdinalIgnoreCase));
             }
 
-            var list = query.ToList();
+            var list = query.OrderByDescending(p => p.BienNhan!.NgayLap).ToList();
             dgvReceipts.Rows.Clear();
-            foreach (var r in list)
+            foreach (var p in list)
             {
+                var bn = p.BienNhan!;
                 var idx = dgvReceipts.Rows.Add(
-                    r.SoBienNhan,
-                    r.MaHocVien,
-                    r.TenHocVien,
-                    r.TenKhoaHoc,
-                    $"{r.SoTienXacNhan:N0} ₫",
-                    r.PhuongThuc,
-                    r.MaNhanVienLap,
-                    UiHelpers.FormatDateTime(r.NgayLap),
-                    r.TrangThai
+                    bn.SoBienNhan,
+                    p.MaHocVien,
+                    p.HoTenHocVien,
+                    p.TenKhoaHoc,
+                    $"{p.SoTien:N0} ₫",
+                    p.PhuongThucThanhToan,
+                    p.TenNhanVienKeToan,
+                    UiHelpers.FormatDateTime(bn.NgayLap),
+                    bn.TrangThai
                 );
                 dgvReceipts.Rows[idx].Cells["TrangThai"].Style.ForeColor = Theme.Success;
             }
@@ -413,10 +503,10 @@ public partial class UcHocPhi : UserControl
         txtSearch.Clear();
         cboTrangThai.SelectedIndex = 0;
         cboPhuongThuc.SelectedIndex = 0;
-        FilterData();
+        _ = ReloadAsync();
     }
 
-    private void BtnCollectFee_Click(object? sender, EventArgs e)
+    private async void BtnCollectFee_Click(object? sender, EventArgs e)
     {
         // Dialog ghi nhận thu học phí mới
         using var dlg = new Form
@@ -492,38 +582,59 @@ public partial class UcHocPhi : UserControl
         dlg.Controls.AddRange([lblTitle, lblSelect, cboFees, lblAmount, txtAmount, lblMethod, cboMethod, lblNote, txtNote, btnSubmit, btnCancel]);
         dlg.AcceptButton = btnSubmit;
 
-        if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+        if (dlg.ShowDialog(FindForm()) != DialogResult.OK)
         {
-            var selectedIdx = cboFees.SelectedIndex;
-            if (selectedIdx >= 0 && selectedIdx < debtItems.Count)
-            {
-                var target = debtItems[selectedIdx];
-                if (decimal.TryParse(txtAmount.Text.Replace(",", "").Replace(".", ""), out var amount) && amount > 0)
-                {
-                    target.SoTienDaDong += amount;
-                    if (target.SoTienDaDong > target.SoTienPhaiDong)
-                        target.SoTienDaDong = target.SoTienPhaiDong;
-                    
-                    target.SoTienConThieu = target.SoTienPhaiDong - target.SoTienDaDong;
-                    target.TrangThaiHocPhi = target.SoTienConThieu == 0 ? "Đã hoàn thành" : "Đóng đợt 1";
-                    target.PhuongThuc = cboMethod.SelectedItem?.ToString() ?? "Chuyển khoản (Vietcombank)";
-                    target.SoBienNhan = $"BN-2026-{Random.Shared.Next(1000, 9999)}";
-                    target.NgayThanhToan = DateTime.Now;
-
-                    FilterData();
-
-                    MessageBox.Show(
-                        FindForm(),
-                        $"Đã ghi nhận thu {amount:N0} VNĐ cho học viên {target.HoTenHocVien}!\n" +
-                        $"Số biên nhận mới: {target.SoBienNhan}\n" +
-                        $"Trạng thái: {target.TrangThaiHocPhi}",
-                        "Thu học phí thành công",
-                        MessageBoxButtons.OK,
-                        MessageBoxIcon.Information
-                    );
-                }
-            }
+            return;
         }
+
+        var selectedIdx = cboFees.SelectedIndex;
+        if (selectedIdx < 0 || selectedIdx >= debtItems.Count)
+        {
+            return;
+        }
+
+        var target = debtItems[selectedIdx];
+
+        if (!decimal.TryParse(txtAmount.Text.Replace(",", "").Replace(".", ""), out var amount) || amount <= 0)
+        {
+            MessageBox.Show(FindForm(), "Số tiền thu không hợp lệ.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        var phuongThuc = cboMethod.SelectedItem?.ToString() ?? "Tiền mặt";
+
+        UseWaitCursor = true;
+
+        // Phase 6: ghi nhận thanh toán + tự sinh biên nhận ở backend (transaction + khoá phiếu học phí)
+        var result = await AppSession.Api.PostAsync<PaymentDto>(
+            $"admin/tuition-fees/{target.MaHocPhi}/payments",
+            new
+            {
+                maGiaoDich = $"GD{DateTime.Now:yyyyMMddHHmmssfff}",
+                soTien = amount,
+                phuongThucThanhToan = phuongThuc,
+                ghiChu = string.IsNullOrWhiteSpace(txtNote.Text) ? null : txtNote.Text.Trim()
+            });
+
+        UseWaitCursor = false;
+
+        if (!result.Success || result.Data is null)
+        {
+            MessageBox.Show(FindForm(), result.ErrorMessage, "Thu học phí thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        MessageBox.Show(
+            FindForm(),
+            $"Đã ghi nhận thu {amount:N0} VNĐ cho học viên {target.HoTenHocVien}!\n"
+            + $"Số biên nhận mới: {result.Data.BienNhan?.SoBienNhan ?? "—"}\n"
+            + $"Mã giao dịch: {result.Data.MaGiaoDich ?? "—"}\n"
+            + $"Phương thức: {phuongThuc}",
+            "Thu học phí thành công",
+            MessageBoxButtons.OK,
+            MessageBoxIcon.Information);
+
+        await ReloadAsync();
     }
 
     private void BtnPrintReceipt_Click(object? sender, EventArgs e)

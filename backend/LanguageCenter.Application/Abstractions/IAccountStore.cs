@@ -40,6 +40,30 @@ public interface IAccountStore
     /// <summary>Email đã được dùng bởi tài khoản khác chưa (<paramref name="exceptUsername"/> để bỏ qua chính nó).</summary>
     Task<bool> EmailExistsAsync(string email, string? exceptUsername, CancellationToken cancellationToken);
 
+    /// <summary>Tên đăng nhập đã tồn tại chưa.</summary>
+    Task<bool> UsernameExistsAsync(string tenDangNhap, CancellationToken cancellationToken);
+
+    /// <summary>Mã vai trò theo tên tiếng Việt; null nếu không tồn tại.</summary>
+    Task<int?> FindRoleIdAsync(string tenVaiTro, CancellationToken cancellationToken);
+
+    /// <summary>Tạo tài khoản mới (không kèm hồ sơ). Trả mã tài khoản vừa tạo, null nếu thất bại.</summary>
+    Task<int?> CreateAsync(
+        string tenDangNhap,
+        string email,
+        string matKhauHash,
+        int maVaiTro,
+        string trangThai,
+        CancellationToken cancellationToken);
+
+    /// <summary>Cập nhật email / vai trò / trạng thái / mật khẩu (tham số null = giữ nguyên).</summary>
+    Task<WriteOutcome> UpdateAsync(
+        int maTaiKhoan,
+        string? email,
+        int? maVaiTro,
+        string? trangThai,
+        string? matKhauHash,
+        CancellationToken cancellationToken);
+
     /// <summary>Kiểm tra tài khoản có dữ liệu nghiệp vụ phụ thuộc hay không trước khi xóa cứng.</summary>
     Task<AccountDeleteCheck> CheckDeletableAsync(int maTaiKhoan, CancellationToken cancellationToken);
 

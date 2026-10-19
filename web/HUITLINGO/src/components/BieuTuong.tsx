@@ -1,4 +1,38 @@
 import type { SVGProps } from "react"
+import {
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  Backpack,
+  BadgeCheck,
+  Blocks,
+  BookUser,
+  Bot,
+  CalendarCheck,
+  CalendarDays,
+  CalendarRange,
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Circle,
+  Clock,
+  GraduationCap,
+  MessageCircle,
+  Phone,
+  Play,
+  Presentation,
+  Rocket,
+  Shield,
+  Star,
+  Target,
+  Timer,
+  Trophy,
+  Users,
+  Wallet,
+  X,
+  BookOpen,
+} from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 
 export type IconName =
   | "logo"
@@ -30,8 +64,93 @@ export type IconName =
   | "sparkles"
   | "more"
   | "filter"
+  // --- Bổ sung: icon lucide cho trang công khai ---
+  | "star"
+  | "target"
+  | "blocks"
+  | "backpack"
+  | "messageCircle"
+  | "timer"
+  | "trophy"
+  | "presentation"
+  | "calendarCheck"
+  | "calendarRange"
+  | "graduationCap"
+  | "rocket"
+  | "shield"
+  | "badgeCheck"
+  | "bookUser"
+  | "play"
+  | "arrowDown"
+  | "chevronUp"
+  | "phone"
+  | "bot"
 
-const paths: Record<IconName, React.ReactNode> = {
+/** Icon lấy từ thư viện lucide-react — hỗ trợ cả tên camelCase và PascalCase. */
+const LUCIDE: Record<string, LucideIcon> = {
+  star: Star,
+  Star: Star,
+  target: Target,
+  Target: Target,
+  blocks: Blocks,
+  Blocks: Blocks,
+  backpack: Backpack,
+  Backpack: Backpack,
+  messageCircle: MessageCircle,
+  MessageCircle: MessageCircle,
+  timer: Timer,
+  Timer: Timer,
+  trophy: Trophy,
+  Trophy: Trophy,
+  presentation: Presentation,
+  Presentation: Presentation,
+  calendarCheck: CalendarCheck,
+  CalendarCheck: CalendarCheck,
+  calendarRange: CalendarRange,
+  CalendarRange: CalendarRange,
+  graduationCap: GraduationCap,
+  GraduationCap: GraduationCap,
+  rocket: Rocket,
+  Rocket: Rocket,
+  shield: Shield,
+  Shield: Shield,
+  badgeCheck: BadgeCheck,
+  BadgeCheck: BadgeCheck,
+  bookUser: BookUser,
+  BookUser: BookUser,
+  bookOpen: BookOpen,
+  BookOpen: BookOpen,
+  play: Play,
+  Play: Play,
+  arrowDown: ArrowDown,
+  ArrowDown: ArrowDown,
+  arrowUp: ArrowUp,
+  ArrowUp: ArrowUp,
+  arrowRight: ArrowRight,
+  ArrowRight: ArrowRight,
+  chevronUp: ChevronUp,
+  ChevronUp: ChevronUp,
+  phone: Phone,
+  Phone: Phone,
+  bot: Bot,
+  Bot: Bot,
+  check: Check,
+  Check: Check,
+  calendar: CalendarDays,
+  CalendarDays: CalendarDays,
+  clock: Clock,
+  Clock: Clock,
+  wallet: Wallet,
+  Wallet: Wallet,
+  users: Users,
+  Users: Users,
+  close: X,
+  X: X,
+  chevronDown: ChevronDown,
+  ChevronDown: ChevronDown,
+}
+
+const paths: Partial<Record<IconName, React.ReactNode>> = {
   logo: (
     <>
       <path d="m3 8 9-5 9 5-9 5-9-5Z" />
@@ -188,20 +307,36 @@ const paths: Record<IconName, React.ReactNode> = {
 
 export function Icon({
   name,
+  ten,
+  size,
   ...props
-}: { name: IconName } & SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      {...props}
-    >
-      {paths[name]}
-    </svg>
-  )
+}: { name?: IconName | string; ten?: IconName | string; size?: number } & SVGProps<SVGSVGElement>) {
+  const key = (name ?? ten ?? "") as string
+
+  const Comp = LUCIDE[key]
+  if (Comp) {
+    return (
+      <Comp size={size ?? 24} strokeWidth={1.8} aria-hidden="true" {...props} />
+    )
+  }
+
+  if (paths[key as IconName]) {
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+        {...(size ? { width: size, height: size } : {})}
+        {...props}
+      >
+        {paths[key as IconName]}
+      </svg>
+    )
+  }
+
+  return <Circle size={size ?? 24} strokeWidth={1.8} aria-hidden="true" {...props} />
 }

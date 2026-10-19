@@ -8,7 +8,8 @@ public enum OperationStatus
     NoContent = 3,
     BadRequest = 4,
     NotFound = 5,
-    Conflict = 6
+    Conflict = 6,
+    Forbidden = 7
 }
 
 /// <summary>
@@ -47,4 +48,8 @@ public sealed class OperationResult<T>
 
     public static OperationResult<T> Conflict(string message)
         => new() { Status = OperationStatus.Conflict, Message = message };
+
+    /// <summary>Đã xác thực nhưng không đủ quyền trên tài nguyên cụ thể (403).</summary>
+    public static OperationResult<T> Forbidden(string message)
+        => new() { Status = OperationStatus.Forbidden, Message = message };
 }

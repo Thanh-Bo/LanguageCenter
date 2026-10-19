@@ -30,6 +30,12 @@ public static class OperationResultExtensions
             OperationStatus.Conflict => new ConflictObjectResult(
                 BuildProblem(result, StatusCodes.Status409Conflict)),
 
+            OperationStatus.Forbidden => new ObjectResult(
+                BuildProblem(result, StatusCodes.Status403Forbidden))
+            {
+                StatusCode = StatusCodes.Status403Forbidden
+            },
+
             _ => new StatusCodeResult(StatusCodes.Status500InternalServerError)
         };
 

@@ -13,6 +13,8 @@ partial class FormSuaPhanCong
     private ComboBox cboVaiTro = null!;
     private Label lblBD = null!;
     private DateTimePicker dtpBatDau = null!;
+    private Label lblKT = null!;
+    private DateTimePicker dtpKetThuc = null!;
     private Label lblGC = null!;
     private TextBox txtGhiChu = null!;
     private Button btnSave = null!;
@@ -40,6 +42,8 @@ partial class FormSuaPhanCong
         cboVaiTro = new ComboBox();
         lblBD = new Label();
         dtpBatDau = new DateTimePicker();
+        lblKT = new Label();
+        dtpKetThuc = new DateTimePicker();
         lblGC = new Label();
         txtGhiChu = new TextBox();
         btnSave = new Button();
@@ -49,7 +53,7 @@ partial class FormSuaPhanCong
 
         // FormSuaPhanCong
         Text = "Phân công giảng dạy mới — HUIT LingoHub";
-        Size = new Size(500, 420);
+        Size = new Size(500, 470);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -103,18 +107,30 @@ partial class FormSuaPhanCong
         dtpBatDau.Format = DateTimePickerFormat.Short;
         dtpBatDau.Font = new Font("Segoe UI", 9.5f);
 
+        // lblKT & dtpKetThuc (tích vào ô vuông = có ngày kết thúc)
+        lblKT.Text = "Ngày kết thúc:";
+        lblKT.Font = new Font("Segoe UI", 9.5f);
+        lblKT.Location = new Point(24, 250);
+        lblKT.AutoSize = true;
+        dtpKetThuc.Location = new Point(160, 246);
+        dtpKetThuc.Width = 150;
+        dtpKetThuc.Format = DateTimePickerFormat.Short;
+        dtpKetThuc.Font = new Font("Segoe UI", 9.5f);
+        dtpKetThuc.ShowCheckBox = true;
+        dtpKetThuc.Checked = false;
+
         // lblGC & txtGhiChu
         lblGC.Text = "Ghi chú nhiệm vụ:";
         lblGC.Font = new Font("Segoe UI", 9.5f);
-        lblGC.Location = new Point(24, 250);
+        lblGC.Location = new Point(24, 294);
         lblGC.AutoSize = true;
-        txtGhiChu.Location = new Point(160, 246);
+        txtGhiChu.Location = new Point(160, 290);
         txtGhiChu.Width = 280;
         txtGhiChu.Font = new Font("Segoe UI", 9.5f);
 
         // btnSave
         btnSave.Text = "Lưu phân công";
-        btnSave.Location = new Point(160, 300);
+        btnSave.Location = new Point(160, 344);
         btnSave.Size = new Size(140, 36);
         btnSave.FlatStyle = FlatStyle.Flat;
         btnSave.BackColor = Color.FromArgb(30, 86, 240);
@@ -125,7 +141,7 @@ partial class FormSuaPhanCong
 
         // btnCancel
         btnCancel.Text = "Hủy bỏ";
-        btnCancel.Location = new Point(310, 300);
+        btnCancel.Location = new Point(310, 344);
         btnCancel.Size = new Size(100, 36);
         btnCancel.FlatStyle = FlatStyle.Flat;
         btnCancel.BackColor = Color.White;
@@ -139,6 +155,8 @@ partial class FormSuaPhanCong
         Controls.Add(btnSave);
         Controls.Add(txtGhiChu);
         Controls.Add(lblGC);
+        Controls.Add(dtpKetThuc);
+        Controls.Add(lblKT);
         Controls.Add(dtpBatDau);
         Controls.Add(lblBD);
         Controls.Add(cboVaiTro);

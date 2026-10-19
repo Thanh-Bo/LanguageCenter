@@ -57,7 +57,7 @@ partial class UcPhanCongGiangDay
 
         // 1. STATS BANNER
         pnlHeaderStats.Dock = DockStyle.Top;
-        pnlHeaderStats.Height = 118;
+        pnlHeaderStats.Height = 132;
         pnlHeaderStats.Padding = new Padding(0, 0, 0, 6);
 
         tblStats.Dock = DockStyle.Fill;

@@ -1,0 +1,7 @@
+﻿--- PORT CLEAR ---
+listen owners = 31848,31848
+killing pid 31848 (LanguageCenter.Api)
+killing pid 31848 (LanguageCenter.Api)
+killing API pid 31848
+remaining listeners = 0
+PORT_CLEAR_DONE

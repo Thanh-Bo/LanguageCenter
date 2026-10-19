@@ -72,7 +72,7 @@ partial class UcHocPhi
 
         // 1. STATS BANNER
         tblStats.Dock = DockStyle.Top;
-        tblStats.Height = 118;
+        tblStats.Height = 132;
         tblStats.ColumnCount = 4;
         tblStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));
         tblStats.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 25F));

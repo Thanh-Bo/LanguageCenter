@@ -12,10 +12,15 @@ partial class UcTaiKhoan
     private Button btnRefresh = null!;
     private DataGridView dgvAccounts = null!;
     private Panel pnlFooter = null!;
+    private Label lblStatus = null!;
+    private FlowLayoutPanel flpPager = null!;
+    private Label lblPageSize = null!;
+    private ComboBox cboPageSize = null!;
     private Label lblPageInfo = null!;
+    private Button btnFirstPage = null!;
     private Button btnPrevPage = null!;
     private Button btnNextPage = null!;
-    private Label lblStatus = null!;
+    private Button btnLastPage = null!;
 
     protected override void Dispose(bool disposing)
     {
@@ -38,14 +43,16 @@ partial class UcTaiKhoan
         btnRefresh = new Button();
         dgvAccounts = new DataGridView();
         pnlFooter = new Panel();
-        lblPageInfo = new Label();
-        btnPrevPage = new Button();
-        btnNextPage = new Button();
         lblStatus = new Label();
+        flpPager = new FlowLayoutPanel();
+        lblPageSize = new Label();
+        cboPageSize = new ComboBox();
+        lblPageInfo = new Label();
 
         pnlToolbar.SuspendLayout();
         ((System.ComponentModel.ISupportInitialize)dgvAccounts).BeginInit();
         pnlFooter.SuspendLayout();
+        flpPager.SuspendLayout();
         SuspendLayout();
 
         // UcTaiKhoan
@@ -59,19 +66,19 @@ partial class UcTaiKhoan
         pnlToolbar.Padding = new Padding(0, 0, 0, 12);
 
         txtSearch.Font = new Font("Segoe UI", 9.5f);
-        txtSearch.Width = 260;
-        txtSearch.Location = new Point(0, 2);
+        txtSearch.Width = 240;
+        txtSearch.Location = new Point(0, 5);
         txtSearch.PlaceholderText = "Tìm theo tên đăng nhập, email hoặc họ tên...";
 
         cboRole.Font = new Font("Segoe UI", 9.5f);
         cboRole.DropDownStyle = ComboBoxStyle.DropDownList;
-        cboRole.Width = 180;
-        cboRole.Location = new Point(272, 2);
+        cboRole.Width = 160;
+        cboRole.Location = new Point(248, 5);
 
         cboStatus.Font = new Font("Segoe UI", 9.5f);
         cboStatus.DropDownStyle = ComboBoxStyle.DropDownList;
-        cboStatus.Width = 160;
-        cboStatus.Location = new Point(464, 2);
+        cboStatus.Width = 150;
+        cboStatus.Location = new Point(416, 5);
 
         btnSearch.Text = "Tìm kiếm";
         btnSearch.Size = new Size(110, 32);
@@ -81,7 +88,7 @@ partial class UcTaiKhoan
         btnSearch.ForeColor = Color.White;
         btnSearch.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         btnSearch.Cursor = Cursors.Hand;
-        btnSearch.Location = new Point(636, 1);
+        btnSearch.Location = new Point(574, 2);
 
         btnRefresh.Text = "Làm mới";
         btnRefresh.Size = new Size(105, 32);
@@ -92,7 +99,7 @@ partial class UcTaiKhoan
         btnRefresh.ForeColor = Color.FromArgb(15, 23, 42);
         btnRefresh.Font = new Font("Segoe UI", 9.5f);
         btnRefresh.Cursor = Cursors.Hand;
-        btnRefresh.Location = new Point(754, 1);
+        btnRefresh.Location = new Point(682, 2);
 
         pnlToolbar.Controls.Add(btnRefresh);
         pnlToolbar.Controls.Add(btnSearch);
@@ -110,48 +117,55 @@ partial class UcTaiKhoan
         dgvAccounts.Columns.Add(new DataGridViewTextBoxColumn { Name = "Status", HeaderText = "Trạng thái", FillWeight = 90 });
         dgvAccounts.Columns.Add(new DataGridViewTextBoxColumn { Name = "LastLoginAt", HeaderText = "Đăng nhập gần nhất", FillWeight = 110 });
 
-        // Footer
+        // Footer — chứa thông báo lỗi (trái) và cụm phân trang (phải).
         pnlFooter.Dock = DockStyle.Bottom;
-        pnlFooter.Height = 44;
+        pnlFooter.Height = 54;
 
         lblStatus.AutoSize = true;
         lblStatus.Font = new Font("Segoe UI", 9.5f);
         lblStatus.ForeColor = Color.FromArgb(239, 68, 68);
-        lblStatus.Location = new Point(0, 12);
+        lblStatus.Location = new Point(0, 20);
+
+        // Cụm phân trang: neo phải bằng FlowLayoutPanel (RightToLeft) để không
+        // phụ thuộc vào bề rộng cửa sổ — tránh bị tràn/che khuất như bản cũ.
+        flpPager.Dock = DockStyle.Right;
+        flpPager.AutoSize = true;
+        flpPager.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        flpPager.WrapContents = false;
+        flpPager.FlowDirection = FlowDirection.RightToLeft;
+        flpPager.Padding = new Padding(0, 11, 4, 0);
+
+        lblPageSize.AutoSize = true;
+        lblPageSize.Text = "Số dòng/trang:";
+        lblPageSize.Font = new Font("Segoe UI", 9.5f);
+        lblPageSize.ForeColor = Color.FromArgb(100, 116, 139);
+        lblPageSize.Margin = new Padding(14, 10, 4, 0);
+
+        cboPageSize.Font = new Font("Segoe UI", 9.5f);
+        cboPageSize.DropDownStyle = ComboBoxStyle.DropDownList;
+        cboPageSize.Width = 70;
+        cboPageSize.Margin = new Padding(0, 6, 0, 0);
 
         lblPageInfo.AutoSize = true;
         lblPageInfo.Font = new Font("Segoe UI", 9.5f);
         lblPageInfo.ForeColor = Color.FromArgb(100, 116, 139);
-        lblPageInfo.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        lblPageInfo.Location = new Point(620, 12);
+        lblPageInfo.Margin = new Padding(18, 10, 14, 0);
 
-        btnPrevPage.Text = "Trước";
-        btnPrevPage.Size = new Size(80, 30);
-        btnPrevPage.FlatStyle = FlatStyle.Flat;
-        btnPrevPage.FlatAppearance.BorderSize = 1;
-        btnPrevPage.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
-        btnPrevPage.BackColor = Color.White;
-        btnPrevPage.ForeColor = Color.FromArgb(15, 23, 42);
-        btnPrevPage.Font = new Font("Segoe UI", 9.5f);
-        btnPrevPage.Cursor = Cursors.Hand;
-        btnPrevPage.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        btnPrevPage.Location = new Point(800, 6);
+        btnFirstPage = TaoNutPhanTrang("«", 44);
+        btnPrevPage = TaoNutPhanTrang("‹ Trước", 82);
+        btnNextPage = TaoNutPhanTrang("Sau ›", 82);
+        btnLastPage = TaoNutPhanTrang("»", 44);
 
-        btnNextPage.Text = "Sau";
-        btnNextPage.Size = new Size(80, 30);
-        btnNextPage.FlatStyle = FlatStyle.Flat;
-        btnNextPage.FlatAppearance.BorderSize = 1;
-        btnNextPage.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
-        btnNextPage.BackColor = Color.White;
-        btnNextPage.ForeColor = Color.FromArgb(15, 23, 42);
-        btnNextPage.Font = new Font("Segoe UI", 9.5f);
-        btnNextPage.Cursor = Cursors.Hand;
-        btnNextPage.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        btnNextPage.Location = new Point(896, 6);
+        // Thứ tự Add = thứ tự từ PHẢI sang TRÁI.
+        flpPager.Controls.Add(btnLastPage);
+        flpPager.Controls.Add(btnNextPage);
+        flpPager.Controls.Add(btnPrevPage);
+        flpPager.Controls.Add(btnFirstPage);
+        flpPager.Controls.Add(lblPageInfo);
+        flpPager.Controls.Add(cboPageSize);
+        flpPager.Controls.Add(lblPageSize);
 
-        pnlFooter.Controls.Add(btnNextPage);
-        pnlFooter.Controls.Add(btnPrevPage);
-        pnlFooter.Controls.Add(lblPageInfo);
+        pnlFooter.Controls.Add(flpPager);
         pnlFooter.Controls.Add(lblStatus);
 
         Controls.Add(dgvAccounts);
@@ -163,6 +177,21 @@ partial class UcTaiKhoan
         ((System.ComponentModel.ISupportInitialize)dgvAccounts).EndInit();
         pnlFooter.ResumeLayout(false);
         pnlFooter.PerformLayout();
+        flpPager.ResumeLayout(false);
+        flpPager.PerformLayout();
         ResumeLayout(false);
     }
+
+    private static Button TaoNutPhanTrang(string text, int width) => new()
+    {
+        Text = text,
+        Size = new Size(width, 30),
+        FlatStyle = FlatStyle.Flat,
+        FlatAppearance = { BorderSize = 1, BorderColor = Color.FromArgb(226, 232, 240) },
+        BackColor = Color.White,
+        ForeColor = Color.FromArgb(15, 23, 42),
+        Font = new Font("Segoe UI", 9.5f),
+        Cursor = Cursors.Hand,
+        Margin = new Padding(4, 6, 0, 0)
+    };
 }

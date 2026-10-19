@@ -1,57 +1,128 @@
 // src/contexts/NguCanhXacThuc.tsx
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from 'react'
-import { goiAPI, type ApiUser } from '../lib/goiAPI'
+import { authApi } from '../lib/api/endpoints'
+import { datXuLyUnauthorized, layToken, luuToken, xoaToken } from '../lib/api/http'
+import type { VaiTro } from '../lib/api/types'
+import { chuVietTat } from '../lib/format'
+import { duongDanTheoVaiTro } from '../lib/roles'
+
+export type ApiUser = {
+  id: number
+  tenDangNhap: string
+  hoTen: string
+  email: string
+  vaiTro: VaiTro
+  avatar: string
+}
 
 type NguCanhXacThucType = {
   nguoiDung: ApiUser | null
   dangTai: boolean
-  dangNhap: (email: string, matKhau: string) => Promise<ApiUser>
+  dangNhap: (tenDangNhap: string, matKhau: string) => Promise<ApiUser>
   dangXuat: () => void
 }
 
+const KHOA_USER = 'huitlingo_user'
+const KHOA_HET_HAN = 'huitlingo_expires'
+
 const NguCanhXacThuc = createContext<NguCanhXacThucType | null>(null)
+
+function taoNguoiDung(user: {
+  id: number
+  username: string
+  email: string
+  role: VaiTro
+}): ApiUser {
+  return {
+    id: user.id,
+    tenDangNhap: user.username,
+    hoTen: user.username,
+    email: user.email,
+    vaiTro: user.role,
+    avatar: chuVietTat(user.username),
+  }
+}
 
 export function NhaCungCapXacThuc({ children }: { children: ReactNode }) {
   const [nguoiDung, setNguoiDung] = useState<ApiUser | null>(null)
   const [dangTai, setDangTai] = useState(true)
 
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('huitlingo_user')
-      if (stored) setNguoiDung(JSON.parse(stored))
-    } catch {
-      /* ignore */
-    } finally {
-      setDangTai(false)
-    }
+  const dangXuat = useCallback(() => {
+    xoaToken()
+    localStorage.removeItem(KHOA_USER)
+    localStorage.removeItem(KHOA_HET_HAN)
+    setNguoiDung(null)
   }, [])
 
-  const dangNhap = async (email: string, matKhau: string) => {
-    const res = await goiAPI.dangNhap(email, matKhau)
-    localStorage.setItem('huitlingo_token', res.token)
-    localStorage.setItem('huitlingo_user', JSON.stringify(res.nguoiDung))
-    setNguoiDung(res.nguoiDung)
-    return res.nguoiDung
-  }
+  // Gặp 401 ở bất kỳ request nào -> xoá phiên ngay
+  useEffect(() => {
+    datXuLyUnauthorized(dangXuat)
+    return () => datXuLyUnauthorized(null)
+  }, [dangXuat])
 
-  const dangXuat = () => {
-    goiAPI.dangXuat()
-    setNguoiDung(null)
-  }
+  // Khôi phục phiên khi tải trang: kiểm tra hạn token rồi xác thực lại với backend
+  useEffect(() => {
+    let huy = false
 
-  return (
-    <NguCanhXacThuc.Provider
-      value={{ nguoiDung, dangTai, dangNhap, dangXuat }}
-    >
-      {children}
-    </NguCanhXacThuc.Provider>
+    const khoiPhuc = async () => {
+      const token = layToken()
+
+      if (!token) {
+        setDangTai(false)
+        return
+      }
+
+      const hetHan = localStorage.getItem(KHOA_HET_HAN)
+      if (hetHan && new Date(hetHan).getTime() <= Date.now()) {
+        dangXuat()
+        setDangTai(false)
+        return
+      }
+
+      try {
+        const user = await authApi.toi()
+        if (!huy) setNguoiDung(taoNguoiDung(user))
+      } catch {
+        // Token hết hạn/không hợp lệ -> xoá phiên, không chặn ứng dụng
+        dangXuat()
+      } finally {
+        if (!huy) setDangTai(false)
+      }
+    }
+
+    void khoiPhuc()
+
+    return () => {
+      huy = true
+    }
+  }, [dangXuat])
+
+  const dangNhap = useCallback(async (tenDangNhap: string, matKhau: string) => {
+    const res = await authApi.dangNhap(tenDangNhap.trim(), matKhau)
+    const user = taoNguoiDung(res.user)
+
+    luuToken(res.accessToken)
+    localStorage.setItem(KHOA_USER, JSON.stringify(user))
+    localStorage.setItem(KHOA_HET_HAN, res.expiresAt)
+
+    setNguoiDung(user)
+    return user
+  }, [])
+
+  const value = useMemo(
+    () => ({ nguoiDung, dangTai, dangNhap, dangXuat }),
+    [nguoiDung, dangTai, dangNhap, dangXuat],
   )
+
+  return <NguCanhXacThuc.Provider value={value}>{children}</NguCanhXacThuc.Provider>
 }
 
 export function dungXacThuc() {
@@ -60,14 +131,4 @@ export function dungXacThuc() {
   return ctx
 }
 
-/** Helper: vai trò → đường dẫn portal tương ứng */
-export function duongDanTheoVaiTro(vaiTro: ApiUser['vaiTro']): string {
-  switch (vaiTro) {
-    case 'Giáo viên':
-      return '/giaovien'
-    case 'Học viên':
-      return '/hocvien'
-    default:
-      return '/admin'
-  }
-}
+export { duongDanTheoVaiTro }

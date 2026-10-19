@@ -2,6 +2,7 @@ using LanguageCenter.Application.Abstractions;
 using LanguageCenter.Application.Accounts.Models;
 using LanguageCenter.Application.Common;
 using LanguageCenter.Domain.Constants;
+using LanguageCenter.Domain.Entities;
 using LanguageCenter.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -117,6 +118,7 @@ public sealed class AccountStore : IAccountStore
                 FullName = row.HoTen ?? row.TenDangNhap,
                 Email = row.Email,
                 Role = row.TenVaiTro,
+                ProfileType = ResolveProfileType(row),
                 Status = row.TrangThaiTaiKhoan,
                 CreatedAt = row.NgayTao,
                 LastLoginAt = row.LanDangNhapCuoi
@@ -143,12 +145,7 @@ public sealed class AccountStore : IAccountStore
             return null;
         }
 
-        var profileType = row.TenVaiTro switch
-        {
-            RoleNames.HocVien => "HocVien",
-            RoleNames.GiaoVien or RoleNames.TroGiang => "GiaoVien",
-            _ => row.TenNhanVien is not null ? "NhanVien" : null
-        };
+        var profileType = ResolveProfileType(row);
 
         return new AccountDetailDto
         {
@@ -411,6 +408,82 @@ public sealed class AccountStore : IAccountStore
         }
     }
 
+    public async Task<bool> UsernameExistsAsync(string tenDangNhap, CancellationToken cancellationToken)
+        => await _dbContext.TaiKhoans
+            .AsNoTracking()
+            .AnyAsync(x => x.TenDangNhap == tenDangNhap, cancellationToken);
+
+    public async Task<int?> FindRoleIdAsync(string tenVaiTro, CancellationToken cancellationToken)
+        => await _dbContext.VaiTros
+            .AsNoTracking()
+            .Where(v => v.TenVaiTro == tenVaiTro)
+            .Select(v => (int?)v.MaVaiTro)
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<int?> CreateAsync(
+        string tenDangNhap,
+        string email,
+        string matKhauHash,
+        int maVaiTro,
+        string trangThai,
+        CancellationToken cancellationToken)
+    {
+        var entity = new TaiKhoan
+        {
+            TenDangNhap = tenDangNhap,
+            Email = email,
+            MatKhauHash = matKhauHash,
+            MaVaiTro = maVaiTro,
+            TrangThaiTaiKhoan = trangThai
+            // NgayTao do database sinh bằng SYSDATETIME().
+        };
+
+        _dbContext.TaiKhoans.Add(entity);
+
+        try
+        {
+            var affected = await _dbContext.SaveChangesAsync(cancellationToken);
+            return affected > 0 ? entity.MaTaiKhoan : null;
+        }
+        catch (DbUpdateException)
+        {
+            // Trùng UNIQUE (TenDangNhap / Email) hoặc vi phạm khóa ngoại.
+            _dbContext.Entry(entity).State = EntityState.Detached;
+            return null;
+        }
+    }
+
+    public async Task<WriteOutcome> UpdateAsync(
+        int maTaiKhoan,
+        string? email,
+        int? maVaiTro,
+        string? trangThai,
+        string? matKhauHash,
+        CancellationToken cancellationToken)
+    {
+        var entity = await _dbContext.TaiKhoans
+            .FirstOrDefaultAsync(x => x.MaTaiKhoan == maTaiKhoan, cancellationToken);
+
+        if (entity is null) return WriteOutcome.NotFound;
+
+        if (email is not null) entity.Email = email;
+        if (maVaiTro.HasValue) entity.MaVaiTro = maVaiTro.Value;
+        if (trangThai is not null) entity.TrangThaiTaiKhoan = trangThai;
+        if (matKhauHash is not null) entity.MatKhauHash = matKhauHash;
+
+        entity.NgayCapNhat = DateTime.Now;
+
+        try
+        {
+            var affected = await _dbContext.SaveChangesAsync(cancellationToken);
+            return affected > 0 ? WriteOutcome.Success : WriteOutcome.Conflict;
+        }
+        catch (DbUpdateException)
+        {
+            return WriteOutcome.DuplicateEmail;
+        }
+    }
+
     /// <summary>
     /// Query nền cho danh sách/chi tiết tài khoản: LEFT JOIN sang cả 3 bảng hồ sơ
     /// (NhanVien / GiaoVien / HocVien) để lấy HoTen tương ứng với vai trò.
@@ -444,6 +517,17 @@ public sealed class AccountStore : IAccountStore
                 TrangThaiHocTap = hocVien.TrangThaiHocTap
             };
     }
+
+    /// <summary>
+    /// Loại hồ sơ THỰC TẾ đang gắn với tài khoản — trả về <c>null</c> khi bảng hồ sơ
+    /// tương ứng với vai trò không có dòng nào (tài khoản "trơn").
+    /// </summary>
+    private static string? ResolveProfileType(AccountJoinRow row) => row.TenVaiTro switch
+    {
+        RoleNames.HocVien => row.TenHocVien is null ? null : "HocVien",
+        RoleNames.GiaoVien or RoleNames.TroGiang => row.TenGiaoVien is null ? null : "GiaoVien",
+        _ => row.TenNhanVien is null ? null : "NhanVien"
+    };
 
     /// <summary>
     /// Dòng dữ liệu phẳng sau khi JOIN — CHỈ dùng nội bộ trong tầng Infrastructure.

@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { TEACHERS } from '../duLieu'
+import { Icon } from '../components/BieuTuong'
 
-const FILTER_TAGS = ['Tất cả', 'IELTS', 'TOEIC', 'Giao tiếp', 'Business', 'Kids English']
+const FILTER_TAGS = ['Tất cả', 'IELTS', 'Giao tiếp', 'Mầm non', 'Tiểu học', 'THCS']
 
 export default function Teachers() {
   const [filter, setFilter] = useState('Tất cả')
@@ -98,7 +99,9 @@ export default function Teachers() {
                       <div style={{ color: '#94A3B8', fontSize: 11 }}>Học viên</div>
                     </div>
                     <div style={{ textAlign: 'center', flex: 1 }}>
-                      <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: 16, color: '#2563EB' }}>★ {t.rating}</div>
+                      <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: 16, color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                        <Icon ten="Star" size={14} fill="currentColor" /> {t.rating}
+                      </div>
                       <div style={{ color: '#94A3B8', fontSize: 11 }}>Đánh giá</div>
                     </div>
                   </div>
@@ -123,10 +126,14 @@ export default function Teachers() {
       {/* JOIN US */}
       <section style={{ padding: '60px 24px', background: '#1E293B' }}>
         <div style={{ maxWidth: 800, margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: 36, marginBottom: 16 }}>🎓</div>
+          <div style={{ display: 'flex', justifyContent: 'center', color: '#60A5FA', marginBottom: 16 }}>
+            <Icon ten="GraduationCap" size={40} />
+          </div>
           <h2 style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 900, fontSize: 32, color: '#fff', margin: '0 0 12px' }}>Bạn là giáo viên giỏi tiếng Anh?</h2>
           <p style={{ color: '#94A3B8', fontSize: 16, margin: '0 0 28px' }}>HUIT LingoHub luôn tìm kiếm giáo viên tài năng, nhiệt huyết để cùng xây dựng thế hệ giỏi tiếng Anh.</p>
-          <a href="mailto:careers@lingohub.edu.vn" style={{ background: '#2563EB', color: '#fff', padding: '13px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 15 }}>Ứng tuyển ngay →</a>
+          <a href="mailto:careers@lingohub.edu.vn" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2563EB', color: '#fff', padding: '13px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 15 }}>
+            Ứng tuyển ngay <Icon ten="ArrowRight" size={16} />
+          </a>
         </div>
       </section>
 
@@ -145,7 +152,9 @@ export default function Teachers() {
             <div style={{ position: 'relative', height: 280 }}>
               <img src={selected.img} alt={selected.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.6), transparent)' }} />
-              <button onClick={() => setSelected(null)} style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(0,0,0,0.4)', border: 'none', color: '#fff', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', fontSize: 18 }}>✕</button>
+              <button onClick={() => setSelected(null)} style={{ position: 'absolute', top: 16, right: 16, background: 'rgba(0,0,0,0.4)', border: 'none', color: '#fff', width: 36, height: 36, borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Icon ten="X" size={18} />
+              </button>
               <div style={{ position: 'absolute', bottom: 20, left: 24 }}>
                 <h2 style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 900, color: '#fff', fontSize: 26, margin: '0 0 4px' }}>{selected.name}</h2>
                 <p style={{ color: 'rgba(255,255,255,0.85)', fontSize: 15, margin: 0 }}>{selected.role} · {selected.flag} {selected.uni}</p>
@@ -155,13 +164,15 @@ export default function Teachers() {
             <div style={{ padding: '28px 28px 32px' }}>
               <div style={{ display: 'flex', gap: 20, marginBottom: 24 }}>
                 {[
-                  { v: selected.score, l: 'Chứng chỉ' },
-                  { v: selected.exp, l: 'Kinh nghiệm' },
-                  { v: `${selected.students}+`, l: 'Học viên' },
-                  { v: `★ ${selected.rating}`, l: 'Đánh giá' },
+                  { v: selected.score, l: 'Chứng chỉ', sao: false },
+                  { v: selected.exp, l: 'Kinh nghiệm', sao: false },
+                  { v: `${selected.students}+`, l: 'Học viên', sao: false },
+                  { v: selected.rating, l: 'Đánh giá', sao: true },
                 ].map(s => (
                   <div key={s.l} style={{ textAlign: 'center', flex: 1, background: '#F8FAFC', borderRadius: 12, padding: '12px 8px' }}>
-                    <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: 16, color: '#2563EB' }}>{s.v}</div>
+                    <div style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: 16, color: '#2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                      {s.sao && <Icon ten="Star" size={13} fill="currentColor" />} {s.v}
+                    </div>
                     <div style={{ color: '#94A3B8', fontSize: 11 }}>{s.l}</div>
                   </div>
                 ))}
@@ -175,7 +186,7 @@ export default function Teachers() {
                 {selected.courses.map(c => <span key={c} style={{ background: '#EFF6FF', color: '#2563EB', borderRadius: 8, padding: '6px 14px', fontWeight: 600, fontSize: 14 }}>{c}</span>)}
               </div>
 
-              <Link to="/khoa-hoc" onClick={() => setSelected(null)} style={{
+              <Link to="/khoahoc" onClick={() => setSelected(null)} style={{
                 display: 'block', textAlign: 'center', background: '#2563EB', color: '#fff',
                 padding: '14px', borderRadius: 12, textDecoration: 'none', fontWeight: 800, fontSize: 16,
               }}>Đăng ký học với {selected.name.split(' ').pop()}</Link>

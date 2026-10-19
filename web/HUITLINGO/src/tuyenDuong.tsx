@@ -1,17 +1,40 @@
 import { createBrowserRouter, Navigate } from 'react-router'
 import BoCuc from './components/BoCuc'
 import BaoVe from './components/BaoVe'
+import PortalLayout from './components/layout/PortalLayout'
 import TrangChu from './pages/TrangChu'
 import KhoaHoc from './pages/KhoaHoc'
 import GiaoVien from './pages/GiaoVien'
 import HocPhi from './pages/HocPhi'
 import DangNhap from './pages/DangNhap'
-import CongQuanLy from './pages/CongQuanLy'
-import GiaoVienPortal from './pages/giaovien/GiaoVienPortal'
-import HocVienPortal from './pages/hocvien/HocVienPortal'
+import CaiDat from './pages/CaiDat'
+import {
+  AdminHocPhi,
+  AdminHocVien,
+  AdminLopHoc,
+  AdminTongQuan,
+} from './pages/admin/AdminPages'
+import { AdminBaoCao, AdminKhaoSat, AdminThongBao } from './pages/admin/AdminContent'
+import {
+  GVBangDiem,
+  GVDiemDanh,
+  GVLichDay,
+  GVLopCuaToi,
+  GVThongBao,
+  GVTongQuan,
+} from './pages/giaovien/TeacherPages'
+import {
+  HVDiemSo,
+  HVHocPhi,
+  HVKhaoSat,
+  HVLichHoc,
+  HVTongQuan,
+  HVThongBao,
+} from './pages/hocvien/StudentPages'
+import { NHOM_GIAO_VIEN, NHOM_HOC_VIEN, NHOM_QUAN_TRI } from './lib/roles'
 
 export const router = createBrowserRouter([
-  // ============ PUBLIC (có Navbar + Footer) ============
+  // ============ PUBLIC (Navbar + Footer) ============
   {
     path: '/',
     Component: BoCuc,
@@ -26,24 +49,65 @@ export const router = createBrowserRouter([
   // ============ AUTH ============
   { path: '/dangnhap', Component: DangNhap },
 
-  // ============ PROTECTED — chỉ Admin ============
+  // ============ QUẢN TRỊ (4 vai trò) ============
   {
-    element: <BaoVe choPhep={['Quản trị viên']} />,
+    element: <BaoVe choPhep={NHOM_QUAN_TRI} />,
     children: [
-      { path: '/admin', element: <CongQuanLy vaiTroMacDinh="Quản trị viên" /> },
+      {
+        path: '/admin',
+        Component: PortalLayout,
+        children: [
+          { index: true, Component: AdminTongQuan },
+          { path: 'hoc-vien', Component: AdminHocVien },
+          { path: 'lop-hoc', Component: AdminLopHoc },
+          { path: 'hoc-phi', Component: AdminHocPhi },
+          { path: 'thong-bao', Component: AdminThongBao },
+          { path: 'khao-sat', Component: AdminKhaoSat },
+          { path: 'bao-cao', Component: AdminBaoCao },
+          { path: 'cai-dat', Component: CaiDat },
+        ],
+      },
     ],
   },
 
-  // ============ PROTECTED — chỉ Giáo viên ============
+  // ============ GIÁO VIÊN / TRỢ GIẢNG ============
   {
-    element: <BaoVe choPhep={['Giáo viên']} />,
-    children: [{ path: '/giaovien', Component: GiaoVienPortal }],
+    element: <BaoVe choPhep={NHOM_GIAO_VIEN} />,
+    children: [
+      {
+        path: '/giaovien',
+        Component: PortalLayout,
+        children: [
+          { index: true, Component: GVTongQuan },
+          { path: 'lop-cua-toi', Component: GVLopCuaToi },
+          { path: 'lich-day', Component: GVLichDay },
+          { path: 'diem-danh', Component: GVDiemDanh },
+          { path: 'bang-diem', Component: GVBangDiem },
+          { path: 'thong-bao', Component: GVThongBao },
+          { path: 'cai-dat', Component: CaiDat },
+        ],
+      },
+    ],
   },
 
-  // ============ PROTECTED — chỉ Học viên ============
+  // ============ HỌC VIÊN ============
   {
-    element: <BaoVe choPhep={['Học viên']} />,
-    children: [{ path: '/hocvien', Component: HocVienPortal }],
+    element: <BaoVe choPhep={NHOM_HOC_VIEN} />,
+    children: [
+      {
+        path: '/hocvien',
+        Component: PortalLayout,
+        children: [
+          { index: true, Component: HVTongQuan },
+          { path: 'lich-hoc', Component: HVLichHoc },
+          { path: 'diem-so', Component: HVDiemSo },
+          { path: 'hoc-phi', Component: HVHocPhi },
+          { path: 'khao-sat', Component: HVKhaoSat },
+          { path: 'thong-bao', Component: HVThongBao },
+          { path: 'cai-dat', Component: CaiDat },
+        ],
+      },
+    ],
   },
 
   // ============ FALLBACK ============

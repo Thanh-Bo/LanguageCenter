@@ -1,4 +1,5 @@
 using LanguageCenter.WinForms.Api;
+using LanguageCenter.WinForms.Dialogs;
 using LanguageCenter.WinForms.UI;
 
 namespace LanguageCenter.WinForms.UserControls;
@@ -8,6 +9,11 @@ public partial class UcKhoaHoc : UserControl
     private const string AllOption = "— Tất cả —";
     private int _currentTab = 0; // 0: Khóa học, 1: Cấp độ, 2: Chương trình
 
+    private IReadOnlyList<CourseListItemDto> _courses = Array.Empty<CourseListItemDto>();
+    private IReadOnlyList<LevelListItemDto> _levels = Array.Empty<LevelListItemDto>();
+    private IReadOnlyList<ProgramListItemDto> _programs = Array.Empty<ProgramListItemDto>();
+    private bool _dangNap;
+
     public UcKhoaHoc()
     {
         InitializeComponent();
@@ -16,15 +22,17 @@ public partial class UcKhoaHoc : UserControl
         UI.UiHelpers.StyleGrid(dgvLevels);
         UI.UiHelpers.StyleGrid(dgvPrograms);
 
+        dgvCourses.CellDoubleClick += DgvCourses_CellDoubleClick;
+
         btnTabCourses.Click += (_, _) => SwitchTab(0);
         btnTabLevels.Click += (_, _) => SwitchTab(1);
         btnTabPrograms.Click += (_, _) => SwitchTab(2);
 
-        txtSearch.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; FilterData(); } };
-        cboChuongTrinh.SelectedIndexChanged += (_, _) => FilterData();
-        cboTrangThai.SelectedIndexChanged += (_, _) => FilterData();
-        btnSearch.Click += (_, _) => FilterData();
-        btnRefresh.Click += (_, _) => ReloadData();
+        txtSearch.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; ApplyFilter(); } };
+        cboChuongTrinh.SelectedIndexChanged += (_, _) => { if (!_dangNap) ApplyFilter(); };
+        cboTrangThai.SelectedIndexChanged += (_, _) => { if (!_dangNap) ApplyFilter(); };
+        btnSearch.Click += (_, _) => ApplyFilter();
+        btnRefresh.Click += async (_, _) => await ReloadAsync();
         btnAdd.Click += BtnAdd_Click;
 
         pnlToolbar.Resize += (_, _) =>
@@ -32,68 +40,70 @@ public partial class UcKhoaHoc : UserControl
             btnAdd.Location = new Point(pnlToolbar.Width - btnAdd.Width - 4, 3);
         };
 
-        InitStats();
-        InitFilterOptions();
         SwitchTab(0);
+        Load += async (_, _) => await ReloadAsync();
     }
 
-    private void InitStats()
+    /// <summary>Tải khóa học, cấp độ và chương trình từ API.</summary>
+    private async Task ReloadAsync()
     {
-        var courses = MockDataStore.GetCourses();
-        var programs = MockDataStore.GetPrograms();
-        var levels = MockDataStore.GetLevels();
+        lblSummary.Text = "Đang tải dữ liệu đào tạo...";
+        UseWaitCursor = true;
+
+        var coursesTask = AppSession.Api.GetAsync<PagedResult<CourseListItemDto>>(
+            QueryStringBuilder.Build("admin/courses", ("page", "1"), ("pageSize", "500")));
+        var levelsTask = AppSession.Api.GetAsync<PagedResult<LevelListItemDto>>(
+            QueryStringBuilder.Build("admin/levels", ("page", "1"), ("pageSize", "500")));
+        var programsTask = AppSession.Api.GetAsync<PagedResult<ProgramListItemDto>>(
+            QueryStringBuilder.Build("admin/programs", ("page", "1"), ("pageSize", "500")));
+
+        await Task.WhenAll(coursesTask, levelsTask, programsTask);
+
+        UseWaitCursor = false;
+
+        _courses = coursesTask.Result.Data?.Items ?? Array.Empty<CourseListItemDto>();
+        _levels = levelsTask.Result.Data?.Items ?? Array.Empty<LevelListItemDto>();
+        _programs = programsTask.Result.Data?.Items ?? Array.Empty<ProgramListItemDto>();
+
+        if (!coursesTask.Result.Success)
+        {
+            lblSummary.Text = coursesTask.Result.ErrorMessage;
+        }
+
+        FillStats();
+        InitFilterOptions();
+        FillStatusFilter();
+        ApplyFilter();
+    }
+
+    private void FillStats()
+    {
+        var dangHoatDong = _courses.Count(c => c.TrangThai != "Đã kết thúc" && c.TrangThai != "Ngừng hoạt động");
 
         tblStats.Controls.Clear();
-        tblStats.Controls.Add(CreateStatCard("Tổng số khóa học", $"{courses.Count} Khóa", "Các cấp độ từ A1 đến C1", Theme.Primary), 0, 0);
-        tblStats.Controls.Add(CreateStatCard("Chương trình đào tạo", $"{programs.Count} Hệ", "IELTS, TOEIC, Giao tiếp, Thiếu nhi", Theme.Purple), 1, 0);
-        tblStats.Controls.Add(CreateStatCard("Cấp độ đào tạo", $"{levels.Count} Cấp độ", "Chuẩn khung tham chiếu CEFR", Theme.Success), 2, 0);
-        tblStats.Controls.Add(CreateStatCard("Đang tuyển sinh", $"{courses.Count(c => c.TrangThai == "Đang tuyển sinh")} Khóa", "Tuyển sinh kỳ học mới", Theme.Warning), 3, 0);
-    }
-
-    private static Panel CreateStatCard(string title, string value, string note, Color accent)
-    {
-        var panel = new Panel
-        {
-            Dock = DockStyle.Fill,
-            BackColor = Color.White,
-            Padding = new Padding(12, 8, 12, 8),
-            Margin = new Padding(4, 2, 4, 6)
-        };
-        panel.Paint += (s, e) =>
-        {
-            if (s is Control ctrl)
-            {
-                using var borderPen = new Pen(Theme.BorderColor);
-                e.Graphics.DrawRectangle(borderPen, 0, 0, ctrl.Width - 1, ctrl.Height - 1);
-                using var accentBrush = new SolidBrush(accent);
-                e.Graphics.FillRectangle(accentBrush, 0, 0, 4, ctrl.Height);
-            }
-        };
-
-        var lblT = new Label { Text = title, Font = new Font("Segoe UI", 8.5f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(14, 6) };
-        var lblV = new Label { Text = value, Font = new Font("Segoe UI", 15f, FontStyle.Bold), ForeColor = accent, AutoSize = true, Location = new Point(12, 24) };
-        var lblN = new Label { Text = note, Font = new Font("Segoe UI", 8f), ForeColor = Theme.Muted, AutoSize = true, Location = new Point(14, 56) };
-
-        panel.Controls.Add(lblN);
-        panel.Controls.Add(lblV);
-        panel.Controls.Add(lblT);
-        return panel;
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tổng số khóa học", $"{_courses.Count} Khóa", "Các cấp độ từ A1 đến C1", Theme.Primary), 0, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Chương trình đào tạo", $"{_programs.Count} Hệ", "IELTS, TOEIC, Giao tiếp, Thiếu nhi", Theme.Purple), 1, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Cấp độ đào tạo", $"{_levels.Count} Cấp độ", "Chuẩn khung tham chiếu CEFR", Theme.Success), 2, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Khóa đang hoạt động", $"{dangHoatDong} Khóa", "Đang tuyển sinh / đang giảng dạy", Theme.Warning), 3, 0);
     }
 
     private void InitFilterOptions()
     {
+        _dangNap = true;
+
+        var dangChon = cboChuongTrinh.SelectedItem?.ToString() ?? AllOption;
+
         cboChuongTrinh.Items.Clear();
         cboChuongTrinh.Items.Add(AllOption);
-        foreach (var p in MockDataStore.GetPrograms())
+        foreach (var ten in _programs.Select(p => p.TenChuongTrinh).Distinct().OrderBy(x => x))
         {
-            cboChuongTrinh.Items.Add(p.TenChuongTrinh);
+            cboChuongTrinh.Items.Add(ten);
         }
-        cboChuongTrinh.SelectedIndex = 0;
 
-        cboTrangThai.Items.Clear();
-        cboTrangThai.Items.Add(AllOption);
-        cboTrangThai.Items.AddRange(["Đang mở", "Đang tuyển sinh", "Đang diễn ra", "Sắp khai giảng"]);
-        cboTrangThai.SelectedIndex = 0;
+        var viTri = cboChuongTrinh.Items.IndexOf(dangChon);
+        cboChuongTrinh.SelectedIndex = viTri >= 0 ? viTri : 0;
+
+        _dangNap = false;
     }
 
     private void SwitchTab(int tabIndex)
@@ -126,10 +136,38 @@ public partial class UcKhoaHoc : UserControl
 
         cboChuongTrinh.Visible = _currentTab != 2;
 
-        FilterData();
+        FillStatusFilter();
+        ApplyFilter();
     }
 
-    private void FilterData()
+    /// <summary>Danh mục trạng thái lấy từ dữ liệu thật của tab đang chọn.</summary>
+    private void FillStatusFilter()
+    {
+        _dangNap = true;
+
+        var dangChon = cboTrangThai.SelectedItem?.ToString() ?? AllOption;
+
+        IEnumerable<string> muc = _currentTab switch
+        {
+            0 => _courses.Select(c => c.TrangThai),
+            1 => _levels.Select(l => l.TrangThai),
+            _ => _programs.Select(p => p.TrangThai)
+        };
+
+        cboTrangThai.Items.Clear();
+        cboTrangThai.Items.Add(AllOption);
+        foreach (var m in muc.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().OrderBy(x => x))
+        {
+            cboTrangThai.Items.Add(m);
+        }
+
+        var viTri = cboTrangThai.Items.IndexOf(dangChon);
+        cboTrangThai.SelectedIndex = viTri >= 0 ? viTri : 0;
+
+        _dangNap = false;
+    }
+
+    private void ApplyFilter()
     {
         var kw = txtSearch.Text.Trim();
         var prog = cboChuongTrinh.SelectedItem?.ToString() ?? AllOption;
@@ -137,37 +175,38 @@ public partial class UcKhoaHoc : UserControl
 
         if (_currentTab == 0)
         {
-            var courses = MockDataStore.GetCourses().AsEnumerable();
+            var courses = _courses.AsEnumerable();
             if (prog != AllOption) courses = courses.Where(c => c.TenChuongTrinh == prog);
             if (status != AllOption) courses = courses.Where(c => c.TrangThai == status);
             if (!string.IsNullOrWhiteSpace(kw))
             {
                 courses = courses.Where(c => c.TenKhoaHoc.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
-                                             c.MaKhoaHocStr.Contains(kw, StringComparison.OrdinalIgnoreCase));
+                                             c.MaKhoaHoc.ToString().Contains(kw, StringComparison.OrdinalIgnoreCase));
             }
 
-            var list = courses.ToList();
+            var list = courses.OrderBy(c => c.TenKhoaHoc).ToList();
             dgvCourses.Rows.Clear();
             foreach (var c in list)
             {
                 var rowIdx = dgvCourses.Rows.Add(
-                    c.MaKhoaHocStr,
+                    c.MaKhoaHoc.ToString(),
                     c.TenKhoaHoc,
                     c.TenChuongTrinh,
                     c.TenCapDo,
                     $"{c.SoBuoi} buổi",
-                    $"{c.TongSoGio} giờ",
+                    c.TongSoGio.HasValue ? $"{c.TongSoGio.Value:0.#} giờ" : "—",
                     $"{c.HocPhiCoBan:N0} ₫",
                     UiHelpers.FormatDate(c.NgayBatDau),
                     c.TrangThai
                 );
                 dgvCourses.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(c.TrangThai);
+                dgvCourses.Rows[rowIdx].Tag = c;
             }
-            lblSummary.Text = $"Hiển thị {list.Count} khóa học phù hợp";
+            lblSummary.Text = $"Hiển thị {list.Count}/{_courses.Count} khóa học phù hợp";
         }
         else if (_currentTab == 1)
         {
-            var levels = MockDataStore.GetLevels().AsEnumerable();
+            var levels = _levels.AsEnumerable();
             if (prog != AllOption) levels = levels.Where(l => l.TenChuongTrinh == prog);
             if (status != AllOption) levels = levels.Where(l => l.TrangThai == status);
             if (!string.IsNullOrWhiteSpace(kw))
@@ -176,7 +215,7 @@ public partial class UcKhoaHoc : UserControl
                                            l.KyHieuCapDo.Contains(kw, StringComparison.OrdinalIgnoreCase));
             }
 
-            var list = levels.ToList();
+            var list = levels.OrderBy(l => l.TenCapDo).ToList();
             dgvLevels.Rows.Clear();
             foreach (var l in list)
             {
@@ -186,18 +225,18 @@ public partial class UcKhoaHoc : UserControl
                     l.KyHieuCapDo,
                     l.TenChuongTrinh,
                     l.ThuTu,
-                    $"{l.ThoiLuongDuKienTuan} tuần",
+                    l.ThoiLuongDuKienTuan.HasValue ? $"{l.ThoiLuongDuKienTuan} tuần" : "—",
                     l.DieuKienDauVao ?? "—",
                     l.KetQuaDauRa ?? "—",
                     l.TrangThai
                 );
                 dgvLevels.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(l.TrangThai);
             }
-            lblSummary.Text = $"Hiển thị {list.Count} cấp độ đào tạo phù hợp";
+            lblSummary.Text = $"Hiển thị {list.Count}/{_levels.Count} cấp độ đào tạo phù hợp";
         }
         else
         {
-            var progs = MockDataStore.GetPrograms().AsEnumerable();
+            var progs = _programs.AsEnumerable();
             if (status != AllOption) progs = progs.Where(p => p.TrangThai == status);
             if (!string.IsNullOrWhiteSpace(kw))
             {
@@ -205,42 +244,66 @@ public partial class UcKhoaHoc : UserControl
                                          (p.NhomDoiTuong != null && p.NhomDoiTuong.Contains(kw, StringComparison.OrdinalIgnoreCase)));
             }
 
-            var list = progs.ToList();
+            var list = progs.OrderBy(p => p.TenChuongTrinh).ToList();
             dgvPrograms.Rows.Clear();
             foreach (var p in list)
             {
+                var doTuoi = p.DoTuoiTu.HasValue || p.DoTuoiDen.HasValue
+                    ? $"{p.DoTuoiTu ?? 0} - {p.DoTuoiDen ?? 0} tuổi"
+                    : "—";
+
                 var rowIdx = dgvPrograms.Rows.Add(
                     p.MaChuongTrinh,
                     p.TenChuongTrinh,
                     p.NhomDoiTuong ?? "—",
-                    $"{p.DoTuoiTu} - {p.DoTuoiDen} tuổi",
+                    doTuoi,
                     p.MucTieu ?? "—",
                     p.MoTa ?? "—",
                     p.TrangThai
                 );
                 dgvPrograms.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(p.TrangThai);
             }
-            lblSummary.Text = $"Hiển thị {list.Count} chương trình đào tạo phù hợp";
+            lblSummary.Text = $"Hiển thị {list.Count}/{_programs.Count} chương trình đào tạo phù hợp";
         }
     }
 
     private void ReloadData()
     {
-        txtSearch.Clear();
-        cboChuongTrinh.SelectedIndex = 0;
-        cboTrangThai.SelectedIndex = 0;
-        InitStats();
-        FilterData();
+        _ = ReloadAsync();
     }
 
-    private void BtnAdd_Click(object? sender, EventArgs e)
+    private async void BtnAdd_Click(object? sender, EventArgs e)
     {
-        var itemType = _currentTab switch { 0 => "khóa học", 1 => "cấp độ", 2 => "chương trình", _ => "mục" };
+        if (_currentTab == 0)
+        {
+            using var dlg = new FormKhoaHoc(_levels);
+            if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+            {
+                await ReloadAsync();
+            }
+            return;
+        }
+
+        var itemType = _currentTab switch { 1 => "cấp độ", 2 => "chương trình", _ => "mục" };
+
         MessageBox.Show(
             FindForm(),
-            $"Biểu mẫu khởi tạo {itemType} mới đã sẵn sàng.\nBạn có thể điền thông tin và kích hoạt khóa học vào hệ thống đào tạo.",
+            $"Chức năng thêm {itemType} mới chưa hỗ trợ trên bản WinForms.\n"
+            + "Vui lòng dùng bản Web (Quản trị → Chương trình) để tạo mới.",
             $"Thêm {itemType} mới",
             MessageBoxButtons.OK,
             MessageBoxIcon.Information);
+    }
+
+    private async void DgvCourses_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
+    {
+        if (e.RowIndex < 0) return;
+        if (dgvCourses.Rows[e.RowIndex].Tag is not CourseListItemDto khoaHoc) return;
+
+        using var dlg = new FormKhoaHoc(_levels, khoaHoc);
+        if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+        {
+            await ReloadAsync();
+        }
     }
 }

@@ -36,6 +36,35 @@ public static class DependencyInjection
         services.AddScoped<IStudentStore, StudentStore>();
         services.AddScoped<ITeacherStore, TeacherStore>();
 
+        // ---------- Phase 4: quản lý học vụ ----------
+        services.AddScoped<IReferenceStore, ReferenceStore>();
+        services.AddScoped<IProgramStore, ProgramStore>();
+        services.AddScoped<ILevelStore, LevelStore>();
+        services.AddScoped<ICourseStore, CourseStore>();
+        services.AddScoped<IPromotionStore, PromotionStore>();
+        services.AddScoped<IClassStore, ClassStore>();
+        services.AddScoped<ITeachingAssignmentStore, TeachingAssignmentStore>();
+        services.AddScoped<IEnrollmentStore, EnrollmentStore>();
+
+        // ---------- Phase 5: lịch học, điểm danh và điểm số ----------
+        services.AddScoped<IAcademicLookupStore, AcademicLookupStore>();
+        services.AddScoped<IRoomStore, RoomStore>();
+        services.AddScoped<IScheduleStore, ScheduleStore>();
+        services.AddScoped<ISessionStore, SessionStore>();
+        services.AddScoped<IAttendanceStore, AttendanceStore>();
+        services.AddScoped<IGradeTypeStore, GradeTypeStore>();
+        services.AddScoped<IGradeStore, GradeStore>();
+
+        // ---------- Phase 6: học phí, thanh toán và biên nhận ----------
+        services.AddScoped<ITuitionFeeStore, TuitionFeeStore>();
+        services.AddScoped<IPaymentStore, PaymentStore>();
+        services.AddScoped<IReceiptStore, ReceiptStore>();
+
+        // ---------- Phase 7: thông báo, khảo sát và báo cáo ----------
+        services.AddScoped<INotificationStore, NotificationStore>();
+        services.AddScoped<ISurveyStore, SurveyStore>();
+        services.AddScoped<IReportStore, ReportStore>();
+
         // Sinh mật khẩu tạm là logic thuần, không giữ state -> singleton.
         services.AddSingleton<ITemporaryPasswordGenerator, TemporaryPasswordGenerator>();
     }

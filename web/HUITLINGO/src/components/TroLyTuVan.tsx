@@ -1,100 +1,111 @@
 import { useState, useRef, useEffect } from 'react'
+import { Icon } from './BieuTuong'
 
 type Message = { from: 'bot' | 'user'; text: string; options?: string[] }
 
 const BOT_FLOW: Record<string, { text: string; options?: string[]; next?: Record<string, string> }> = {
   start: {
-    text: 'Xin chào! 👋 Mình là trợ lý tư vấn của HUIT LingoHub. Bạn đang học tiếng Anh với mục tiêu gì?',
-    options: ['Thi IELTS', 'Thi TOEIC', 'Giao tiếp hàng ngày', 'Cho con em học'],
-    next: { 'Thi IELTS': 'ielts_level', 'Thi TOEIC': 'toeic_level', 'Giao tiếp hàng ngày': 'comm_level', 'Cho con em học': 'kids' },
+    text: 'Xin chào! Mình là trợ lý tư vấn của HUIT LingoHub. Bạn hoặc con em đang cần học tiếng Anh theo hướng nào?',
+    options: ['Thi IELTS', 'Học giao tiếp', 'Cho con em học', 'Học sinh phổ thông'],
+    next: { 'Thi IELTS': 'ielts_level', 'Học giao tiếp': 'comm_level', 'Cho con em học': 'kids', 'Học sinh phổ thông': 'teen_level' },
   },
   ielts_level: {
-    text: 'Tuyệt vời! 🎯 Điểm IELTS mục tiêu của bạn là bao nhiêu?',
-    options: ['5.0 – 6.0', '6.0 – 7.0', '7.0 – 8.0+'],
-    next: { '5.0 – 6.0': 'rec_ielts_foundation', '6.0 – 7.0': 'rec_ielts_inter', '7.0 – 8.0+': 'rec_ielts_adv' },
+    text: 'Tuyệt vời! Điểm IELTS mục tiêu của bạn là bao nhiêu?',
+    options: ['5.5 – 6.0', '6.0 – 6.5', '7.0 trở lên'],
+    next: { '5.5 – 6.0': 'rec_ielts_foundation', '6.0 – 6.5': 'rec_ielts_inter', '7.0 trở lên': 'rec_ielts_adv' },
   },
   rec_ielts_foundation: {
-    text: '✅ Mình đề xuất khoá **IELTS Foundation** (3 tháng). Lớp nhỏ 12 người, giáo viên bản ngữ, cam kết đạt 5.5+. Bạn muốn đăng ký tư vấn miễn phí không?',
+    text: '**IELTS Foundation** — 12 tuần · 24 buổi · 48 giờ · **6.000.000đ/khóa**. Đầu vào 4.0–5.0, mục tiêu 5.5–6.0. Bạn muốn đăng ký tư vấn miễn phí không?',
     options: ['Đăng ký ngay', 'Xem thêm thông tin'],
     next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
   },
   rec_ielts_inter: {
-    text: '✅ Mình đề xuất khoá **IELTS Intermediate** (4 tháng). Tập trung Writing & Speaking band 6-7, luyện đề thật. Bạn muốn đăng ký tư vấn miễn phí không?',
+    text: '**IELTS Intermediate** — 12 tuần · 24 buổi · 48 giờ · **7.200.000đ/khóa**. Đầu vào từ 5.5, mục tiêu 6.0–6.5. Bạn muốn đăng ký tư vấn miễn phí không?',
     options: ['Đăng ký ngay', 'Xem thêm thông tin'],
     next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
   },
   rec_ielts_adv: {
-    text: '✅ Mình đề xuất khoá **IELTS Advanced** (6 tháng). Lớp chuyên sâu band 7+, giáo viên từng đạt 8.5. Bạn muốn đăng ký tư vấn miễn phí không?',
-    options: ['Đăng ký ngay', 'Xem thêm thông tin'],
-    next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
-  },
-  toeic_level: {
-    text: 'Bạn hiện đang ở trình độ nào rồi?',
-    options: ['Chưa biết gì', 'Dưới 500 điểm', 'Từ 500 – 700 điểm'],
-    next: { 'Chưa biết gì': 'rec_toeic_basic', 'Dưới 500 điểm': 'rec_toeic_inter', 'Từ 500 – 700 điểm': 'rec_toeic_adv' },
-  },
-  rec_toeic_basic: {
-    text: '✅ Khoá **TOEIC Sơ cấp** (2 tháng) sẽ phù hợp nhất. Mục tiêu 500+ điểm từ đầu. Bạn muốn đăng ký tư vấn không?',
-    options: ['Đăng ký ngay', 'Xem thêm thông tin'],
-    next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
-  },
-  rec_toeic_inter: {
-    text: '✅ Khoá **TOEIC Trung cấp** (3 tháng) — từ dưới 500 lên 700+. Chiến thuật làm bài + luyện đề thật. Bạn muốn đăng ký tư vấn không?',
-    options: ['Đăng ký ngay', 'Xem thêm thông tin'],
-    next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
-  },
-  rec_toeic_adv: {
-    text: '✅ Khoá **TOEIC Cao cấp** (2 tháng) — tập trung chinh phục 850–990 điểm. Bạn muốn đăng ký tư vấn không?',
+    text: '**IELTS Advanced** — 14 tuần · 28 buổi · 56 giờ · **8.400.000đ/khóa**. Đầu vào từ 6.0, mục tiêu 7.0+. Bạn muốn đăng ký tư vấn miễn phí không?',
     options: ['Đăng ký ngay', 'Xem thêm thông tin'],
     next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
   },
   comm_level: {
-    text: 'Mình muốn giao tiếp trong hoàn cảnh nào?',
-    options: ['Công việc / Business', 'Du lịch & cuộc sống', 'Cả hai'],
-    next: { 'Công việc / Business': 'rec_business', 'Du lịch & cuộc sống': 'rec_daily', 'Cả hai': 'rec_daily' },
+    text: 'Bạn muốn bắt đầu ở mức nào?',
+    options: ['A1–A2 · Căn bản', 'B1 · Trung cấp', 'B2 · Nâng cao'],
+    next: { 'A1–A2 · Căn bản': 'rec_comm_basic', 'B1 · Trung cấp': 'rec_comm_inter', 'B2 · Nâng cao': 'rec_comm_adv' },
   },
-  rec_business: {
-    text: '✅ Khoá **Business English** (4 tháng) — email, meeting, thuyết trình chuyên nghiệp. Tự tin làm việc với đối tác nước ngoài. Đăng ký tư vấn nhé?',
+  rec_comm_basic: {
+    text: '**Giao tiếp Căn bản** — 10 tuần · 20 buổi · 40 giờ · **4.500.000đ/khóa**. Lấy lại nền tảng, luyện phát âm. Đăng ký tư vấn nhé?',
     options: ['Đăng ký ngay', 'Xem thêm thông tin'],
     next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
   },
-  rec_daily: {
-    text: '✅ Khoá **Tiếng Anh Giao Tiếp** (3 tháng) — phát âm chuẩn, phản xạ nhanh, tự nhiên. 30% giờ học là thực hành với native speaker. Đăng ký tư vấn nhé?',
+  rec_comm_inter: {
+    text: '**Giao tiếp Trung cấp** — 12 tuần · 24 buổi · 48 giờ · **5.400.000đ/khóa**. Phản xạ trong công việc, lớp tối đa 12 người. Đăng ký tư vấn nhé?',
+    options: ['Đăng ký ngay', 'Xem thêm thông tin'],
+    next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
+  },
+  rec_comm_adv: {
+    text: '**Giao tiếp Nâng cao** — 14 tuần · 28 buổi · 56 giờ · **6.200.000đ/khóa**. Thuyết trình và tranh luận. Đăng ký tư vấn nhé?',
     options: ['Đăng ký ngay', 'Xem thêm thông tin'],
     next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
   },
   kids: {
-    text: 'Con em bao nhiêu tuổi?',
-    options: ['5 – 7 tuổi', '8 – 10 tuổi', '11 – 12 tuổi'],
-    next: { '5 – 7 tuổi': 'rec_kids_starters', '8 – 10 tuổi': 'rec_kids_movers', '11 – 12 tuổi': 'rec_kids_flyers' },
+    text: 'Bé nhà mình bao nhiêu tuổi?',
+    options: ['4 – 6 tuổi', '6 – 8 tuổi', '8 – 10 tuổi', '10 – 11 tuổi'],
+    next: { '4 – 6 tuổi': 'rec_pre', '6 – 8 tuổi': 'rec_kids_starters', '8 – 10 tuổi': 'rec_kids_movers', '10 – 11 tuổi': 'rec_kids_flyers' },
+  },
+  rec_pre: {
+    text: '**Tiếng Anh Mầm non** (Preschool 1/2) — 10–12 tuần · **3.600.000 – 3.900.000đ/khóa**. Lớp tối đa 10 bé, luôn có 1 giáo viên chính + 1 trợ giảng. Đăng ký cho bé không?',
+    options: ['Đăng ký ngay', 'Xem thêm thông tin'],
+    next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
   },
   rec_kids_starters: {
-    text: '✅ Khoá **Starters** (6 tháng) cho bé 5–7 tuổi. Học qua trò chơi, nhạc và hình ảnh sinh động. Đăng ký cho bé không?',
+    text: '**Tiểu học · Starters** — 15 tuần · 30 buổi · **4.200.000đ/khóa**. Làm quen Pre-A1 theo khung Cambridge YLE. Đăng ký cho bé không?',
     options: ['Đăng ký ngay', 'Xem thêm thông tin'],
     next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
   },
   rec_kids_movers: {
-    text: '✅ Khoá **Movers** (8 tháng) — bé 8–10 tuổi học đọc viết và giao tiếp cơ bản. Chuẩn bị cho kỳ thi Cambridge YLE. Đăng ký không?',
+    text: '**Tiểu học · Movers** — 16 tuần · 32 buổi · **4.600.000đ/khóa**. Trình độ A1, chuẩn bị thi Cambridge YLE. Đăng ký cho bé không?',
     options: ['Đăng ký ngay', 'Xem thêm thông tin'],
     next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
   },
   rec_kids_flyers: {
-    text: '✅ Khoá **Flyers** (6 tháng) — bé 11–12 tuổi, hướng đến chứng chỉ Cambridge Flyers quốc tế. Đăng ký không?',
+    text: '**Tiểu học · Flyers** — 17 tuần · 34 buổi · **5.000.000đ/khóa**. Trình độ A2, sẵn sàng vào lớp 6. Đăng ký cho bé không?',
+    options: ['Đăng ký ngay', 'Xem thêm thông tin'],
+    next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
+  },
+  teen_level: {
+    text: 'Bạn đang học lớp mấy?',
+    options: ['Lớp 6 – 7', 'Lớp 7 – 8', 'Lớp 8 – 9'],
+    next: { 'Lớp 6 – 7': 'rec_teen_1', 'Lớp 7 – 8': 'rec_teen_2', 'Lớp 8 – 9': 'rec_teen_3' },
+  },
+  rec_teen_1: {
+    text: '**Tiếng Anh THCS · Teen Starter** — 12 tuần · 24 buổi · **4.800.000đ/khóa**. Củng cố nền tảng ngữ pháp và 4 kỹ năng. Đăng ký không?',
+    options: ['Đăng ký ngay', 'Xem thêm thông tin'],
+    next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
+  },
+  rec_teen_2: {
+    text: '**Tiếng Anh THCS · Teen Elementary** — 13 tuần · 26 buổi · **5.200.000đ/khóa**. Bám chương trình phổ thông. Đăng ký không?',
+    options: ['Đăng ký ngay', 'Xem thêm thông tin'],
+    next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
+  },
+  rec_teen_3: {
+    text: '**Tiếng Anh THCS · Teen Intermediate** — 14 tuần · 28 buổi · **5.600.000đ/khóa**. Nền tảng thi vào lớp 10. Đăng ký không?',
     options: ['Đăng ký ngay', 'Xem thêm thông tin'],
     next: { 'Đăng ký ngay': 'register', 'Xem thêm thông tin': 'more_info' },
   },
   more_info: {
-    text: 'Bạn có thể xem chi tiết tại mục **Khóa học** hoặc để lại số điện thoại — đội tư vấn sẽ gọi lại trong 30 phút! 📞',
+    text: 'Bạn có thể xem chi tiết tại mục **Chương trình** hoặc để lại số điện thoại — đội tư vấn sẽ gọi lại trong 30 phút!',
     options: ['Để lại số điện thoại', 'Bắt đầu lại'],
     next: { 'Để lại số điện thoại': 'register', 'Bắt đầu lại': 'start' },
   },
   register: {
-    text: '🎉 Tuyệt vời! Vui lòng điền form hoặc gọi hotline **1800 6868** (miễn phí). Mình có thể giúp gì thêm không?',
+    text: 'Tuyệt vời! Vui lòng để lại số điện thoại hoặc gọi hotline **1800 6868** (miễn phí). Mình có thể giúp gì thêm không?',
     options: ['Hỏi về học phí', 'Bắt đầu lại'],
     next: { 'Hỏi về học phí': 'pricing', 'Bắt đầu lại': 'start' },
   },
   pricing: {
-    text: '💰 Học phí từ **2,500,000đ/tháng**. Trả 3 tháng giảm 10%, 6 tháng giảm 15%. Có học bổng cho học viên xuất sắc. Bạn muốn biết thêm?',
+    text: 'Học phí tính theo **khóa**, từ **3.600.000đ** (Mầm non) đến **8.400.000đ** (IELTS Advanced). Đóng đủ trước khai giảng giảm 5%, đăng ký từ 2 khóa giảm 10%. Bạn muốn biết thêm?',
     options: ['Đăng ký tư vấn', 'Bắt đầu lại'],
     next: { 'Đăng ký tư vấn': 'register', 'Bắt đầu lại': 'start' },
   },
@@ -167,7 +178,7 @@ export default function ChatBot() {
         fontSize: 24, transition: 'background 0.2s, transform 0.2s',
         transform: open ? 'rotate(15deg) scale(1.05)' : 'scale(1)',
       }} aria-label="Mở chat tư vấn">
-        {open ? '✕' : '💬'}
+        {open ? <Icon ten="X" size={24} /> : <Icon ten="MessageCircle" size={24} />}
         {!open && unread && (
           <span style={{
             position: 'absolute', top: 2, right: 2,
@@ -187,7 +198,9 @@ export default function ChatBot() {
           animation: 'slideUp 0.25s ease',
         }}>
           <div style={{ background: '#2563EB', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>🤖</div>
+            <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon ten="Bot" size={22} color="#fff" />
+            </div>
             <div>
               <div style={{ color: '#fff', fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: 15 }}>HUIT LingoBot</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -195,14 +208,18 @@ export default function ChatBot() {
                 <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>Trực tuyến — phản hồi ngay</span>
               </div>
             </div>
-            <button onClick={() => setOpen(false)} style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', cursor: 'pointer', width: 30, height: 30, borderRadius: '50%', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>✕</button>
+            <button onClick={() => setOpen(false)} style={{ marginLeft: 'auto', background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', cursor: 'pointer', width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Icon ten="X" size={16} />
+            </button>
           </div>
 
           <div style={{ flex: 1, overflowY: 'auto', padding: '16px 16px 8px', display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 340, minHeight: 200, background: '#F8FAFC' }}>
             {messages.map((msg, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: msg.from === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-end', gap: 8 }}>
                 {msg.from === 'bot' && (
-                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0 }}>🤖</div>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#2563EB' }}>
+                    <Icon ten="Bot" size={16} />
+                  </div>
                 )}
                 <div style={{
                   maxWidth: '78%', padding: '10px 14px',
@@ -240,12 +257,14 @@ export default function ChatBot() {
               <input autoFocus value={inputVal} onChange={e => setInputVal(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()}
                 placeholder="Nhập số điện thoại hoặc câu hỏi..."
                 style={{ flex: 1, padding: '9px 12px', borderRadius: 10, border: '1.5px solid #BFDBFE', fontSize: 14, outline: 'none', background: '#fff' }} />
-              <button onClick={handleSend} style={{ background: '#2563EB', color: '#fff', border: 'none', borderRadius: 10, padding: '0 14px', cursor: 'pointer', fontSize: 16, fontWeight: 700 }}>→</button>
+              <button onClick={handleSend} style={{ background: '#2563EB', color: '#fff', border: 'none', borderRadius: 10, padding: '0 14px', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <Icon ten="ArrowRight" size={18} />
+              </button>
             </div>
           )}
 
           <div style={{ padding: '8px 16px 12px', textAlign: 'center', background: '#fff', borderTop: '1px solid #F1F5F9' }}>
-            <span style={{ fontSize: 11, color: '#CBD5E1' }}>HUIT LingoHub · Tư vấn 24/7 · 1800 6868</span>
+            <span style={{ fontSize: 11, color: '#CBD5E1' }}>HUIT LingoHub · Tư vấn miễn phí · 1800 6868</span>
           </div>
         </div>
       )}

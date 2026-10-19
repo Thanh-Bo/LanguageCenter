@@ -1,0 +1,124 @@
+﻿============================================================
+ PHASE 6 - TEST SUITE (hoc phi / thanh toan / bien nhan)
+============================================================
+Health check: HTTP 200
+  [PASS] LOGIN admin (ADMIN001)
+  [PASS] LOGIN ke toan (NVKT001)
+  [PASS] LOGIN tu van (NVTV001)
+  [PASS] LOGIN hoc vien (HV001)
+  chan doan: DangKyHoc=4 | HocPhi=4 | ung vien san co=0
+  tao 2 dang ky test qua API...
+Dang ky test #1 = 5 (hoc vien HV002)
+Dang ky test #2 = 6 (hoc vien HV002)
+
+--- T01: tao nghia vu hoc phi ---
+  [PASS] T01.1 tao hoc phi -> 201
+  [PASS] T01.2 trang thai ban dau = Chua thanh toan
+  [PASS] T01.3 soTienDaDong = 0
+  [PASS] T01.4 DB soTienGoc = DangKyHoc.HocPhiGoc
+  [PASS] T01.5 DB soTienGiam = DangKyHoc.SoTienGiam
+  [PASS] T01.6 DB soTienPhaiDong = goc - giam
+  [PASS] T01.7 DB soTienConThieu = phaiDong
+
+--- T02: chong tao trung nghia vu hoc phi ---
+  [PASS] T02.1 tao lai cung maDangKy -> 409
+  [PASS] T02.2 dang ky khong ton tai -> 400
+
+--- T03: tra cuu hoc phi ---
+  [PASS] T03.1 GET danh sach -> 200
+  [PASS] T03.2 danh sach co ban ghi vua tao
+  [PASS] T03.3 GET chi tiet -> 200
+  [PASS] T03.4 chi tiet dung chu so huu
+  [PASS] T03.5 hoc phi khong ton tai -> 404
+
+--- T04: validate so tien ---
+  [PASS] T04.1 soTien = 0 -> 400
+  [PASS] T04.2 soTien am -> 400
+  [PASS] T04.3 vuot so du -> 409
+  [PASS] T04.4 vuot so du KHONG lam thay doi soTienDaDong
+  [PASS] T04.5 loaiGiaoDich Hoan tien -> 400
+  [PASS] T04.6 hoc phi khong ton tai -> 404
+
+--- T05: ghi nhan thanh toan hop le ---
+  [PASS] T05.1 thanh toan -> 201
+  [PASS] T05.2 giao dich co trang thai Thanh cong
+  [PASS] T05.3 ma nhan vien ke toan lay tu JWT (NVKT001)
+  [PASS] T05.4 co bien nhan kem theo
+  [PASS] T05.5 so bien nhan dung dinh dang BN+yyyyMMdd+3 so
+  [PASS] T05.6 DB soTienDaDong = so tien vua dong
+  [PASS] T05.7 DB trang thai = Thanh toan mot phan
+  [PASS] T05.8 DB soTienConThieu dung
+
+--- T06: chong giao dich trung lap ---
+  [PASS] T06.1 gui lai cung maGiaoDich -> 200
+  [PASS] T06.2 tra ve dung giao dich cu
+  [PASS] T06.3 DB chi co 1 giao dich voi ma nay
+  [PASS] T06.4 soTienDaDong khong bi cong doi
+
+--- T07: thanh toan du ---
+  [PASS] T07.1 thanh toan phan con lai -> 201
+  [PASS] T07.2 DB trang thai = Da thanh toan
+  [PASS] T07.3 DB soTienConThieu = 0
+
+--- T08: bien nhan ---
+  [PASS] T08.1 moi giao dich chi co 1 bien nhan
+  [PASS] T08.2 tra cuu bien nhan theo so -> 200
+  [PASS] T08.3 bien nhan gan dung giao dich
+  [PASS] T08.4 so tien bien nhan = so tien giao dich
+  [PASS] T08.5 GET danh sach bien nhan -> 200
+  [PASS] T08.6 danh sach co bien nhan vua tao
+
+--- T09: tra cuu giao dich ---
+  [PASS] T09.1 GET giao dich cua hoc phi -> 200
+  [PASS] T09.2 co dung 2 giao dich
+  [PASS] T09.3 GET chi tiet giao dich -> 200
+  [PASS] T09.4 chi tiet co bien nhan
+  [PASS] T09.5 giao dich khong ton tai -> 404
+
+--- T10: phan quyen ---
+  [PASS] T10.1 hoc vien tu ghi nhan thanh toan -> 403
+  [PASS] T10.2 hoc vien xem danh sach giao dich admin -> 403
+  [PASS] T10.3 hoc vien xem danh sach hoc phi admin -> 403
+  [PASS] T10.4 tu van duoc XEM hoc phi -> 200
+  [PASS] T10.5 tu van KHONG duoc ghi nhan thanh toan -> 403
+
+--- T11: API tu phuc vu cua hoc vien ---
+  [PASS] T11.1 GET /students/me/tuition-fees -> 200
+  [PASS] T11.2 chi tra du lieu cua HV001
+  [PASS] T11.3 GET /students/me/payments -> 200
+  [PASS] T11.4 GET /students/me/receipts -> 200
+  [PASS] T11.5 xem hoc phi nguoi khac -> 404
+  [PASS] T11.6 xem bien nhan nguoi khac -> 404
+
+--- T12: dong bo so tien tu dang ky ---
+  [PASS] T12.1 da thanh toan du -> dong bo bi chan 409
+  [PASS] T12.2 body rong -> 400
+
+--- T13: ghi nhan dong thoi, khong duoc am so du ---
+  [PASS] T13.1 tao hoc phi thu 2 -> 201
+  dong thoi: status1=201, status2=409, moiLan=4320000, tong=7200000.00
+  [PASS] T13.2 chi 1 giao dich duoc chap nhan
+  [PASS] T13.3 soTienDaDong khong am
+  [PASS] T13.4 soTienDaDong <= soTienPhaiDong
+  [PASS] T13.5 soTienDaDong = dung 1 lan thanh toan
+
+--- T14: bao cao hoc phi ---
+  [PASS] T14.1 GET bao cao -> 200
+  [PASS] T14.2 tongPhaiThu = tongDaThu + tongConThieu
+  [PASS] T14.3 tongPhaiThu > 0
+  [PASS] T14.4 hoc vien xem bao cao -> 403
+
+--- T15: regression Phase 1-5 ---
+  [PASS] T15.1 Phase 5 /students/me/grades van hoat dong
+  [PASS] T15.2 Phase 5 /students/me/schedule van hoat dong
+  [PASS] T15.3 Phase 4 /admin/enrollments van hoat dong
+  [PASS] T15.4 trang thai loc khong hop le -> 400
+
+--- DON DEP DU LIEU TEST ---
+  da xoa hoc phi test: 5,6
+  da xoa dang ky test: 5,6
+  so dong HocPhi con lai trong DB: 4
+
+============================================================
+ KET QUA: PASS = 76 | FAIL = 0 | WARN = 0
+============================================================

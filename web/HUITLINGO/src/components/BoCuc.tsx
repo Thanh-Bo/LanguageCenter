@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, Outlet } from 'react-router'
 import TroLyTuVan from './TroLyTuVan'
+import { Icon } from './BieuTuong'
 import { NAV_LINKS } from '../duLieu'
 import { dungXacThuc, duongDanTheoVaiTro } from '../contexts/NguCanhXacThuc'
 
@@ -368,7 +369,7 @@ export default function BoCuc() {
                 tạo và hơn 15,000 học viên tốt nghiệp.
               </p>
               <div style={{ display: 'flex', gap: 12 }}>
-                {['f', 'in', 'yt', '✉'].map((s) => (
+                {['f', 'in', 'yt', 'mail'].map((s) => (
                   <div
                     key={s}
                     style={{
@@ -392,20 +393,20 @@ export default function BoCuc() {
                       (e.currentTarget.style.background = '#334155')
                     }
                   >
-                    {s}
+                    {s === 'mail' ? <Icon name="mail" className="size-4" /> : s}
                   </div>
                 ))}
               </div>
             </div>
             {[
               {
-                title: 'Khóa học',
+                title: 'Chương trình',
                 items: [
-                  'IELTS',
-                  'TOEIC',
+                  'Mầm non',
+                  'Tiểu học',
+                  'THCS',
                   'Giao tiếp',
-                  'Thiếu nhi',
-                  'Business English',
+                  'IELTS',
                 ],
               },
               {
