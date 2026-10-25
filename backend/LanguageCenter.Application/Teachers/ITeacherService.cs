@@ -16,6 +16,12 @@ public interface ITeacherService
 
     Task<OperationResult<TeacherDetailDto>> UpdateAsync(string maGiaoVien, UpdateTeacherRequest request, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Xóa cứng giáo viên / trợ giảng + tài khoản — CHỈ khi không có dữ liệu nghiệp vụ phụ thuộc
+    /// (phân công giảng dạy, ca học, điểm đã chấm...). Nếu có, trả 409 và hướng dẫn đổi trạng thái.
+    /// </summary>
+    Task<OperationResult<bool>> DeleteAsync(string maGiaoVien, CancellationToken cancellationToken);
+
     // ---------- Self profile ----------
 
     /// <summary>

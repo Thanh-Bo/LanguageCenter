@@ -48,13 +48,27 @@ function mauChuTheoTrangThai(trangThai: string): string {
 function TheCaHoc({
   ca,
   dongPhu,
+  onChon,
 }: {
   ca: SessionListItem
   dongPhu: (ca: SessionListItem) => Array<string | null | undefined>
+  onChon?: () => void
 }) {
   return (
     <div
-      className={`rounded-lg border p-2 ${lopTheoTrangThai(ca.trangThai)}`}
+      onClick={
+        onChon
+          ? (event) => {
+              // Không để click trên thẻ lan ra ô ngày bên ngoài
+              event.stopPropagation()
+              onChon()
+            }
+          : undefined
+      }
+      role={onChon ? 'button' : undefined}
+      className={`rounded-lg border p-2 ${lopTheoTrangThai(ca.trangThai)} ${
+        onChon ? 'cursor-pointer transition hover:brightness-[0.97]' : ''
+      }`}
       title={`${ca.tenLop} · ${ca.trangThai}${ca.noiDungBaiHoc ? ` · ${ca.noiDungBaiHoc}` : ''}`}
     >
       <p className={`text-xs font-bold ${mauChuTheoTrangThai(ca.trangThai)}`}>
@@ -144,6 +158,7 @@ export function ThoiKhoaBieuTuan({
   moTaRong = 'Tuần này bạn không có ca học nào.',
   nhanDem = 'ca học',
   onChonNgay,
+  onChonCaHoc,
 }: {
   duLieu: SessionListItem[]
   tuanBatDau: string
@@ -158,6 +173,8 @@ export function ThoiKhoaBieuTuan({
   nhanDem?: string
   /** Bấm vào một ngày (ô lịch hoặc ô chọn ngày) → trả về ngày ISO vừa chọn. */
   onChonNgay?: (ngay: string) => void
+  /** Bấm vào một CA HỌC → mở trang điểm danh của ca đó. */
+  onChonCaHoc?: (ca: SessionListItem) => void
 }) {
   const cacNgay = NHAN_THU.map((_, i) => congNgayIso(tuanBatDau, i))
   const homNay = homNayIso()
@@ -222,7 +239,8 @@ export function ThoiKhoaBieuTuan({
                 const ngay = e.target.value
                 if (!ngay) return
                 onDoiTuan(dauTuanIso(ngay))
-                chonNgay(ngay)
+                setNgayChon(ngay)
+                onChonNgay?.(ngay)
               }}
               className={`${LOP_INPUT} h-10`}
             />
@@ -329,7 +347,12 @@ export function ThoiKhoaBieuTuan({
                         >
                           <div className="space-y-1">
                             {ds.map((s) => (
-                              <TheCaHoc key={s.maCaHoc} ca={s} dongPhu={dongPhu} />
+                              <TheCaHoc
+                                key={s.maCaHoc}
+                                ca={s}
+                                dongPhu={dongPhu}
+                                onChon={onChonCaHoc ? () => onChonCaHoc(s) : undefined}
+                              />
                             ))}
                           </div>
                         </td>
@@ -369,7 +392,11 @@ export function ThoiKhoaBieuTuan({
                   {(caTheoNgay.get(ngayChon) ?? []).map((ca) => (
                     <li
                       key={ca.maCaHoc}
-                      className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
+                      onClick={onChonCaHoc ? () => onChonCaHoc(ca) : undefined}
+                      className={`flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 ${
+                        onChonCaHoc ? 'cursor-pointer transition hover:border-blue-400' : ''
+                      }`}
+                      title={onChonCaHoc ? 'Bấm để mở trang điểm danh ca này' : undefined}
                     >
                       <span className="w-32 shrink-0 text-sm font-bold text-slate-900">
                         {dinhDangKhoangGio(ca.gioBatDau, ca.gioKetThuc)}

@@ -6,6 +6,8 @@ import type {
   ClassListItem,
   CurrentUser,
   FinanceReport,
+  GradeItem,
+  HoSoCaNhan,
   LoginResponse,
   MySurvey,
   NotificationItem,
@@ -138,6 +140,32 @@ export const giaoVienApi = {
   // Bảng điểm dùng endpoint tổng kết đã có ở Phase 5
   bangDiemLop: (maLopHoc: number) =>
     http.get<AcademicReport>(`/admin/reports/academic${qs({ maLopHoc })}`),
+
+  // ===== NHẬP ĐIỂM (giáo viên được phép theo AdminGradesController) =====
+  diemCuaDangKy: (maDangKy: number) =>
+    http.get<PagedResult<GradeItem>>(
+      `/admin/grades${qs({ maDangKy, page: 1, pageSize: 50 })}`,
+    ),
+  /** Toàn bộ điểm đã lưu của một lớp — dùng cho lưới nhập điểm. */
+  diemCuaLop: (maLopHoc: number) =>
+    http.get<PagedResult<GradeItem>>(
+      `/admin/grades${qs({ maLopHoc, page: 1, pageSize: 500 })}`,
+    ),
+  taoDiem: (body: {
+    maDangKy: number
+    maLoaiDiem: number
+    diem: number
+    nhanXet?: string | null
+  }) => http.post<GradeItem>('/admin/grades', body),
+  suaDiem: (maDiemSo: number, body: { diem: number; nhanXet?: string | null }) =>
+    http.patch<GradeItem>(`/admin/grades/${maDiemSo}`, body),
+  xoaDiem: (maDiemSo: number) => http.delete<void>(`/admin/grades/${maDiemSo}`),
+}
+
+// ===== HỒ SƠ CÁ NHÂN (chỉ để lấy họ tên hiển thị trên sidebar) =====
+export const hoSoApi = {
+  giaoVien: () => http.get<HoSoCaNhan>('/teacher/profile'),
+  hocVien: () => http.get<HoSoCaNhan>('/student/profile'),
 }
 
 // ===== HỌC VIÊN (tự phục vụ) =====

@@ -173,7 +173,26 @@ public partial class UcDiemSo : UserControl
             }
         }
 
-        using var dlg = new FormNhapDiem(hocVien, _report.ThanhPhan, map, _teachers);
+        // Tìm giáo viên chính đang phân công lớp này để điền sẵn ô "Người chấm"
+        // (bảng DiemSo bắt buộc có MaGiaoVien — Quản trị viên vẫn nhập điểm bình thường).
+        string? gvMacDinh = null;
+
+        var phanCong = await AppSession.Api.GetAsync<PagedResult<AssignmentListItemDto>>(
+            QueryStringBuilder.Build(
+                "admin/teaching-assignments",
+                ("maLopHoc", _report.MaLopHoc.ToString()),
+                ("page", "1"),
+                ("pageSize", "50")));
+
+        if (phanCong.Success && phanCong.Data is not null)
+        {
+            gvMacDinh = phanCong.Data.Items
+                            .FirstOrDefault(a => a.MaGiaoVien is not null
+                                                 && a.VaiTroPhanCong == "Giáo viên chính")?.MaGiaoVien
+                        ?? phanCong.Data.Items.FirstOrDefault(a => a.MaGiaoVien is not null)?.MaGiaoVien;
+        }
+
+        using var dlg = new FormNhapDiem(hocVien, _report.ThanhPhan, map, _teachers, gvMacDinh);
 
         if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
         {

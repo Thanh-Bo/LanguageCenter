@@ -176,7 +176,9 @@ public sealed class ApiClient
     /// </summary>
     private static (string Message, IReadOnlyList<string> Errors) ExtractError(string body, System.Net.HttpStatusCode statusCode)
     {
-        var fallback = $"Yêu cầu thất bại ({(int)statusCode} {statusCode}).";
+        var fallback = statusCode == System.Net.HttpStatusCode.Forbidden
+            ? "Tài khoản của bạn không có quyền thực hiện thao tác này (403)."
+            : $"Yêu cầu thất bại ({(int)statusCode} {statusCode}).";
 
         if (string.IsNullOrWhiteSpace(body))
         {

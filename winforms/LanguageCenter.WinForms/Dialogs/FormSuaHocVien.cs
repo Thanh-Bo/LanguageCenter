@@ -35,8 +35,10 @@ public partial class FormSuaHocVien : Form
     private void WireEvents()
     {
         chkNgayNhapHoc.CheckedChanged += (_, _) => dtpNgayNhapHoc.Enabled = chkNgayNhapHoc.Checked;
-        chkHasParent.CheckedChanged += (_, _) => pnlParentFields.Enabled = chkHasParent.Checked;
         btnCancel.Click += (_, _) => Close();
+
+        // Ô SĐT: chỉ cho gõ chữ số, tối đa 10 ký tự.
+        UI.KiemTraNhap.ChiNhapSoDienThoai(txtSoDienThoai);
     }
 
     private void ConfigureForCreateMode()
@@ -44,12 +46,10 @@ public partial class FormSuaHocVien : Form
         Text = "Thêm học viên mới";
         dtpNgaySinh.Value = DateTime.Today.AddYears(-10);
         cboGioiTinh.Items.AddRange(["Nam", "Nữ", "Khác"]);
-        cboMoiQuanHe.Items.AddRange(["Cha", "Mẹ", "Người giám hộ"]);
 
         // Khối trạng thái học tập do backend tự set khi tạo mới -> ẩn và kéo các control bên dưới lên.
         grpStatus.Visible = false;
-        var shift = grpParent.Top - grpStatus.Top;
-        grpParent.Top -= shift;
+        var shift = grpStatus.Height + 10;
         lblMessage.Top -= shift;
         btnSave.Top -= shift;
         btnCancel.Top -= shift;
@@ -61,11 +61,6 @@ public partial class FormSuaHocVien : Form
         Text = $"Sửa hồ sơ học viên — {_studentId}";
         cboGioiTinh.Items.AddRange(["Nam", "Nữ", "Khác"]);
         cboTrangThaiHocTap.Items.AddRange(StudentStatuses.All.ToArray());
-
-        // backend chưa hỗ trợ sửa phụ huynh qua API -> chỉ hiển thị, không cho nhập.
-        chkHasParent.Visible = false;
-        pnlParentFields.Visible = false;
-        lblParentReadonly.Visible = true;
 
         Load += async (_, _) => await LoadStudentAsync();
     }
@@ -107,14 +102,6 @@ public partial class FormSuaHocVien : Form
         {
             chkNgayNhapHoc.Checked = false;
         }
-
-        lblParentReadonly.Text = student.PhuHuynh is { } parent
-            ? $"Họ tên: {parent.HoTen}\n"
-                + $"Mối quan hệ: {parent.MoiQuanHe}\n"
-                + $"SĐT: {parent.SoDienThoai ?? "—"}\n"
-                + $"Email: {parent.Email ?? "—"}\n"
-                + $"Địa chỉ: {parent.DiaChi ?? "—"}"
-            : "Học viên chưa có thông tin phụ huynh.";
     }
 
     private async void BtnSave_Click(object? sender, EventArgs e)
@@ -122,19 +109,9 @@ public partial class FormSuaHocVien : Form
         lblMessage.ForeColor = UI.Theme.Danger;
         lblMessage.Text = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(txtHoTen.Text) || string.IsNullOrWhiteSpace(txtEmail.Text))
+        if (!KiemTraDuLieuHopLe())
         {
-            lblMessage.Text = "Vui lòng nhập Họ tên và Email.";
             return;
-        }
-
-        if (!_isEditMode && chkHasParent.Checked)
-        {
-            if (string.IsNullOrWhiteSpace(txtParentHoTen.Text) || string.IsNullOrWhiteSpace(cboMoiQuanHe.Text))
-            {
-                lblMessage.Text = "Đã chọn \"Có thông tin phụ huynh\" — vui lòng nhập Họ tên và Mối quan hệ của phụ huynh.";
-                return;
-            }
         }
 
         SetBusy(true);
@@ -163,16 +140,8 @@ public partial class FormSuaHocVien : Form
             DiaChi = NullIfEmpty(txtDiaChi.Text),
             MucTieuHocTap = NullIfEmpty(txtMucTieuHocTap.Text),
             TrinhDoHienTai = NullIfEmpty(txtTrinhDoHienTai.Text),
-            PhuHuynh = chkHasParent.Checked
-                ? new CreateParentRequest
-                {
-                    HoTen = txtParentHoTen.Text.Trim(),
-                    SoDienThoai = NullIfEmpty(txtParentSoDienThoai.Text),
-                    Email = NullIfEmpty(txtParentEmail.Text),
-                    DiaChi = NullIfEmpty(txtParentDiaChi.Text),
-                    MoiQuanHe = cboMoiQuanHe.Text.Trim()
-                }
-                : null
+            // Khối phụ huynh đã bỏ khỏi UI: luôn tạo học viên không kèm phụ huynh.
+            PhuHuynh = null
         };
 
         var result = await AppSession.Api.PostAsync<CreateStudentResponse>("admin/students", request);
@@ -220,8 +189,40 @@ public partial class FormSuaHocVien : Form
         }
 
         DataChanged = true;
-        lblMessage.ForeColor = UI.Theme.Success;
-        lblMessage.Text = "Đã lưu thay đổi.";
+        UI.KiemTraNhap.HienThiThanhCong(lblMessage, "Đã lưu thay đổi.");
+    }
+
+    /// <summary>
+    /// Kiểm tra dữ liệu nhập trước khi gọi API — cùng quy tắc với backend để báo lỗi ngay tại form.
+    /// Ô sai được tô đỏ, danh sách lỗi hiển thị bên dưới và con trỏ nhảy về ô sai đầu tiên.
+    /// </summary>
+    private bool KiemTraDuLieuHopLe()
+    {
+        var controls = new Control[] { txtHoTen, txtEmail, txtSoDienThoai, txtDiaChi, txtTrinhDoHienTai, txtMucTieuHocTap, dtpNgaySinh };
+        UI.KiemTraNhap.BoDanhDau(controls);
+
+        var loi = new List<string>();
+
+        UI.KiemTraNhap.BatBuoc(txtHoTen, "Họ tên", loi, minLength: 2);
+        UI.KiemTraNhap.DoDai(txtHoTen, "Họ tên", 150, loi);
+        UI.KiemTraNhap.Email(txtEmail, "Email", loi);
+        UI.KiemTraNhap.SoDienThoai(txtSoDienThoai, "Số điện thoại", loi);
+        UI.KiemTraNhap.DoDai(txtDiaChi, "Địa chỉ", 500, loi);
+        UI.KiemTraNhap.DoDai(txtTrinhDoHienTai, "Trình độ hiện tại", 200, loi);
+        UI.KiemTraNhap.DoDai(txtMucTieuHocTap, "Mục tiêu học tập", 1000, loi);
+
+        // Ngày sinh không được ở tương lai / trước 1900 (áp cho cả tạo mới và sửa).
+        UI.KiemTraNhap.NgaySinh(dtpNgaySinh, "Ngày sinh", loi);
+
+        UI.KiemTraNhap.HienThiLoi(lblMessage, loi);
+
+        if (loi.Count > 0)
+        {
+            UI.KiemTraNhap.FocusLoi(controls);
+            return false;
+        }
+
+        return true;
     }
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

@@ -22,6 +22,9 @@ public sealed class FormNhapDiem : Form
     private readonly IReadOnlyDictionary<int, int> _maDiemSoTheoLoaiDiem;
     private readonly IReadOnlyList<TeacherListItemDto> _giaoViens;
 
+    /// <summary>Giáo viên đang phân công lớp — được chọn sẵn ở ô "Người chấm".</summary>
+    private readonly string? _maGiaoVienMacDinh;
+
     private readonly Label _lblTieuDe = new();
     private readonly Label _lblThongBao = new();
     private readonly Label _lblTongKet = new();
@@ -36,12 +39,14 @@ public sealed class FormNhapDiem : Form
         AcademicStudentRowDto hocVien,
         IReadOnlyList<GradeComponentDto> thanhPhan,
         IReadOnlyDictionary<int, int> maDiemSoTheoLoaiDiem,
-        IReadOnlyList<TeacherListItemDto> giaoViens)
+        IReadOnlyList<TeacherListItemDto> giaoViens,
+        string? maGiaoVienMacDinh = null)
     {
         _hocVien = hocVien;
         _thanhPhan = thanhPhan;
         _maDiemSoTheoLoaiDiem = maDiemSoTheoLoaiDiem;
         _giaoViens = giaoViens;
+        _maGiaoVienMacDinh = maGiaoVienMacDinh;
 
         Text = $"Nhập điểm — {hocVien.HoTen}";
         StartPosition = FormStartPosition.CenterParent;
@@ -72,6 +77,11 @@ public sealed class FormNhapDiem : Form
         _grid.RowHeadersVisible = false;
         _grid.AutoGenerateColumns = false;
         UiHelpers.StyleGrid(_grid);
+
+        // StyleGrid đặt ReadOnly = true → phải mở lại, nếu không sẽ KHÔNG nhập được
+        // điểm, không gõ được nhận xét và không tích được ô "Xoá".
+        _grid.ReadOnly = false;
+        _grid.EditMode = DataGridViewEditMode.EditOnEnter;
 
         _grid.Columns.Add(new DataGridViewTextBoxColumn
         {
@@ -190,15 +200,25 @@ public sealed class FormNhapDiem : Form
         }
 
         _cboNguoiCham.Items.Clear();
-        foreach (var gv in _giaoViens)
+
+        // Ưu tiên giáo viên đang được phân công lớp này → Quản trị viên không phải chọn lại.
+        var dsSapXep = _giaoViens
+            .OrderByDescending(gv => string.Equals(
+                gv.MaGiaoVien, _maGiaoVienMacDinh, StringComparison.OrdinalIgnoreCase))
+            .ThenBy(gv => gv.MaGiaoVien)
+            .ToList();
+
+        foreach (var gv in dsSapXep)
         {
             _cboNguoiCham.Items.Add(new GiaoVienItem(gv.MaGiaoVien, $"{gv.MaGiaoVien} — {gv.HoTen} ({gv.LoaiGiaoVien})"));
         }
+
         if (_cboNguoiCham.Items.Count > 0) _cboNguoiCham.SelectedIndex = 0;
 
         _lblThongBao.Text = _thanhPhan.Count == 0
             ? "Khóa học của lớp này chưa cấu hình đầu điểm."
-            : "Nhập điểm rồi bấm Lưu. Để trống điểm và tích 'Xoá' nếu muốn huỷ một đầu điểm.";
+            : "Quản trị viên nhập điểm được — chỉ cần chọn 'Người chấm'. "
+              + "Để trống điểm và tích 'Xoá' nếu muốn huỷ một đầu điểm.";
     }
 
     private async Task LuuAsync()

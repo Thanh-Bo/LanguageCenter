@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { authApi } from '../lib/api/endpoints'
+import { authApi, hoSoApi } from '../lib/api/endpoints'
 import { datXuLyUnauthorized, layToken, luuToken, xoaToken } from '../lib/api/http'
 import type { VaiTro } from '../lib/api/types'
 import { chuVietTat } from '../lib/format'
@@ -35,16 +35,39 @@ const KHOA_HET_HAN = 'huitlingo_expires'
 
 const NguCanhXacThuc = createContext<NguCanhXacThucType | null>(null)
 
-function taoNguoiDung(user: {
+/**
+ * Lấy HỌ TÊN THẬT từ hồ sơ (giáo viên / trợ giảng / học viên).
+ * Tài khoản đăng nhập chỉ có mã (GV001, HV004) nên phải hỏi hồ sơ.
+ * Lỗi → giữ tên đăng nhập để không chặn đăng nhập.
+ */
+async function layHoTen(user: { username: string; role: VaiTro }): Promise<string> {
+  try {
+    if (user.role === 'Giáo viên' || user.role === 'Trợ giảng') {
+      const hoSo = await hoSoApi.giaoVien()
+      return hoSo.hoTen?.trim() || user.username
+    }
+
+    if (user.role === 'Học viên') {
+      const hoSo = await hoSoApi.hocVien()
+      return hoSo.hoTen?.trim() || user.username
+    }
+  } catch {
+    // Không có hồ sơ (hoặc lỗi mạng) → dùng tên đăng nhập
+  }
+
+  return user.username
+}
+
+async function taoNguoiDung(user: {
   id: number
   username: string
   email: string
   role: VaiTro
-}): ApiUser {
+}): Promise<ApiUser> {
   return {
     id: user.id,
     tenDangNhap: user.username,
-    hoTen: user.username,
+    hoTen: await layHoTen(user),
     email: user.email,
     vaiTro: user.role,
     avatar: chuVietTat(user.username),
@@ -89,7 +112,7 @@ export function NhaCungCapXacThuc({ children }: { children: ReactNode }) {
 
       try {
         const user = await authApi.toi()
-        if (!huy) setNguoiDung(taoNguoiDung(user))
+        if (!huy) setNguoiDung(await taoNguoiDung(user))
       } catch {
         // Token hết hạn/không hợp lệ -> xoá phiên, không chặn ứng dụng
         dangXuat()
@@ -107,9 +130,11 @@ export function NhaCungCapXacThuc({ children }: { children: ReactNode }) {
 
   const dangNhap = useCallback(async (tenDangNhap: string, matKhau: string) => {
     const res = await authApi.dangNhap(tenDangNhap.trim(), matKhau)
-    const user = taoNguoiDung(res.user)
 
     luuToken(res.accessToken)
+
+    const user = await taoNguoiDung(res.user)
+
     localStorage.setItem(KHOA_USER, JSON.stringify(user))
     localStorage.setItem(KHOA_HET_HAN, res.expiresAt)
 

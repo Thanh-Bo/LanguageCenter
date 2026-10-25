@@ -16,6 +16,12 @@ public interface IStudentService
 
     Task<OperationResult<StudentDetailDto>> UpdateAsync(string maHocVien, UpdateStudentRequest request, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Xóa cứng học viên + tài khoản — CHỈ khi không có dữ liệu nghiệp vụ phụ thuộc.
+    /// Nếu đã có đăng ký học / điểm danh / học phí..., trả 409 và hướng dẫn đổi trạng thái sang "Đã nghỉ".
+    /// </summary>
+    Task<OperationResult<bool>> DeleteAsync(string maHocVien, CancellationToken cancellationToken);
+
     // ---------- Self profile ----------
 
     /// <summary>

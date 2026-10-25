@@ -39,6 +39,32 @@ export type LoginResponse = {
   user: CurrentUser
 }
 
+/** Hồ sơ cá nhân (giáo viên / trợ giảng / học viên) — chỉ lấy phần cần hiển thị. */
+export type HoSoCaNhan = {
+  // Chung
+  hoTen?: string
+  email?: string | null
+  soDienThoai?: string | null
+  gioiTinh?: string | null
+  ngaySinh?: string | null
+  diaChi?: string | null
+
+  // Học viên (/student/profile)
+  maHocVien?: string
+  mucTieuHocTap?: string | null
+  trinhDoHienTai?: string | null
+  trangThaiHocTap?: string
+  ngayNhapHoc?: string | null
+
+  // Giáo viên / trợ giảng (/teacher/profile)
+  maGiaoVien?: string
+  loaiGiaoVien?: string
+  chuyenMon?: string | null
+  soNamKinhNghiem?: number | null
+  ngayVaoLam?: string | null
+  trangThai?: string
+}
+
 // ===== HỌC VIÊN =====
 export type StudentListItem = {
   maHocVien: string
@@ -204,6 +230,27 @@ export type AcademicReport = {
   diemCaoNhat?: number | null
   diemThapNhat?: number | null
   hocViens: AcademicStudentRow[]
+}
+
+/** Một bản ghi điểm đã lưu (GET /api/admin/grades). */
+export type GradeItem = {
+  maDiemSo: number
+  maDangKy: number
+  maHocVien: string
+  hoTenHocVien: string
+  maLopHoc?: number | null
+  maLop?: string | null
+  tenLop?: string | null
+  maLoaiDiem: number
+  tenLoaiDiem: string
+  diemToiDa: number
+  diem: number
+  nhanXet?: string | null
+  trangThaiKetQua?: string | null
+  maGiaoVien: string
+  tenGiaoVien: string
+  ngayCham: string
+  ngayCapNhat?: string | null
 }
 
 // ===== ĐIỂM DANH CỦA HỌC VIÊN =====

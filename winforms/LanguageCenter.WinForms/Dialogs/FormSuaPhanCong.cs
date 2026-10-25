@@ -122,12 +122,8 @@ public partial class FormSuaPhanCong : Form
         }
 
         var lop = _classes[cboLopHoc.SelectedIndex];
-        var soNgay = lop.NgayKetThucDuKien.DayNumber - lop.NgayBatDau.DayNumber;
 
-        _lblThoiGian.Text =
-            $"{lop.NgayBatDau:dd/MM/yyyy}  →  {lop.NgayKetThucDuKien:dd/MM/yyyy}"
-            + Environment.NewLine
-            + $"(lấy theo lớp — khoảng {soNgay} ngày)";
+        _lblThoiGian.Text = $"{lop.NgayBatDau:dd/MM/yyyy}  →  {lop.NgayKetThucDuKien:dd/MM/yyyy}";
     }
 
     /// <summary>Nạp danh sách lớp và giáo viên/trợ giảng thật từ API.</summary>

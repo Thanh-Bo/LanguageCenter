@@ -57,7 +57,7 @@ public sealed class StudentService : IStudentService
                 $"Email '{email}' đã được sử dụng bởi tài khoản khác.");
         }
 
-        // Mật khẩu tạm: random, KHÔNG hard-code, KHÔNG log, chỉ lưu dạng hash.
+        // Mật khẩu mặc định của trung tâm ("111111") — chỉ lưu dạng hash, không log plain text.
         var temporaryPassword = _temporaryPasswordGenerator.Generate();
         var passwordHash = _passwordHasherService.HashPassword(temporaryPassword);
 
@@ -93,7 +93,7 @@ public sealed class StudentService : IStudentService
                 FullName = provisionData.HoTen,
                 Email = email,
                 Role = RoleNames.HocVien,
-                Message = "Tạo học viên thành công. Mật khẩu tạm chỉ hiển thị MỘT LẦN — hãy gửi ngay cho học viên."
+                Message = "Tạo học viên thành công. Mật khẩu mặc định: 111111 — hãy gửi ngay cho học viên và nhắc đổi mật khẩu sau khi đăng nhập."
             },
             "Tạo học viên thành công.");
     }
@@ -204,6 +204,35 @@ public sealed class StudentService : IStudentService
     // ========================================================================
     // PRIVATE HELPERS
     // ========================================================================
+
+    public async Task<OperationResult<bool>> DeleteAsync(string maHocVien, CancellationToken cancellationToken)
+    {
+        var account = await _accountStore.FindByUsernameAsync(maHocVien, cancellationToken);
+
+        if (account is null || account.TenVaiTro != RoleNames.HocVien)
+        {
+            return OperationResult<bool>.NotFound($"Không tìm thấy học viên '{maHocVien}'.");
+        }
+
+        // Xóa cứng chỉ khi không còn dữ liệu nghiệp vụ phụ thuộc (đăng ký, điểm danh, học phí...).
+        var check = await _accountStore.CheckDeletableAsync(account.MaTaiKhoan, cancellationToken);
+
+        if (!check.CanDelete)
+        {
+            return OperationResult<bool>.Conflict(
+                $"Không thể xóa học viên '{maHocVien}' vì đang có dữ liệu liên quan ({check.Reason}). "
+                + "Hãy dùng chức năng Sửa và đổi Trạng thái học tập sang 'Đã nghỉ' thay vì xóa.");
+        }
+
+        var outcome = await _accountStore.DeleteAsync(account.MaTaiKhoan, cancellationToken);
+
+        return outcome switch
+        {
+            WriteOutcome.Success => OperationResult<bool>.NoContent(),
+            WriteOutcome.NotFound => OperationResult<bool>.NotFound($"Không tìm thấy học viên '{maHocVien}'."),
+            _ => OperationResult<bool>.Conflict("Không thể xóa học viên do ràng buộc dữ liệu.")
+        };
+    }
 
     private static ParentProvisionData? MapParent(CreateParentRequest? parent)
     {

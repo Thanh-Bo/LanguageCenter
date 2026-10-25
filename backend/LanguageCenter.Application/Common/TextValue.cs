@@ -36,7 +36,10 @@ public static class TextValue
         return true;
     }
 
-    /// <summary>Số điện thoại: chỉ chữ số, khoảng trắng, +, -, ., ( ) và dài 8-20 ký tự.</summary>
+    /// <summary>
+    /// Số điện thoại Việt Nam: không bắt buộc; nếu nhập thì <b>chỉ chữ số</b>,
+    /// <b>bắt đầu bằng số 0</b> và <b>đúng 10 chữ số</b>.
+    /// </summary>
     public static bool IsPlausiblePhone(string? phone, out string? error)
     {
         error = null;
@@ -48,19 +51,22 @@ public static class TextValue
 
         var trimmed = phone.Trim();
 
-        if (trimmed.Length is < 8 or > 20)
+        if (trimmed.Any(c => !char.IsDigit(c)))
         {
-            error = "Số điện thoại phải từ 8 đến 20 ký tự.";
+            error = "Số điện thoại chỉ được chứa chữ số (không chữ, không khoảng trắng, không ký tự đặc biệt).";
             return false;
         }
 
-        foreach (var c in trimmed)
+        if (!trimmed.StartsWith('0'))
         {
-            if (!char.IsDigit(c) && c is not (' ' or '+' or '-' or '.' or '(' or ')'))
-            {
-                error = "Số điện thoại chỉ được chứa chữ số và các ký tự + - . ( )";
-                return false;
-            }
+            error = "Số điện thoại phải bắt đầu bằng số 0.";
+            return false;
+        }
+
+        if (trimmed.Length != 10)
+        {
+            error = $"Số điện thoại phải có đúng 10 chữ số (hiện có {trimmed.Length}).";
+            return false;
         }
 
         return true;

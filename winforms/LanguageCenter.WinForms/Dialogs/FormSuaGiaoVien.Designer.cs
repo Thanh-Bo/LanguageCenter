@@ -7,7 +7,7 @@ partial class FormSuaGiaoVien
     private GroupBox grpInfo = null!;
     private Label lblHoTen = null!;
     private TextBox txtHoTen = null!;
-    private CheckBox chkNgaySinh = null!;
+    private Label lblNgaySinh = null!;
     private DateTimePicker dtpNgaySinh = null!;
     private Label lblGioiTinh = null!;
     private ComboBox cboGioiTinh = null!;
@@ -17,14 +17,10 @@ partial class FormSuaGiaoVien
     private TextBox txtSoDienThoai = null!;
     private Label lblDiaChi = null!;
     private TextBox txtDiaChi = null!;
-    private Label lblLoaiGiaoVien = null!;
-    private ComboBox cboLoaiGiaoVien = null!;
     private Label lblSoNamKinhNghiem = null!;
     private NumericUpDown numSoNamKinhNghiem = null!;
     private Label lblChuyenMon = null!;
     private TextBox txtChuyenMon = null!;
-    private CheckBox chkNgayVaoLam = null!;
-    private DateTimePicker dtpNgayVaoLam = null!;
 
     private GroupBox grpStatus = null!;
     private Label lblTrangThai = null!;
@@ -53,24 +49,20 @@ partial class FormSuaGiaoVien
         grpInfo = new GroupBox();
         lblHoTen = new Label { Text = "Họ tên (*)", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 28) };
         txtHoTen = new TextBox { Width = 460, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 48) };
-        chkNgaySinh = new CheckBox { Text = "Có ngày sinh", AutoSize = true, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 84) };
-        dtpNgaySinh = new DateTimePicker { Width = 220, Format = DateTimePickerFormat.Short, Enabled = false, Location = new Point(16, 104) };
-        lblGioiTinh = new Label { Text = "Giới tính", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(250, 84) };
-        cboGioiTinh = new ComboBox { Width = 210, DropDownStyle = ComboBoxStyle.DropDown, Font = new Font("Segoe UI", 9.5f), Location = new Point(250, 104) };
+        lblNgaySinh = new Label { Text = "Ngày sinh (*)", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 84) };
+        dtpNgaySinh = new DateTimePicker { Width = 220, Format = DateTimePickerFormat.Short, Location = new Point(16, 104) };
+        lblGioiTinh = new Label { Text = "Giới tính (*)", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(250, 84) };
+        cboGioiTinh = new ComboBox { Width = 210, DropDownStyle = ComboBoxStyle.DropDownList, Font = new Font("Segoe UI", 9.5f), Location = new Point(250, 104) };
         lblEmail = new Label { Text = "Email (*)", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 140) };
         txtEmail = new TextBox { Width = 220, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 160) };
-        lblSoDienThoai = new Label { Text = "Số điện thoại", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(250, 140) };
+        lblSoDienThoai = new Label { Text = "Số điện thoại (*)", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(250, 140) };
         txtSoDienThoai = new TextBox { Width = 210, Font = new Font("Segoe UI", 9.5f), Location = new Point(250, 160) };
-        lblDiaChi = new Label { Text = "Địa chỉ", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 196) };
+        lblDiaChi = new Label { Text = "Địa chỉ (*)", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 196) };
         txtDiaChi = new TextBox { Width = 460, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 216) };
-        lblLoaiGiaoVien = new Label { Text = "Loại giáo viên (*)", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 252) };
-        cboLoaiGiaoVien = new ComboBox { Width = 210, Font = new Font("Segoe UI", 9.5f), DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(16, 272) };
-        lblSoNamKinhNghiem = new Label { Text = "Số năm kinh nghiệm", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(250, 252) };
-        numSoNamKinhNghiem = new NumericUpDown { Width = 100, Minimum = 0, Maximum = 80, Font = new Font("Segoe UI", 9.5f), Location = new Point(250, 272) };
-        lblChuyenMon = new Label { Text = "Chuyên môn", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 308) };
-        txtChuyenMon = new TextBox { Width = 460, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 328) };
-        chkNgayVaoLam = new CheckBox { Text = "Có ngày vào làm", AutoSize = true, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 364) };
-        dtpNgayVaoLam = new DateTimePicker { Width = 220, Format = DateTimePickerFormat.Short, Enabled = false, Location = new Point(16, 384) };
+        lblChuyenMon = new Label { Text = "Chuyên môn (*)", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 252) };
+        txtChuyenMon = new TextBox { Width = 460, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 272) };
+        lblSoNamKinhNghiem = new Label { Text = "Số năm kinh nghiệm", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 308) };
+        numSoNamKinhNghiem = new NumericUpDown { Width = 100, Minimum = 0, Maximum = 80, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 328) };
 
         grpStatus = new GroupBox();
         lblTrangThai = new Label { Text = "Trạng thái làm việc", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 26) };
@@ -119,21 +111,20 @@ partial class FormSuaGiaoVien
         grpInfo.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         grpInfo.ForeColor = Color.FromArgb(15, 23, 42);
         grpInfo.Location = new Point(20, 16);
-        grpInfo.Size = new Size(500, 430);
+        grpInfo.Size = new Size(500, 366);
 
         grpInfo.Controls.AddRange(new Control[]
         {
-            lblHoTen, txtHoTen, chkNgaySinh, dtpNgaySinh, lblGioiTinh, cboGioiTinh,
+            lblHoTen, txtHoTen, lblNgaySinh, dtpNgaySinh, lblGioiTinh, cboGioiTinh,
             lblEmail, txtEmail, lblSoDienThoai, txtSoDienThoai, lblDiaChi, txtDiaChi,
-            lblLoaiGiaoVien, cboLoaiGiaoVien, lblSoNamKinhNghiem, numSoNamKinhNghiem,
-            lblChuyenMon, txtChuyenMon, chkNgayVaoLam, dtpNgayVaoLam
+            lblChuyenMon, txtChuyenMon, lblSoNamKinhNghiem, numSoNamKinhNghiem
         });
 
         // grpStatus
         grpStatus.Text = "Trạng thái làm việc (Quản trị viên)";
         grpStatus.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         grpStatus.ForeColor = Color.FromArgb(15, 23, 42);
-        grpStatus.Location = new Point(20, 462);
+        grpStatus.Location = new Point(20, 398);
         grpStatus.Size = new Size(500, 90);
         grpStatus.Controls.AddRange(new Control[] { lblTrangThai, cboTrangThai });
 
@@ -141,20 +132,20 @@ partial class FormSuaGiaoVien
         grpQualifications.Text = "Bằng cấp / Chứng chỉ (chỉ đọc)";
         grpQualifications.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         grpQualifications.ForeColor = Color.FromArgb(15, 23, 42);
-        grpQualifications.Location = new Point(20, 568);
+        grpQualifications.Location = new Point(20, 504);
         grpQualifications.Size = new Size(500, 160);
         grpQualifications.Controls.Add(lblQualificationsReadonly);
 
         // message + buttons
-        lblMessage.Location = new Point(20, 744);
-        lblMessage.Size = new Size(500, 40);
+        lblMessage.Location = new Point(20, 680);
+        lblMessage.Size = new Size(500, 92);
         lblMessage.Font = new Font("Segoe UI", 9.5f);
         lblMessage.ForeColor = Color.FromArgb(239, 68, 68);
 
-        btnSave.Location = new Point(20, 792);
+        btnSave.Location = new Point(20, 780);
         btnSave.Click += BtnSave_Click;
 
-        btnCancel.Location = new Point(170, 792);
+        btnCancel.Location = new Point(170, 780);
 
         Controls.Add(btnCancel);
         Controls.Add(btnSave);
@@ -165,7 +156,7 @@ partial class FormSuaGiaoVien
 
         AutoScaleDimensions = new SizeF(96F, 96F);
         AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 860);
+        ClientSize = new Size(560, 852);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;

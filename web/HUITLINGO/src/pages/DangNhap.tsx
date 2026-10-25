@@ -1,5 +1,6 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router";
+import logo from "../assets/logo.png";
 import { Icon } from "../components/BieuTuong";
 import { dungXacThuc, duongDanTheoVaiTro } from "../contexts/NguCanhXacThuc";
 
@@ -64,14 +65,12 @@ export default function DangNhap() {
           to="/"
           className="relative flex w-fit items-center gap-3 text-white no-underline"
         >
-          <span className="grid size-11 place-items-center rounded-xl bg-white/15 ring-1 ring-white/20 backdrop-blur-sm">
-            <Icon name="logo" className="size-6" />
-          </span>
+          <img src={logo} alt="LingoHub" className="size-11 shrink-0 rounded-full object-cover" />
           <span
             className="text-2xl font-bold tracking-tight"
             style={{ fontFamily: SANS }}
           >
-            HUIT LingoHub
+            LingoHub
           </span>
         </Link>
 
@@ -115,7 +114,7 @@ export default function DangNhap() {
         </div>
 
         <p className="relative text-sm text-blue-200">
-          © 2026 HUIT LingoHub Education Management
+          © 2026 LingoHub Education Management
         </p>
       </section>
 
@@ -126,11 +125,9 @@ export default function DangNhap() {
             to="/"
             className="mb-12 flex items-center gap-3 text-slate-900 no-underline lg:hidden"
           >
-            <span className="grid size-10 place-items-center rounded-xl bg-blue-600 text-white">
-              <Icon name="logo" className="size-5" />
-            </span>
+            <img src={logo} alt="LingoHub" className="size-10 shrink-0 rounded-full object-cover" />
             <span className="text-xl font-bold" style={{ fontFamily: SANS }}>
-              HUIT LingoHub
+              LingoHub
             </span>
           </Link>
 

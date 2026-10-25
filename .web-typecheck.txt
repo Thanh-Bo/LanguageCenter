@@ -1,8 +1,1 @@
-﻿web/HUITLINGO/src/pages/giaovien/BangDiem.tsx(48,25): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
-web/HUITLINGO/src/pages/giaovien/DiemDanh.tsx(29,25): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
-web/HUITLINGO/src/pages/giaovien/LopCuaToi.tsx(21,25): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
-web/HUITLINGO/src/pages/hocvien/DiemSo.tsx(32,30): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
-web/HUITLINGO/src/pages/hocvien/LichHoc.tsx(14,33): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
-web/HUITLINGO/src/pages/hocvien/TongQuanHocVien.tsx(51,31): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
-web/HUITLINGO/src/pages/hocvien/TongQuanHocVien.tsx(52,32): error TS2345: Argument of type 'number' is not assignable to parameter of type 'string'.
-EXITCODE=2
+﻿EXITCODE=0

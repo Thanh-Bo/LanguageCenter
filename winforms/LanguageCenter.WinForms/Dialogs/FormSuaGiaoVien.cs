@@ -3,31 +3,41 @@ using LanguageCenter.WinForms.Api;
 namespace LanguageCenter.WinForms.Dialogs;
 
 /// Thêm mới hoặc sửa hồ sơ giáo viên / trợ giảng.
-/// Constructor không tham số → chế độ TẠO MỚI (chọn được Loại giáo viên).
-/// Constructor(teacherId) → chế độ SỬA (Loại giáo viên khóa cứng — xem ghi chú trong
-/// UpdateTeacherRequest của backend: đổi loại sẽ làm hỏng mã GV/TG và dữ liệu lịch sử;
-/// hiện thêm khối trạng thái làm việc và Bằng cấp/Chứng chỉ chỉ đọc, Phase 3 chưa có CRUD).
+/// <para>
+/// <c>laTroGiang</c> quyết định form thuộc tab nào: tab Trợ giảng thì loại cố định là "Trợ giảng",
+/// tab Giáo viên thì cố định là "Giáo viên" — người dùng không chọn được (tránh tạo sai mã GV/TG).
+/// </para>
+/// <para>
+/// Ngày sinh luôn có (ai cũng có ngày sinh) và Giới tính chỉ chọn trong dropdown.
+/// Ngày vào làm đã bỏ khỏi form.
+/// </para>
 public partial class FormSuaGiaoVien : Form
 {
     private readonly string? _teacherId;
     private readonly bool _isEditMode;
+    private readonly bool _laTroGiang;
 
     public bool DataChanged { get; private set; }
 
+    /// Loại cố định theo tab đang mở.
+    private string LoaiGiaoVien => _laTroGiang ? TeacherTypes.TroGiang : TeacherTypes.GiaoVien;
+
     /// Chế độ tạo mới.
-    public FormSuaGiaoVien()
+    public FormSuaGiaoVien(bool laTroGiang)
     {
         _isEditMode = false;
+        _laTroGiang = laTroGiang;
         InitializeComponent();
         WireEvents();
         ConfigureForCreateMode();
     }
 
     /// Chế độ sửa.
-    public FormSuaGiaoVien(string teacherId)
+    public FormSuaGiaoVien(string teacherId, bool laTroGiang)
     {
         _teacherId = teacherId;
         _isEditMode = true;
+        _laTroGiang = laTroGiang;
         InitializeComponent();
         WireEvents();
         ConfigureForEditMode();
@@ -35,17 +45,17 @@ public partial class FormSuaGiaoVien : Form
 
     private void WireEvents()
     {
-        chkNgaySinh.CheckedChanged += (_, _) => dtpNgaySinh.Enabled = chkNgaySinh.Checked;
-        chkNgayVaoLam.CheckedChanged += (_, _) => dtpNgayVaoLam.Enabled = chkNgayVaoLam.Checked;
         btnCancel.Click += (_, _) => Close();
+
+        // Ô SĐT: chỉ cho gõ chữ số, tối đa 10 ký tự.
+        UI.KiemTraNhap.ChiNhapSoDienThoai(txtSoDienThoai);
     }
 
     private void ConfigureForCreateMode()
     {
-        Text = "Thêm giáo viên / trợ giảng mới";
+        Text = $"Thêm {LoaiGiaoVien.ToLowerInvariant()} mới";
         cboGioiTinh.Items.AddRange(["Nam", "Nữ", "Khác"]);
-        cboLoaiGiaoVien.Items.AddRange(TeacherTypes.All.ToArray());
-        cboLoaiGiaoVien.SelectedIndex = 0;
+        dtpNgaySinh.Value = DateTime.Today.AddYears(-25);
 
         // Trạng thái làm việc + Bằng cấp/Chứng chỉ chỉ có ý nghĩa với hồ sơ đã tồn tại.
         grpStatus.Visible = false;
@@ -59,13 +69,9 @@ public partial class FormSuaGiaoVien : Form
 
     private void ConfigureForEditMode()
     {
-        Text = $"Sửa hồ sơ giáo viên / trợ giảng — {_teacherId}";
+        Text = $"Sửa hồ sơ {LoaiGiaoVien.ToLowerInvariant()} — {_teacherId}";
         cboGioiTinh.Items.AddRange(["Nam", "Nữ", "Khác"]);
         cboTrangThai.Items.AddRange(WorkStatuses.All.ToArray());
-
-        // LoaiGiaoVien không sửa được qua API -> chỉ hiển thị, khóa combo.
-        cboLoaiGiaoVien.Items.AddRange(TeacherTypes.All.ToArray());
-        cboLoaiGiaoVien.Enabled = false;
 
         Load += async (_, _) => await LoadTeacherAsync();
     }
@@ -88,37 +94,24 @@ public partial class FormSuaGiaoVien : Form
         var teacher = result.Data;
 
         txtHoTen.Text = teacher.HoTen;
-        cboGioiTinh.Text = teacher.GioiTinh ?? string.Empty;
+
+        // DropDownList: chọn theo index, không gán Text tự do.
+        var chiSoGioiTinh = cboGioiTinh.Items.IndexOf(teacher.GioiTinh);
+        cboGioiTinh.SelectedIndex = chiSoGioiTinh >= 0 ? chiSoGioiTinh : -1;
+
         txtEmail.Text = teacher.Email ?? string.Empty;
         txtSoDienThoai.Text = teacher.SoDienThoai ?? string.Empty;
         txtDiaChi.Text = teacher.DiaChi ?? string.Empty;
         txtChuyenMon.Text = teacher.ChuyenMon ?? string.Empty;
-        cboLoaiGiaoVien.SelectedItem = teacher.LoaiGiaoVien;
 
         if (teacher.SoNamKinhNghiem is { } soNam)
         {
             numSoNamKinhNghiem.Value = Math.Clamp(soNam, 0, 80);
         }
 
-        if (teacher.NgaySinh is { } ngaySinh)
-        {
-            chkNgaySinh.Checked = true;
-            dtpNgaySinh.Value = ngaySinh.ToDateTime(TimeOnly.MinValue);
-        }
-        else
-        {
-            chkNgaySinh.Checked = false;
-        }
-
-        if (teacher.NgayVaoLam is { } ngayVaoLam)
-        {
-            chkNgayVaoLam.Checked = true;
-            dtpNgayVaoLam.Value = ngayVaoLam.ToDateTime(TimeOnly.MinValue);
-        }
-        else
-        {
-            chkNgayVaoLam.Checked = false;
-        }
+        dtpNgaySinh.Value = teacher.NgaySinh is { } ngaySinh
+            ? ngaySinh.ToDateTime(TimeOnly.MinValue)
+            : DateTime.Today.AddYears(-25);
 
         cboTrangThai.SelectedItem = teacher.TrangThai;
 
@@ -159,39 +152,8 @@ public partial class FormSuaGiaoVien : Form
         lblMessage.ForeColor = UI.Theme.Danger;
         lblMessage.Text = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(txtHoTen.Text) || string.IsNullOrWhiteSpace(txtEmail.Text))
+        if (!KiemTraDuLieuHopLe())
         {
-            lblMessage.Text = "Vui lòng nhập Họ tên và Email.";
-            return;
-        }
-
-        // Tạo mới: bắt buộc đủ thông tin để hồ sơ dùng được ngay (lịch dạy, liên hệ, hợp đồng).
-        if (!_isEditMode)
-        {
-            var thieu = new List<string>();
-
-            if (string.IsNullOrWhiteSpace(txtEmail.Text) || !txtEmail.Text.Contains('@'))
-            {
-                thieu.Add("Email hợp lệ");
-            }
-
-            if (string.IsNullOrWhiteSpace(txtSoDienThoai.Text)) thieu.Add("Số điện thoại");
-            if (string.IsNullOrWhiteSpace(cboGioiTinh.Text)) thieu.Add("Giới tính");
-            if (!chkNgaySinh.Checked) thieu.Add("Ngày sinh");
-            if (string.IsNullOrWhiteSpace(txtDiaChi.Text)) thieu.Add("Địa chỉ");
-            if (string.IsNullOrWhiteSpace(txtChuyenMon.Text)) thieu.Add("Chuyên môn");
-            if (string.IsNullOrWhiteSpace(cboLoaiGiaoVien.Text)) thieu.Add("Loại giáo viên");
-
-            if (thieu.Count > 0)
-            {
-                lblMessage.Text = "Vui lòng nhập đủ thông tin: " + string.Join(", ", thieu) + ".";
-                return;
-            }
-        }
-
-        if (!_isEditMode && string.IsNullOrWhiteSpace(cboLoaiGiaoVien.Text))
-        {
-            lblMessage.Text = "Vui lòng chọn Loại giáo viên (Giáo viên / Trợ giảng).";
             return;
         }
 
@@ -214,15 +176,14 @@ public partial class FormSuaGiaoVien : Form
         var request = new CreateTeacherRequest
         {
             HoTen = txtHoTen.Text.Trim(),
-            NgaySinh = chkNgaySinh.Checked ? DateOnly.FromDateTime(dtpNgaySinh.Value) : null,
+            NgaySinh = DateOnly.FromDateTime(dtpNgaySinh.Value),
             GioiTinh = NullIfEmpty(cboGioiTinh.Text),
             Email = txtEmail.Text.Trim(),
             SoDienThoai = NullIfEmpty(txtSoDienThoai.Text),
             DiaChi = NullIfEmpty(txtDiaChi.Text),
-            LoaiGiaoVien = cboLoaiGiaoVien.Text.Trim(),
+            LoaiGiaoVien = LoaiGiaoVien,
             ChuyenMon = NullIfEmpty(txtChuyenMon.Text),
-            SoNamKinhNghiem = (int)numSoNamKinhNghiem.Value,
-            NgayVaoLam = chkNgayVaoLam.Checked ? DateOnly.FromDateTime(dtpNgayVaoLam.Value) : null
+            SoNamKinhNghiem = (int)numSoNamKinhNghiem.Value
         };
 
         var result = await AppSession.Api.PostAsync<CreateTeacherResponse>("admin/teachers", request);
@@ -250,14 +211,13 @@ public partial class FormSuaGiaoVien : Form
         var request = new UpdateTeacherRequest
         {
             HoTen = txtHoTen.Text.Trim(),
-            NgaySinh = chkNgaySinh.Checked ? DateOnly.FromDateTime(dtpNgaySinh.Value) : null,
+            NgaySinh = DateOnly.FromDateTime(dtpNgaySinh.Value),
             GioiTinh = NullIfEmpty(cboGioiTinh.Text),
             Email = NullIfEmpty(txtEmail.Text),
             SoDienThoai = NullIfEmpty(txtSoDienThoai.Text),
             DiaChi = NullIfEmpty(txtDiaChi.Text),
             ChuyenMon = NullIfEmpty(txtChuyenMon.Text),
             SoNamKinhNghiem = (int)numSoNamKinhNghiem.Value,
-            NgayVaoLam = chkNgayVaoLam.Checked ? DateOnly.FromDateTime(dtpNgayVaoLam.Value) : null,
             TrangThai = cboTrangThai.SelectedItem as string
         };
 
@@ -270,8 +230,64 @@ public partial class FormSuaGiaoVien : Form
         }
 
         DataChanged = true;
-        lblMessage.ForeColor = UI.Theme.Success;
-        lblMessage.Text = "Đã lưu thay đổi.";
+        UI.KiemTraNhap.HienThiThanhCong(lblMessage, "Đã lưu thay đổi.");
+    }
+
+    /// <summary>
+    /// Kiểm tra dữ liệu nhập trước khi gọi API — cùng quy tắc với backend để báo lỗi ngay tại form.
+    /// Ô sai được tô đỏ, danh sách lỗi hiển thị bên dưới và con trỏ nhảy về ô sai đầu tiên.
+    /// </summary>
+    private bool KiemTraDuLieuHopLe()
+    {
+        var controls = new Control[]
+        {
+            txtHoTen, txtEmail, txtSoDienThoai, txtDiaChi, txtChuyenMon, cboGioiTinh, dtpNgaySinh
+        };
+        UI.KiemTraNhap.BoDanhDau(controls);
+
+        var loi = new List<string>();
+
+        UI.KiemTraNhap.BatBuoc(txtHoTen, "Họ tên", loi, minLength: 2);
+        UI.KiemTraNhap.DoDai(txtHoTen, "Họ tên", 150, loi);
+        UI.KiemTraNhap.Email(txtEmail, "Email", loi);
+        UI.KiemTraNhap.SoDienThoai(txtSoDienThoai, "Số điện thoại", loi);
+        UI.KiemTraNhap.DoDai(txtDiaChi, "Địa chỉ", 500, loi);
+        UI.KiemTraNhap.DoDai(txtChuyenMon, "Chuyên môn", 500, loi);
+        UI.KiemTraNhap.NgaySinh(dtpNgaySinh, "Ngày sinh", loi);
+
+        // Tạo mới: bắt buộc đủ thông tin để hồ sơ dùng được ngay (lịch dạy, liên hệ).
+        if (!_isEditMode)
+        {
+            UI.KiemTraNhap.ChonBatBuoc(cboGioiTinh, "Giới tính", loi);
+
+            if (string.IsNullOrWhiteSpace(txtSoDienThoai.Text))
+            {
+                UI.KiemTraNhap.DanhDauLoi(txtSoDienThoai);
+                loi.Add("Số điện thoại: bắt buộc nhập.");
+            }
+
+            if (string.IsNullOrWhiteSpace(txtDiaChi.Text))
+            {
+                UI.KiemTraNhap.DanhDauLoi(txtDiaChi);
+                loi.Add("Địa chỉ: bắt buộc nhập.");
+            }
+
+            if (string.IsNullOrWhiteSpace(txtChuyenMon.Text))
+            {
+                UI.KiemTraNhap.DanhDauLoi(txtChuyenMon);
+                loi.Add("Chuyên môn: bắt buộc nhập.");
+            }
+        }
+
+        UI.KiemTraNhap.HienThiLoi(lblMessage, loi);
+
+        if (loi.Count > 0)
+        {
+            UI.KiemTraNhap.FocusLoi(controls);
+            return false;
+        }
+
+        return true;
     }
 
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();

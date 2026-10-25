@@ -222,7 +222,11 @@ public sealed class StudentListItemDto
 
     public string TrangThaiHocTap { get; init; } = string.Empty;
 
-    public DateOnly? NgayNhapHoc { get; init; }
+    /// <summary>
+    /// Ngày nhập học = ngày BẮT ĐẦU lớp học (lớp sớm nhất học viên đã vào).
+    /// <c>set</c> để store điền bổ sung cho dữ liệu cũ chưa đồng bộ.
+    /// </summary>
+    public DateOnly? NgayNhapHoc { get; set; }
 }
 
 /// <summary>Tham số lọc danh sách học viên (Admin).</summary>

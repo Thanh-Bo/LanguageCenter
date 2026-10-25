@@ -101,6 +101,8 @@ public sealed class StudentStore : IStudentStore
             })
             .ToListAsync(cancellationToken);
 
+        await DienNgayNhapHocConThieuAsync(items, cancellationToken);
+
         return new PagedResult<StudentListItemDto>
         {
             Items = items,
@@ -108,6 +110,48 @@ public sealed class StudentStore : IStudentStore
             PageSize = query.PageSize,
             TotalItems = totalItems
         };
+    }
+
+    /// <summary>
+    /// Ngày nhập học = ngày BẮT ĐẦU lớp học (lớp sớm nhất học viên đã vào).
+    /// Với dữ liệu cũ chưa đồng bộ sang <c>HocVien.NgayNhapHoc</c>, điền bổ sung
+    /// từ <c>DangKyHoc</c> → <c>LopHoc</c> để màn Quản lý học viên luôn hiển thị đúng.
+    /// </summary>
+    private async Task DienNgayNhapHocConThieuAsync(
+        List<StudentListItemDto> items,
+        CancellationToken cancellationToken)
+    {
+        var canBoSung = items
+            .Where(item => item.NgayNhapHoc is null)
+            .Select(item => item.MaHocVien)
+            .ToList();
+
+        if (canBoSung.Count == 0)
+        {
+            return;
+        }
+
+        var ngayTheoLop = await _dbContext.DangKyHocs
+            .Where(dangKy => canBoSung.Contains(dangKy.MaHocVien) && dangKy.MaLopHoc != null)
+            .GroupBy(dangKy => dangKy.MaHocVien)
+            .Select(nhom => new
+            {
+                MaHocVien = nhom.Key,
+                NgayBatDau = nhom.Min(dangKy => (DateOnly?)dangKy.LopHoc!.NgayBatDau)
+            })
+            .ToListAsync(cancellationToken);
+
+        var banDo = ngayTheoLop
+            .Where(x => x.NgayBatDau is not null)
+            .ToDictionary(x => x.MaHocVien, x => x.NgayBatDau!.Value);
+
+        foreach (var item in items)
+        {
+            if (item.NgayNhapHoc is null && banDo.TryGetValue(item.MaHocVien, out var ngayBatDau))
+            {
+                item.NgayNhapHoc = ngayBatDau;
+            }
+        }
     }
 
     public async Task<WriteOutcome> UpdateAsync(

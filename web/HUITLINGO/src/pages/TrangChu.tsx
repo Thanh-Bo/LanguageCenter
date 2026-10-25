@@ -1,6 +1,24 @@
 import { Link } from 'react-router'
-import { COURSES, TEACHERS, TESTIMONIALS, STATS } from '../duLieu'
+import { TEACHERS, TESTIMONIALS, STATS } from '../duLieu'
 import { Icon } from '../components/BieuTuong'
+
+/**
+ * BẢNG MÀU DUY NHẤT của trang chủ: chỉ xanh nước biển + xám trung tính.
+ * Dùng chung cho mọi section để không bị "mỗi chỗ một kiểu".
+ */
+const UC = {
+  brand: '#1D4ED8',
+  blue: '#2563EB',
+  light: '#EFF6FF',
+  border: '#BFDBFE',
+  ink: '#0F172A',
+  body: '#475569',
+  muted: '#64748B',
+  line: '#E2E8F0',
+  bg: '#F8FAFC',
+} as const
+
+const FONT = "'Be Vietnam Pro', 'Inter', system-ui, -apple-system, sans-serif"
 
 const FEATURES = [
   { icon: 'Trophy', color: '#2563EB', bg: '#EFF6FF', title: 'Cam kết đầu ra', desc: 'Học lại miễn phí nếu chưa đạt mục tiêu và đủ điều kiện chuyên cần từ 80%' },
@@ -13,9 +31,9 @@ export default function Home() {
   return (
     <>
       {/* HERO */}
-      <section style={{ background: 'linear-gradient(135deg, #EFF6FF 0%, #EFF6FF 50%, #EFF6FF 100%)', padding: '80px 24px 100px', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -80, right: -80, width: 400, height: 400, borderRadius: '50%', background: 'rgba(37,99,235,0.06)' }} />
-        <div style={{ position: 'absolute', bottom: -60, left: -60, width: 300, height: 300, borderRadius: '50%', background: 'rgba(139,92,246,0.06)' }} />
+      <section style={{ background: `linear-gradient(180deg, ${UC.light} 0%, #FFFFFF 78%)`, padding: '72px 24px 88px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', top: -120, right: -100, width: 420, height: 420, borderRadius: '50%', background: 'rgba(37,99,235,0.10)' }} />
+        <div style={{ position: 'absolute', bottom: -80, left: -80, width: 320, height: 320, borderRadius: '50%', background: 'rgba(37,99,235,0.06)' }} />
 
         <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1.1fr 1fr', gap: 60, alignItems: 'center' }} className="hero-grid">
           <div>
@@ -34,7 +52,7 @@ export default function Home() {
             }}>
               Chinh phục tiếng Anh{' '}
               <span style={{ color: '#2563EB' }}>
-                cùng HUIT LingoHub
+                cùng LingoHub
               </span>
             </h1>
             <p style={{ color: '#64748B', fontSize: 20, lineHeight: 1.7, margin: '0 0 40px', maxWidth: 520 }}>
@@ -75,16 +93,16 @@ export default function Home() {
 
           <div style={{ position: 'relative' }}>
             <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=600&h=500&fit=crop&auto=format"
-              alt="Học viên đang học tại HUIT LingoHub"
+              alt="Học viên đang học tại LingoHub"
               style={{ width: '100%', borderRadius: 20, boxShadow: '0 20px 60px rgba(0,0,0,0.12)', display: 'block' }} />
-            <div style={{ position: 'absolute', top: -20, left: -20, background: '#fff', borderRadius: 16, padding: '14px 18px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ position: 'absolute', top: -20, left: -20, background: '#fff', borderRadius: 16, padding: '14px 18px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: 12 }} className="hero-float">
               <div style={{ color: '#2563EB', display: 'flex' }}><Icon ten="Trophy" size={32} /></div>
               <div>
                 <div style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif", fontWeight: 800, fontSize: 20, color: '#2563EB' }}>IELTS 8.0+</div>
                 <div style={{ color: '#64748B', fontSize: 14 }}>Học viên đạt điểm cao nhất</div>
               </div>
             </div>
-            <div style={{ position: 'absolute', bottom: 30, right: -20, background: '#fff', borderRadius: 16, padding: '14px 18px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }}>
+            <div style={{ position: 'absolute', bottom: 30, right: -20, background: '#fff', borderRadius: 16, padding: '14px 18px', boxShadow: '0 8px 30px rgba(0,0,0,0.1)' }} className="hero-float">
               <div style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif", fontWeight: 800, fontSize: 16, marginBottom: 10 }}>Học viên mới tháng này</div>
               <div style={{ display: 'flex' }}>
                 {['photo-1438761681033-6461ffad8d80', 'photo-1500648767791-00dcc994a43e', 'photo-1494790108377-be9c29b29330'].map((id, i) => (
@@ -114,62 +132,29 @@ export default function Home() {
       </section>
 
       {/* WHY US */}
-      <section style={{ padding: '80px 24px', background: '#F8FAFC' }}>
+      <section style={{ padding: '72px 24px', background: UC.bg }}>
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 56 }}>
-            <div style={{ color: '#2563EB', fontWeight: 700, fontSize: 15, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>Tại sao chọn HUIT LingoHub?</div>
-            <h2 style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif", fontWeight: 900, fontSize: 'clamp(32px, 4.5vw, 48px)', margin: '0 0 20px', lineHeight: 1.15 }}>Học tiếng Anh hiệu quả hơn<br />với phương pháp của chúng tôi</h2>
-            <p style={{ color: '#64748B', fontSize: 19, maxWidth: 600, margin: '0 auto', lineHeight: 1.7 }}>Hệ thống học tập kết hợp giữa lớp học trực tiếp và công nghệ AI — tối ưu hóa cho từng học viên</p>
+          <div style={{ textAlign: 'center', marginBottom: 44 }}>
+            <div className="tc-eyebrow">Tại sao chọn LingoHub?</div>
+            <h2 className="tc-h2" style={{ margin: '0 auto 16px', maxWidth: 720 }}>
+              Học tiếng Anh hiệu quả hơn với phương pháp của chúng tôi
+            </h2>
+            <p style={{ color: UC.muted, fontSize: 18, maxWidth: 600, margin: '0 auto', lineHeight: 1.7 }}>
+              Kết hợp lớp học trực tiếp với hệ thống theo dõi tiến độ từng buổi
+            </p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
-            {FEATURES.map(f => (
-              <div key={f.title} style={{ background: '#fff', borderRadius: 16, padding: '32px 28px', border: '1px solid #E2E8F0', transition: 'transform 0.2s, box-shadow 0.2s', cursor: 'default' }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.08)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
-              >
-                <div style={{ width: 64, height: 64, borderRadius: 16, background: f.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', color: f.color, marginBottom: 24 }}>
-                  <Icon ten={f.icon} size={32} />
-                </div>
-                <h3 style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif", fontWeight: 800, fontSize: 22, margin: '0 0 12px', color: f.color }}>{f.title}</h3>
-                <p style={{ color: '#64748B', fontSize: 17, lineHeight: 1.7, margin: 0 }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* COURSES PREVIEW */}
-      <section style={{ padding: '80px 24px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 48, flexWrap: 'wrap', gap: 16 }}>
-            <div>
-              <div style={{ color: '#2563EB', fontWeight: 700, fontSize: 15, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 14 }}>Chương trình đào tạo</div>
-              <h2 style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif", fontWeight: 900, fontSize: 'clamp(32px, 4.5vw, 48px)', margin: 0 }}>5 chương trình học theo độ tuổi</h2>
-            </div>
-            <Link to="/khoahoc" style={{ color: '#2563EB', fontWeight: 700, textDecoration: 'none', fontSize: 17, display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
-              Xem tất cả <Icon ten="ArrowRight" size={16} />
-            </Link>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 24 }}>
-            {COURSES.slice(0, 5).map(c => (
-              <Link key={c.tag} to="/khoahoc" style={{ textDecoration: 'none', color: 'inherit' }}>
-                <div style={{ background: '#fff', borderRadius: 20, overflow: 'hidden', border: '1px solid #E2E8F0', transition: 'transform 0.2s, box-shadow 0.2s', height: '100%' }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 16px 48px rgba(0,0,0,0.1)' }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
-                >
-                  <div style={{ background: c.bg, padding: '28px 24px 24px' }}>
-                    <span style={{ display: 'inline-block', background: c.color, color: '#fff', borderRadius: 100, padding: '5px 14px', fontSize: 13, fontWeight: 700, marginBottom: 14 }}>{c.tag}</span>
-                    <div style={{ fontSize: 38, marginBottom: 12 }}>{c.icon}</div>
-                    <h3 style={{ fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif", fontWeight: 800, fontSize: 21, margin: '0 0 10px' }}>{c.title}</h3>
-                    <p style={{ color: '#64748B', fontSize: 16, lineHeight: 1.7, margin: 0 }}>{c.desc}</p>
-                  </div>
-                  <div style={{ padding: '18px 24px', display: 'flex', justifyContent: 'space-between', fontSize: 15, color: '#64748B' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Icon ten="Star" size={14} fill="currentColor" /> {c.rating}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}><Icon ten="Users" size={14} /> {c.students}</span>
-                    <span style={{ color: c.color, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>Xem thêm <Icon ten="ArrowRight" size={14} /></span>
-                  </div>
-                </div>
-              </Link>
+          <div className="tc-why-grid">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="tc-why-cell">
+                <h3 className="tc-why-title">
+                  <span className="tc-why-icon">
+                    <Icon ten={f.icon} size={20} />
+                  </span>
+                  {f.title}
+                </h3>
+                <p className="tc-why-desc">{f.desc}</p>
+              </div>
             ))}
           </div>
         </div>
@@ -258,9 +243,95 @@ export default function Home() {
       </section>
 
       <style>{`
+        /* ===== Kiểu chữ dùng chung ===== */
+        .tc-eyebrow {
+          color: #1D4ED8;
+          font-weight: 700;
+          font-size: 13px;
+          letter-spacing: .08em;
+          text-transform: uppercase;
+          text-align: center;
+          margin-bottom: 12px;
+        }
+        .tc-h2 {
+          font-family: 'Be Vietnam Pro', 'Inter', system-ui, sans-serif;
+          font-weight: 900;
+          font-size: clamp(28px, 3.6vw, 40px);
+          line-height: 1.2;
+          color: #0F172A;
+        }
+
+        /* ===== VÌ SAO CHỌN: lưới 2x2 kẻ đường, KHÔNG khung 4 card ===== */
+        .tc-why-grid {
+          display: grid;
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          background: #fff;
+          border: 1px solid #E2E8F0;
+          border-radius: 20px;
+          overflow: hidden;
+        }
+        .tc-why-cell {
+          padding: 30px 32px;
+          border-right: 1px solid #E2E8F0;
+          border-bottom: 1px solid #E2E8F0;
+        }
+        .tc-why-cell:nth-child(2n) { border-right: none; }
+        .tc-why-cell:nth-child(n + 3) { border-bottom: none; }
+        .tc-why-title {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin: 0 0 10px;
+          font-family: 'Be Vietnam Pro', 'Inter', system-ui, sans-serif;
+          font-size: 19px;
+          font-weight: 800;
+          color: #0F172A;
+        }
+        .tc-why-icon {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          width: 34px;
+          height: 34px;
+          border-radius: 10px;
+          background: #EFF6FF;
+          color: #2563EB;
+          flex-shrink: 0;
+        }
+        .tc-why-desc {
+          margin: 0;
+          color: #475569;
+          font-size: 16px;
+          line-height: 1.7;
+        }
+
+        @media (max-width: 760px) {
+          .tc-why-grid { grid-template-columns: 1fr; }
+          .tc-why-cell { border-right: none; }
+          .tc-why-cell:nth-child(n) { border-bottom: 1px solid #E2E8F0; }
+          .tc-why-cell:last-child { border-bottom: none; }
+        }
+
         @media (max-width: 900px) {
-          .hero-grid { grid-template-columns: 1fr !important; }
+          .hero-grid { grid-template-columns: 1fr !important; gap: 44px !important; }
           .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          /* Thẻ nổi đè lên ảnh trên màn nhỏ → ẩn hẳn */
+          .hero-float { display: none !important; }
+        }
+        @media (max-width: 560px) {
+          .stats-grid { grid-template-columns: 1fr !important; }
+        }
+
+        /* Trạng thái focus thống nhất cho bàn phím (trước đây chỉ có hover bằng JS) */
+        a:focus-visible,
+        button:focus-visible {
+          outline: 3px solid rgba(37, 99, 235, 0.45);
+          outline-offset: 3px;
+          border-radius: 10px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          * { transition: none !important; animation: none !important; }
         }
       `}</style>
     </>

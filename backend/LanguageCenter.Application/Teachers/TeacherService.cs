@@ -104,7 +104,7 @@ public sealed class TeacherService : ITeacherService
                 Email = email,
                 LoaiGiaoVien = loaiGiaoVien,
                 Role = vaiTro,
-                Message = $"Tạo {loaiGiaoVien.ToLowerInvariant()} thành công. Mật khẩu tạm chỉ hiển thị MỘT LẦN."
+                Message = $"Tạo {loaiGiaoVien.ToLowerInvariant()} thành công. Mật khẩu mặc định: 111111 — hãy gửi ngay cho người dùng và nhắc đổi mật khẩu sau khi đăng nhập."
             },
             $"Tạo {loaiGiaoVien} thành công.");
     }
@@ -214,6 +214,35 @@ public sealed class TeacherService : ITeacherService
     // ========================================================================
     // PRIVATE HELPERS
     // ========================================================================
+
+    public async Task<OperationResult<bool>> DeleteAsync(string maGiaoVien, CancellationToken cancellationToken)
+    {
+        var account = await _accountStore.FindByUsernameAsync(maGiaoVien, cancellationToken);
+
+        if (account is null
+            || (account.TenVaiTro != RoleNames.GiaoVien && account.TenVaiTro != RoleNames.TroGiang))
+        {
+            return OperationResult<bool>.NotFound($"Không tìm thấy giáo viên / trợ giảng '{maGiaoVien}'.");
+        }
+
+        var check = await _accountStore.CheckDeletableAsync(account.MaTaiKhoan, cancellationToken);
+
+        if (!check.CanDelete)
+        {
+            return OperationResult<bool>.Conflict(
+                $"Không thể xóa '{maGiaoVien}' vì đang có dữ liệu liên quan ({check.Reason}). "
+                + "Hãy dùng chức năng Sửa và đổi Trạng thái làm việc thay vì xóa.");
+        }
+
+        var outcome = await _accountStore.DeleteAsync(account.MaTaiKhoan, cancellationToken);
+
+        return outcome switch
+        {
+            WriteOutcome.Success => OperationResult<bool>.NoContent(),
+            WriteOutcome.NotFound => OperationResult<bool>.NotFound($"Không tìm thấy giáo viên / trợ giảng '{maGiaoVien}'."),
+            _ => OperationResult<bool>.Conflict("Không thể xóa giáo viên / trợ giảng do ràng buộc dữ liệu.")
+        };
+    }
 
     /// <summary>"Giáo viên" → RoleNames.GiaoVien; "Trợ giảng" → RoleNames.TroGiang.</summary>
     private static string ResolveRole(string loaiGiaoVien)

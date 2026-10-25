@@ -35,6 +35,10 @@ partial class FormChinh
     {
         if (disposing && components is not null)
         {
+            // Màn hình đang hiển thị và màn của lần điều hướng trước đã bị tách khỏi pnlContent
+            // (hoãn Dispose để không hủy control đang chờ API) -> dọn ở đây.
+            _currentView?.Dispose();
+            _viewTruocDo?.Dispose();
             components.Dispose();
         }
         base.Dispose(disposing);

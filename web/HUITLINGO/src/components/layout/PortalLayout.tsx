@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
+import logo from '../../assets/logo.png'
 import { Icon } from '../BieuTuong'
 import { dungXacThuc } from '../../contexts/NguCanhXacThuc'
 import { menuTheoVaiTro } from '../../lib/roles'
@@ -39,12 +40,13 @@ export default function PortalLayout() {
       >
         <div className="flex h-18 items-center justify-between border-b border-slate-100 px-6">
           <Link to="/" className="flex items-center gap-3 text-slate-900 no-underline">
-            <span className="grid size-10 place-items-center rounded-xl bg-blue-600 text-white">
-              <Icon name="logo" className="size-5" />
-            </span>
+            <img
+              src={logo}
+              alt="LingoHub"
+              className="size-10 shrink-0 rounded-full object-cover"
+            />
             <span>
               <strong className="block text-lg font-bold">
-                <span>HUIT </span>
                 <span className="text-blue-600">LingoHub</span>
               </strong>
               <small className="block text-[10px] font-bold uppercase tracking-[.18em] text-slate-400">
@@ -83,17 +85,16 @@ export default function PortalLayout() {
         </nav>
 
         <div className="m-4 rounded-2xl bg-slate-900 p-4 text-white">
-          <div className="flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-full bg-blue-500 text-sm font-bold">
-              {nguoiDung.avatar}
-            </span>
+          <div className="flex items-start gap-3">
             <span className="min-w-0 flex-1">
-              <strong className="block truncate text-sm">{nguoiDung.hoTen}</strong>
-              <small className="text-slate-400">{nguoiDung.vaiTro}</small>
+              <strong className="block truncate text-sm leading-5">{nguoiDung.hoTen}</strong>
+              <small className="mt-0.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                {nguoiDung.vaiTro}
+              </small>
             </span>
             <button
               onClick={xuLyDangXuat}
-              className="text-slate-400 transition hover:text-white"
+              className="shrink-0 text-slate-400 transition hover:text-white"
               title="Đăng xuất"
             >
               <Icon name="logout" className="size-5" />
@@ -123,9 +124,6 @@ export default function PortalLayout() {
             >
               Về trang chủ
             </Link>
-            <span className="grid size-10 place-items-center rounded-xl bg-blue-600 text-sm font-bold text-white">
-              {nguoiDung.avatar}
-            </span>
           </div>
         </header>
 

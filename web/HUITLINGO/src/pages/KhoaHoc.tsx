@@ -1,9 +1,19 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
 import { COURSES } from '../duLieu'
 import { Icon } from '../components/BieuTuong'
 
 const FILTERS = ['Tất cả', 'Mầm non', 'Tiểu học', 'THCS', 'Giao tiếp', 'IELTS']
+
+/** Câu hỏi thường gặp — chuyển từ trang Học phí (đã gỡ) sang cuối trang này. */
+const FAQS = [
+  { q: 'Học phí đã bao gồm tài liệu học chưa?', a: 'Đã bao gồm tài liệu học online và giáo trình in. Học viên không phải đóng thêm phụ phí nào ngoài học phí niêm yết.' },
+  { q: 'Học phí tính theo tháng hay theo khóa?', a: 'Học phí được niêm yết theo khóa — trọn gói số buổi của cấp độ. Ví dụ IELTS Foundation: 6.000.000đ cho 24 buổi (48 giờ) trong 12 tuần. Không đóng thêm theo tháng.' },
+  { q: 'Có thể đóng nhiều đợt không?', a: 'Có. Tối đa 2 đợt: đợt 1 tối thiểu 50% khi nhập học, đợt 2 trước khi khóa kết thúc 2 tuần. Học viên chỉ được chuyển sang trạng thái "Đang học" khi đã hoàn tất đợt 1.' },
+  { q: 'Nếu không đạt mục tiêu thì sao?', a: 'Học viên được học lại miễn phí nếu đáp ứng đủ điều kiện: chuyên cần từ 80%, làm đủ bài tập và không nợ học phí. Chính sách cụ thể được ghi rõ trong hợp đồng học.' },
+  { q: 'Có ưu đãi gì không?', a: 'Có: giảm 5% khi đóng đủ trước khai giảng, giảm 10% cho anh/chị/em ruột cùng học, giảm 10% khi đăng ký từ 2 khóa trở lên. Các ưu đãi không cộng dồn.' },
+  { q: 'Có thể chuyển lớp hoặc bảo lưu không?', a: 'Chuyển lớp 1 lần miễn phí mỗi khóa (lần 2 thu 10% học phí). Bảo lưu tối đa 4 tuần, không quá 1 lần mỗi chương trình. Vắng quá 30% số buổi sẽ không được công nhận hoàn thành.' },
+  { q: 'Lớp học có bao nhiêu học viên?', a: 'Mầm non tối đa 10 · Tiểu học 12 · THCS 15 · Giao tiếp 12 · IELTS 14. Lớp Mầm non luôn có 1 giáo viên chính và 1 trợ giảng.' },
+]
 
 function fmt(n: number) {
   return n.toLocaleString('vi-VN') + 'đ'
@@ -12,6 +22,7 @@ function fmt(n: number) {
 export default function Courses() {
   const [filter, setFilter] = useState('Tất cả')
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [openFaq, setOpenFaq] = useState<number | null>(null)
 
   const visible = filter === 'Tất cả' ? COURSES : COURSES.filter(c => c.tag === filter)
 
@@ -28,7 +39,7 @@ export default function Courses() {
             Mầm non, Tiểu học, THCS, Giao tiếp và IELTS — mỗi chương trình có lộ trình cấp độ riêng, học phí niêm yết theo khóa.
           </p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/hocphi" style={{ background: '#2563EB', color: '#fff', padding: '12px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>Xem học phí</Link>
+            <a href="#faq" style={{ background: '#2563EB', color: '#fff', padding: '12px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>Câu hỏi thường gặp</a>
             <a href="#courses" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', color: '#2563EB', padding: '12px 24px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, border: '2px solid #BFDBFE' }}>
               Xem chương trình <Icon ten="ArrowDown" size={16} />
             </a>
@@ -133,13 +144,13 @@ export default function Courses() {
                               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon ten="Timer" size={14} /> Khối lượng: <strong>{lv.buoi} buổi · {lv.gio} giờ</strong></span>
                               <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Icon ten="Wallet" size={14} /> Học phí: <strong style={{ color: c.color }}>{fmt(lv.fee)}/khóa</strong></span>
                             </div>
-                            <Link to="/hocphi" style={{
+                            <a href="tel:18006868" style={{
                               display: 'block', textAlign: 'center',
                               background: i === 1 ? c.color : '#F8FAFC',
                               color: i === 1 ? '#fff' : c.color,
                               padding: '10px', borderRadius: 8, textDecoration: 'none', fontWeight: 700, fontSize: 14,
                               border: i === 1 ? 'none' : `1.5px solid ${c.color}`,
-                            }}>Đăng ký ngay</Link>
+                            }}>Đăng ký ngay</a>
                           </div>
                         ))}
                       </div>
@@ -164,12 +175,50 @@ export default function Courses() {
           <h2 style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 900, fontSize: 32, margin: '0 0 12px' }}>Chưa biết nên chọn chương trình nào?</h2>
           <p style={{ color: '#64748B', fontSize: 16, margin: '0 0 28px' }}>Làm bài test trình độ miễn phí — chúng tôi sẽ đề xuất lộ trình phù hợp nhất cho bạn.</p>
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <Link to="/hocphi" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#2563EB', color: '#fff', padding: '13px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>
-              Xem học phí <Icon ten="ArrowRight" size={16} />
-            </Link>
+            <a href="#faq" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#2563EB', color: '#fff', padding: '13px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 700 }}>
+              Câu hỏi thường gặp <Icon ten="ArrowDown" size={16} />
+            </a>
             <a href="tel:18006868" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#fff', color: '#2563EB', padding: '13px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, border: '2px solid #BFDBFE' }}>
               <Icon ten="Phone" size={16} /> Tư vấn miễn phí
             </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ===== FAQ — đặt ở CUỐI trang ===== */}
+      <section id="faq" style={{ padding: '64px 24px 80px', background: '#F8FAFC', borderTop: '1px solid #E2E8F0' }}>
+        <div style={{ maxWidth: 760, margin: '0 auto' }}>
+          <h2 style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 900, fontSize: 32, margin: '0 0 8px', textAlign: 'center' }}>Câu hỏi thường gặp</h2>
+          <p style={{ color: '#64748B', textAlign: 'center', margin: '0 0 40px' }}>
+            Không tìm thấy câu trả lời? Gọi hotline <strong style={{ color: '#2563EB' }}>1800 6868</strong> (miễn phí)
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {FAQS.map((faq, i) => {
+              const mo = openFaq === i
+
+              return (
+                <div key={faq.q} style={{ background: '#fff', borderRadius: 14, border: '1px solid #E2E8F0', overflow: 'hidden' }}>
+                  <button
+                    type="button"
+                    onClick={() => setOpenFaq(mo ? null : i)}
+                    aria-expanded={mo}
+                    style={{
+                      width: '100%', padding: '18px 22px', background: 'none', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between', textAlign: 'left', gap: 12,
+                    }}
+                  >
+                    <span style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: 16 }}>{faq.q}</span>
+                    <span style={{ display: 'flex', color: '#2563EB', flexShrink: 0, transform: mo ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+                      <Icon ten="ChevronDown" size={20} />
+                    </span>
+                  </button>
+                  {mo && (
+                    <div style={{ padding: '0 22px 18px', color: '#64748B', fontSize: 15, lineHeight: 1.7 }}>{faq.a}</div>
+                  )}
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>

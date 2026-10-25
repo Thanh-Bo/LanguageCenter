@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, Outlet } from 'react-router'
+import logo from '../assets/logo.png'
 import TroLyTuVan from './TroLyTuVan'
 import { Icon } from './BieuTuong'
 import { NAV_LINKS } from '../duLieu'
@@ -52,24 +53,18 @@ export default function BoCuc() {
               flexShrink: 0,
             }}
           >
-            <div
+            <img
+              src={logo}
+              alt="LingoHub"
               style={{
                 width: 40,
                 height: 40,
-                borderRadius: 12,
-                background: 'linear-gradient(135deg, #2563EB, #1D4ED8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: 22,
-                fontWeight: 900,
-                color: '#fff',
-                fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif",
+                borderRadius: '50%',
+                objectFit: 'cover',
+                flexShrink: 0,
                 boxShadow: '0 4px 12px rgba(37,99,235,0.3)',
               }}
-            >
-              L
-            </div>
+            />
             <span
               style={{
                 fontFamily: "'Be Vietnam Pro', 'Inter', sans-serif",
@@ -79,7 +74,7 @@ export default function BoCuc() {
                 whiteSpace: 'nowrap',
               }}
             >
-              HUIT <span style={{ color: '#2563EB' }}>LingoHub</span>
+              <span style={{ color: '#2563EB' }}>LingoHub</span>
             </span>
           </Link>
 
@@ -353,7 +348,7 @@ export default function BoCuc() {
                     color: '#fff',
                   }}
                 >
-                  HUIT LingoHub
+                  LingoHub
                 </span>
               </div>
               <p
@@ -489,7 +484,7 @@ export default function BoCuc() {
             }}
           >
             <p style={{ margin: 0, fontSize: 13, color: '#64748B' }}>
-              © 2026 HUIT LingoHub. Bảo lưu mọi quyền.
+              © 2026 LingoHub. Bảo lưu mọi quyền.
             </p>
             <p style={{ margin: 0, fontSize: 13, color: '#64748B' }}>
               Giấy phép hoạt động số 1234/GCN-SGDĐT-HCM

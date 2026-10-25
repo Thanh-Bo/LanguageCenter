@@ -22,7 +22,7 @@ public partial class FormKetQuaMatKhau : Form
     {
         try
         {
-            Clipboard.SetText($"Tên đăng nhập: {txtUsername.Text}\nMật khẩu tạm: {txtPassword.Text}");
+            Clipboard.SetText($"Tên đăng nhập: {txtUsername.Text}\nMật khẩu: {txtPassword.Text}");
             MessageBox.Show(this, "Đã sao chép vào clipboard.", "Sao chép", MessageBoxButtons.OK, MessageBoxIcon.Information);
         }
         catch (Exception ex)

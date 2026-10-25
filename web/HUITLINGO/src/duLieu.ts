@@ -217,7 +217,7 @@ export const TESTIMONIALS = [
     name: 'Phạm Thu Hà',
     course: 'IELTS Advanced',
     score: 'IELTS 7.5',
-    text: 'Sau 5 tháng học tại HUIT LingoHub, mình đã đạt 7.5 IELTS — vượt xa mục tiêu ban đầu. Giáo viên rất tận tâm, phương pháp học logic và hiệu quả.',
+    text: 'Sau 5 tháng học tại LingoHub, mình đã đạt 7.5 IELTS — vượt xa mục tiêu ban đầu. Giáo viên rất tận tâm, phương pháp học logic và hiệu quả.',
     avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=80&h=80&fit=crop&auto=format',
     stars: 5,
   },
@@ -243,6 +243,5 @@ export const NAV_LINKS = [
   { label: 'Trang chủ', path: '/' },
   { label: 'Chương trình', path: '/khoahoc' },
   { label: 'Giáo viên', path: '/giaovien-public' },
-  { label: 'Học phí', path: '/hocphi' },
   { label: 'Liên hệ', path: '/#lien-he' },
 ]

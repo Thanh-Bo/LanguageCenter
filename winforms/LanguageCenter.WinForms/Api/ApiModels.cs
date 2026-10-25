@@ -932,6 +932,7 @@ public sealed class ReportOverviewDto
     public int TongGiaoVien { get; init; }
     public int TongNhanVien { get; init; }
     public int TongChuongTrinh { get; init; }
+    public int TongCapDo { get; init; }
     public int TongKhoaHoc { get; init; }
     public int TongLopHoc { get; init; }
     public int SoLopDangHoc { get; init; }

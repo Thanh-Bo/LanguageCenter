@@ -326,6 +326,17 @@ public sealed class EnrollmentStore : IEnrollmentStore
             enrollment.NgayXepLop = DateTime.Now;
             enrollment.TrangThaiDangKy = EnrollmentStatuses.DaXepLop;
 
+            // Ngày nhập học = ngày BẮT ĐẦU của lớp (đồng bộ sang hồ sơ học viên để màn Quản lý học viên hiển thị đúng).
+            // Học viên học nhiều lớp → giữ ngày bắt đầu SỚM NHẤT.
+            var hocVien = await _dbContext.HocViens
+                .FirstOrDefaultAsync(x => x.MaHocVien == enrollment.MaHocVien, cancellationToken);
+
+            if (hocVien is not null
+                && (hocVien.NgayNhapHoc is not { } ngayCu || ngayCu > lopHoc.NgayBatDau))
+            {
+                hocVien.NgayNhapHoc = lopHoc.NgayBatDau;
+            }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 

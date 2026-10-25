@@ -65,4 +65,15 @@ public sealed class AdminTeachersController : ControllerBase
         [FromBody] UpdateTeacherRequest request,
         CancellationToken cancellationToken)
         => (await _teacherService.UpdateAsync(teacherId, request, cancellationToken)).ToActionResult();
+
+    /// <summary>
+    /// Xóa cứng giáo viên / trợ giảng + tài khoản — CHỈ khi không có dữ liệu nghiệp vụ phụ thuộc.
+    /// Nếu có, trả 409 và hướng dẫn đổi Trạng thái làm việc.
+    /// </summary>
+    [HttpDelete("{teacherId}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> DeleteAsync(string teacherId, CancellationToken cancellationToken)
+        => (await _teacherService.DeleteAsync(teacherId, cancellationToken)).ToActionResult();
 }

@@ -30,21 +30,6 @@ partial class FormSuaHocVien
     private CheckBox chkNgayNhapHoc = null!;
     private DateTimePicker dtpNgayNhapHoc = null!;
 
-    private GroupBox grpParent = null!;
-    private CheckBox chkHasParent = null!;
-    private Panel pnlParentFields = null!;
-    private Label lblParentHoTen = null!;
-    private TextBox txtParentHoTen = null!;
-    private Label lblParentMoiQuanHe = null!;
-    private ComboBox cboMoiQuanHe = null!;
-    private Label lblParentSdt = null!;
-    private TextBox txtParentSoDienThoai = null!;
-    private Label lblParentEmail = null!;
-    private TextBox txtParentEmail = null!;
-    private Label lblParentDiaChi = null!;
-    private TextBox txtParentDiaChi = null!;
-    private Label lblParentReadonly = null!;
-
     private Label lblMessage = null!;
     private Button btnSave = null!;
     private Button btnCancel = null!;
@@ -85,28 +70,6 @@ partial class FormSuaHocVien
         cboTrangThaiHocTap = new ComboBox { Width = 220, Font = new Font("Segoe UI", 9.5f), DropDownStyle = ComboBoxStyle.DropDownList, Location = new Point(16, 46) };
         chkNgayNhapHoc = new CheckBox { Text = "Đã nhập học", AutoSize = true, Font = new Font("Segoe UI", 9.5f), Location = new Point(250, 28) };
         dtpNgayNhapHoc = new DateTimePicker { Width = 210, Format = DateTimePickerFormat.Short, Enabled = false, Location = new Point(250, 46) };
-
-        grpParent = new GroupBox();
-        chkHasParent = new CheckBox { Text = "Có thông tin phụ huynh", AutoSize = true, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 26) };
-        pnlParentFields = new Panel();
-        lblParentHoTen = new Label { Text = "Họ tên phụ huynh (*)", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(0, 0) };
-        txtParentHoTen = new TextBox { Width = 220, Font = new Font("Segoe UI", 9.5f), Location = new Point(0, 20) };
-        lblParentMoiQuanHe = new Label { Text = "Mối quan hệ (*)", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(240, 0) };
-        cboMoiQuanHe = new ComboBox { Width = 200, DropDownStyle = ComboBoxStyle.DropDown, Font = new Font("Segoe UI", 9.5f), Location = new Point(240, 20) };
-        lblParentSdt = new Label { Text = "Số điện thoại", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(0, 54) };
-        txtParentSoDienThoai = new TextBox { Width = 220, Font = new Font("Segoe UI", 9.5f), Location = new Point(0, 74) };
-        lblParentEmail = new Label { Text = "Email", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(240, 54) };
-        txtParentEmail = new TextBox { Width = 200, Font = new Font("Segoe UI", 9.5f), Location = new Point(240, 74) };
-        lblParentDiaChi = new Label { Text = "Địa chỉ", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(0, 108) };
-        txtParentDiaChi = new TextBox { Width = 460, Font = new Font("Segoe UI", 9.5f), Location = new Point(0, 128) };
-        lblParentReadonly = new Label
-        {
-            AutoSize = false,
-            Font = new Font("Segoe UI", 9.5f),
-            ForeColor = Color.FromArgb(15, 23, 42),
-            Location = new Point(16, 26),
-            Size = new Size(460, 150)
-        };
 
         lblMessage = new Label();
         btnSave = new Button
@@ -158,49 +121,26 @@ partial class FormSuaHocVien
         grpStatus.Size = new Size(500, 90);
         grpStatus.Controls.AddRange(new Control[] { lblTrangThai, cboTrangThaiHocTap, chkNgayNhapHoc, dtpNgayNhapHoc });
 
-        // grpParent
-        grpParent.Text = "Phụ huynh";
-        grpParent.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-        grpParent.ForeColor = Color.FromArgb(15, 23, 42);
-        grpParent.Location = new Point(20, 496);
-        grpParent.Size = new Size(500, 210);
-
-        pnlParentFields.Location = new Point(16, 54);
-        pnlParentFields.Size = new Size(468, 140);
-        pnlParentFields.Enabled = false;
-
-        pnlParentFields.Controls.AddRange(new Control[]
-        {
-            lblParentHoTen, txtParentHoTen, lblParentMoiQuanHe, cboMoiQuanHe,
-            lblParentSdt, txtParentSoDienThoai, lblParentEmail, txtParentEmail,
-            lblParentDiaChi, txtParentDiaChi
-        });
-
-        grpParent.Controls.Add(lblParentReadonly);
-        grpParent.Controls.Add(pnlParentFields);
-        grpParent.Controls.Add(chkHasParent);
-
         // message + buttons
-        lblMessage.Location = new Point(20, 716);
-        lblMessage.Size = new Size(500, 40);
+        lblMessage.Location = new Point(20, 490);
+        lblMessage.Size = new Size(500, 92);
         lblMessage.Font = new Font("Segoe UI", 9.5f);
         lblMessage.ForeColor = Color.FromArgb(239, 68, 68);
 
-        btnSave.Location = new Point(20, 760);
+        btnSave.Location = new Point(20, 592);
         btnSave.Click += BtnSave_Click;
 
-        btnCancel.Location = new Point(170, 760);
+        btnCancel.Location = new Point(170, 592);
 
         Controls.Add(btnCancel);
         Controls.Add(btnSave);
         Controls.Add(lblMessage);
-        Controls.Add(grpParent);
         Controls.Add(grpStatus);
         Controls.Add(grpInfo);
 
         AutoScaleDimensions = new SizeF(96F, 96F);
         AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 820);
+        ClientSize = new Size(560, 650);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;

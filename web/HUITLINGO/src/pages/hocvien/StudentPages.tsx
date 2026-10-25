@@ -1,5 +1,6 @@
 // Khu vực học viên.
 import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router'
 import { Icon } from '../../components/BieuTuong'
 import {
   Bang,
@@ -37,6 +38,7 @@ import {
   dinhDangNgayGio,
   dinhDangTien,
   homNayIso,
+  thuTrongTuan,
 } from '../../lib/format'
 import { dungDuLieu, thongDiepLoi } from '../../lib/useApi'
 
@@ -61,9 +63,11 @@ function nhomTheoKhoaHoc(ds: StudentCourseGrade[]) {
   return [...nhom.values()]
 }
 
-export function HVTongQuan() {
-  const [moKhoaHoc, setMoKhoaHoc] = useState(false)
-
+/**
+ * @deprecated Bản tổng quan CŨ, không còn dùng trong router.
+ * Giao diện mới nằm ở <c>src/pages/hocvien/TongQuanHocVien.tsx</c>.
+ */
+export function HVTongQuanCu() {
   const { duLieu, dangTai, loi, taiLai } = dungDuLieu(async () => {
     const [diem, lich, hocPhi] = await Promise.all([
       hocVienSelfApi.diem(),
@@ -71,9 +75,28 @@ export function HVTongQuan() {
       hocVienSelfApi.hocPhi({ page: 1, pageSize: 50 }),
     ])
 
+    // Lấy TOÀN BỘ ca học của các lớp đang theo → tính tiến độ từng khóa.
+    let buoiTheoLop: Record<number, SessionListItem[]> = {}
+
+    if (diem.length > 0) {
+      const tuNgay = diem.map((d) => d.ngayBatDau).sort()[0]
+      const denNgay = diem.map((d) => d.ngayKetThucDuKien).sort().pop() ?? homNayIso()
+
+      try {
+        const tatCa = await hocVienSelfApi.lichHoc({ tuNgay, denNgay })
+
+        buoiTheoLop = tatCa.reduce<Record<number, SessionListItem[]>>((acc, b) => {
+          ;(acc[b.maLopHoc] ??= []).push(b)
+          return acc
+        }, {})
+      } catch {
+        buoiTheoLop = {}
+      }
+    }
+
     const conThieu = hocPhi.items.reduce((s, h) => s + h.soTienConThieu, 0)
 
-    return { diem, lich, conThieu, hocPhi: hocPhi.items }
+    return { diem, lich, conThieu, hocPhi: hocPhi.items, buoiTheoLop }
   })
 
   if (dangTai) return <DangTai nhan="Đang tải dữ liệu học tập…" />
@@ -82,6 +105,7 @@ export function HVTongQuan() {
 
   const nhomKhoaHoc = nhomTheoKhoaHoc(duLieu.diem)
   const hocPhiTheoDangKy = new Map(duLieu.hocPhi.map((h) => [h.maDangKy, h]))
+  const homNay = homNayIso()
 
   return (
     <div className="space-y-6">
@@ -104,7 +128,6 @@ export function HVTongQuan() {
           moTa={
             duLieu.diem.length > 0 ? `${duLieu.diem.length} lớp đang theo học` : 'Chưa được xếp lớp'
           }
-          onClick={() => setMoKhoaHoc(true)}
         />
         <TheChiSo nhan="Ca học hôm nay" giaTri={duLieu.lich.length} icon="calendar" tone="emerald" />
         <TheChiSo
@@ -116,7 +139,7 @@ export function HVTongQuan() {
       </div>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-4 text-sm font-bold uppercase tracking-wider text-slate-500">
+        <h2 className="mb-4 text-sm font-bold  uppercase tracking-wider text-slate-500">
           Lịch học hôm nay
         </h2>
         {duLieu.lich.length === 0 ? (
@@ -145,179 +168,120 @@ export function HVTongQuan() {
         )}
       </section>
 
-      <HopThoai
-        mo={moKhoaHoc}
-        tieuDe="Khóa học đang theo"
-        onDong={() => setMoKhoaHoc(false)}
-        rong="max-w-2xl"
-        footer={
-          <button type="button" onClick={() => setMoKhoaHoc(false)} className={LOP_NUT_PHU}>
-            Đóng
-          </button>
-        }
-      >
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+              Tiến độ học của tôi
+            </h2>
+            <p className="text-xs text-slate-400">
+              Bấm vào một khóa học để xem tiến độ từng buổi, điểm danh và điểm số.
+            </p>
+          </div>
+        </div>
+
         {nhomKhoaHoc.length === 0 ? (
-          <p className="text-sm text-slate-500">
+          <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
             Bạn chưa được xếp vào lớp học nào. Hãy liên hệ phòng học vụ để được xếp lớp.
           </p>
         ) : (
-          <ul className="space-y-3">
+          <div className="space-y-4">
             {nhomKhoaHoc.map((khoa) => (
-              <li key={khoa.maKhoaHoc} className="rounded-xl border border-slate-200 p-4">
-                <p className="font-semibold text-slate-900">{khoa.tenKhoaHoc}</p>
-                <p className="mt-0.5 text-xs text-slate-500">
-                  Mã khóa học: {khoa.maKhoaHoc} · {khoa.lop.length} lớp đang theo học
+              <div key={khoa.maKhoaHoc} className="space-y-2">
+                <p className="px-1 text-xs font-bold uppercase tracking-wider text-slate-400">
+                  {khoa.tenKhoaHoc}
                 </p>
 
-                <ul className="mt-3 space-y-3">
+                <div className="grid gap-3 md:grid-cols-2">
                   {khoa.lop.map((lop) => {
+                    const buoi = duLieu.buoiTheoLop[lop.maLopHoc] ?? []
+                    const tongBuoi = buoi.length
+                    const soBuoiDaHoc = buoi.filter(
+                      (b) =>
+                        b.trangThai !== 'Đã hủy' &&
+                        (b.trangThai === 'Đã hoàn thành' || b.ngayHoc < homNay),
+                    ).length
+                    const phanTram = tongBuoi > 0 ? Math.round((soBuoiDaHoc / tongBuoi) * 100) : 0
+                    const buoiTiepTheo = buoi
+                      .filter((b) => b.ngayHoc >= homNay && b.trangThai !== 'Đã hủy')
+                      .sort((a, b) => a.ngayHoc.localeCompare(b.ngayHoc))[0]
                     const hocPhi = hocPhiTheoDangKy.get(lop.maDangKy)
                     const soDauDiemDaCo = lop.thanhPhan.length - lop.thanhPhanConThieu.length
 
                     return (
-                      <li
+                      <Link
                         key={lop.maDangKy}
-                        className="rounded-lg border border-slate-100 bg-slate-50/70 p-3"
+                        to={`/hocvien/khoa-hoc/${lop.maLopHoc}`}
+                        className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="flex items-start justify-between gap-3">
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-slate-900">
-                              {lop.tenLop}
-                            </p>
+                            <p className="text-base font-bold text-slate-900">{lop.tenLop}</p>
                             <p className="text-xs text-slate-500">
-                              Mã lớp: {lop.maLop} · Mã đăng ký: #{lop.maDangKy}
-                            </p>
-                            <p className="mt-0.5 text-xs text-slate-500">
-                              Bắt đầu:{' '}
-                              <span className="font-medium text-slate-700">
-                                {dinhDangNgay(lop.ngayBatDau)}
-                              </span>
-                              {' · '}Kết thúc dự kiến: {dinhDangNgay(lop.ngayKetThucDuKien)}
-                              {lop.ngayXepLop ? ` · Xếp lớp: ${dinhDangNgayGio(lop.ngayXepLop)}` : ''}
+                              {lop.maLop} · {dinhDangNgay(lop.ngayBatDau)} →{' '}
+                              {dinhDangNgay(lop.ngayKetThucDuKien)}
                             </p>
                           </div>
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <Nhan tone={lop.duDieuKien ? 'emerald' : 'amber'}>
-                              {lop.duDieuKien ? 'Đủ điều kiện' : 'Chưa đủ điều kiện'}
+                          <Nhan tone={lop.duDieuKien ? 'emerald' : 'amber'}>
+                            {lop.diemTongKet != null ? lop.diemTongKet.toFixed(2) : '—'}
+                          </Nhan>
+                        </div>
+
+                        <div className="mt-3">
+                          <div className="mb-1 flex items-center justify-between text-xs">
+                            <span className="font-semibold text-slate-600">
+                              {soBuoiDaHoc}
+                              {tongBuoi > 0 ? `/${tongBuoi}` : ''} buổi
+                            </span>
+                            <span className="text-slate-400">{phanTram}%</span>
+                          </div>
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                            <div
+                              className="h-full rounded-full bg-blue-600"
+                              style={{ width: `${phanTram}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          <Nhan tone="blue">
+                            Đầu điểm {soDauDiemDaCo}/{lop.thanhPhan.length}
+                          </Nhan>
+                          {hocPhi && hocPhi.soTienConThieu > 0 ? (
+                            <Nhan tone={hocPhi.quaHan ? 'rose' : 'amber'}>
+                              Còn {dinhDangTien(hocPhi.soTienConThieu)}
                             </Nhan>
-                            {lop.canhBaoTrongSo ? (
-                              <Nhan tone="rose">Trọng số {lop.tongTrongSo}%</Nhan>
-                            ) : null}
-                          </div>
-                        </div>
-
-                        <div className="mt-3 grid grid-cols-3 gap-2">
-                          <div className="rounded-lg bg-white p-2.5">
-                            <p className="text-xs text-slate-500">Điểm tổng kết</p>
-                            <p className="text-lg font-bold text-slate-900">
-                              {lop.diemTongKet != null ? lop.diemTongKet.toFixed(2) : '—'}
-                              <span className="ml-1 text-xs font-normal text-slate-400">/ 10</span>
-                            </p>
-                          </div>
-                          <div className="rounded-lg bg-white p-2.5">
-                            <p className="text-xs text-slate-500">Tổng trọng số</p>
-                            <p className="text-lg font-bold text-slate-900">{lop.tongTrongSo}%</p>
-                          </div>
-                          <div className="rounded-lg bg-white p-2.5">
-                            <p className="text-xs text-slate-500">Đầu điểm đã có</p>
-                            <p className="text-lg font-bold text-slate-900">
-                              {soDauDiemDaCo}/{lop.thanhPhan.length}
-                            </p>
-                          </div>
-                        </div>
-
-                        {lop.thanhPhan.length > 0 && (
-                          <div className="mt-3">
-                            <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                              Thành phần điểm
-                            </p>
-                            <ul className="mt-1.5 space-y-1">
-                              {lop.thanhPhan.map((tp) => (
-                                <li
-                                  key={tp.maLoaiDiem}
-                                  className="flex items-center gap-2 rounded-md bg-white px-2.5 py-1.5 text-xs"
-                                >
-                                  <span className="min-w-0 flex-1 truncate text-slate-700">
-                                    {tp.tenLoaiDiem}
-                                  </span>
-                                  <span className="shrink-0 text-slate-500">
-                                    {tp.trongSo}%
-                                  </span>
-                                  <span
-                                    className={`w-16 shrink-0 text-right font-semibold ${
-                                      tp.diem == null ? 'text-slate-400' : 'text-slate-900'
-                                    }`}
-                                  >
-                                    {tp.diem != null ? `${tp.diem.toFixed(1)}/${tp.diemToiDa}` : '—'}
-                                  </span>
-                                </li>
-                              ))}
-                            </ul>
-                            {lop.thanhPhanConThieu.length > 0 && (
-                              <p className="mt-1.5 text-xs text-amber-600">
-                                Còn thiếu: {lop.thanhPhanConThieu.join(', ')}
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        <div className="mt-3 rounded-lg bg-white p-2.5">
-                          <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                            Học phí
-                          </p>
-                          {hocPhi ? (
-                            <>
-                              <div className="mt-1.5 grid grid-cols-3 gap-2 text-xs">
-                                <div>
-                                  <p className="text-slate-500">Phải đóng</p>
-                                  <p className="font-semibold text-slate-900">
-                                    {dinhDangTien(hocPhi.soTienPhaiDong)}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-slate-500">Đã đóng</p>
-                                  <p className="font-semibold text-emerald-700">
-                                    {dinhDangTien(hocPhi.soTienDaDong)}
-                                  </p>
-                                </div>
-                                <div>
-                                  <p className="text-slate-500">Còn thiếu</p>
-                                  <p
-                                    className={`font-semibold ${
-                                      hocPhi.soTienConThieu > 0 ? 'text-rose-600' : 'text-slate-900'
-                                    }`}
-                                  >
-                                    {dinhDangTien(hocPhi.soTienConThieu)}
-                                  </p>
-                                </div>
-                              </div>
-                              <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
-                                <Nhan
-                                  tone={hocPhi.quaHan ? 'rose' : hocPhi.conNo ? 'amber' : 'emerald'}
-                                >
-                                  {hocPhi.trangThaiHocPhi}
-                                </Nhan>
-                                {hocPhi.hanThanhToan ? (
-                                  <span>Hạn đóng: {dinhDangNgay(hocPhi.hanThanhToan)}</span>
-                                ) : null}
-                                <span>Số giao dịch: {hocPhi.soGiaoDich}</span>
-                              </div>
-                            </>
                           ) : (
-                            <p className="mt-1 text-xs text-slate-400">
-                              Chưa có phiếu học phí cho đăng ký này.
-                            </p>
+                            <Nhan tone="emerald">Học phí đã đủ</Nhan>
                           )}
                         </div>
-                      </li>
+
+                        <p className="mt-3 text-xs text-slate-500">
+                          {tongBuoi === 0
+                            ? 'Lớp chưa được xếp lịch buổi học.'
+                            : buoiTiepTheo
+                              ? `Buổi tới: ${thuTrongTuan(buoiTiepTheo.ngayHoc)}, ${dinhDangNgay(
+                                  buoiTiepTheo.ngayHoc,
+                                )} · ${dinhDangKhoangGio(
+                                  buoiTiepTheo.gioBatDau,
+                                  buoiTiepTheo.gioKetThuc,
+                                )}`
+                              : 'Đã học hết các buổi của lớp.'}
+                        </p>
+
+                        <span className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-blue-600 group-hover:gap-2">
+                          Xem tiến độ
+                          <Icon name="arrowRight" className="size-4 transition-all" />
+                        </span>
+                      </Link>
                     )
                   })}
-                </ul>
-              </li>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         )}
-      </HopThoai>
+      </section>
     </div>
   )
 }
@@ -582,12 +546,12 @@ export function HVDiemSo() {
               className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
             >
               <div className="flex items-start justify-between gap-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="font-mono text-xs text-slate-500">{k.maLop}</p>
                   <h3 className="text-lg font-bold text-slate-900">{k.tenLop}</h3>
                   <p className="text-sm text-slate-500">{k.tenKhoaHoc}</p>
                 </div>
-                <div className="text-right">
+                <div className="shrink-0 text-right">
                   <p className="text-xs text-slate-500">Tổng kết</p>
                   <p className="text-2xl font-bold text-blue-600">
                     {k.diemTongKet !== null && k.diemTongKet !== undefined

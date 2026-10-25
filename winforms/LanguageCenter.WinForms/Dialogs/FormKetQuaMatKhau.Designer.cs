@@ -86,7 +86,7 @@ partial class FormKetQuaMatKhau
         txtUsername.ReadOnly = true;
         txtUsername.BackColor = Color.White;
 
-        lblPasswordCaption.Text = "Mật khẩu tạm";
+        lblPasswordCaption.Text = "Mật khẩu mặc định";
         lblPasswordCaption.Font = new Font("Segoe UI", 9.5f);
         lblPasswordCaption.ForeColor = Color.FromArgb(100, 116, 139);
         lblPasswordCaption.AutoSize = true;
@@ -98,8 +98,8 @@ partial class FormKetQuaMatKhau
         txtPassword.ReadOnly = true;
         txtPassword.BackColor = Color.White;
 
-        lblWarning.Text = " Mật khẩu này CHỈ hiển thị một lần và không thể xem lại. "
-            + "Hãy sao chép và gửi cho người dùng ngay bây giờ.";
+        lblWarning.Text = " Mật khẩu mặc định của trung tâm là 111111. "
+            + "Hãy nhắc người dùng đổi mật khẩu ngay sau lần đăng nhập đầu tiên.";
         lblWarning.Font = new Font("Segoe UI", 8.75f, FontStyle.Italic);
         lblWarning.ForeColor = Color.FromArgb(245, 158, 11);
         lblWarning.AutoSize = false;

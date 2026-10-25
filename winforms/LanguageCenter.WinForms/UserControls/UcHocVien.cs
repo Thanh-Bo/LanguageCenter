@@ -11,6 +11,9 @@ public partial class UcHocVien : UserControl
     private int _currentPage = 1;
     private int _totalPages = 1;
 
+    private readonly Button _btnSua;
+    private readonly Button _btnXoa;
+
     public UcHocVien()
     {
         InitializeComponent();
@@ -25,10 +28,18 @@ public partial class UcHocVien : UserControl
         btnPrevPage.Click += async (_, _) => await ChangePageAsync(-1);
         btnNextPage.Click += async (_, _) => await ChangePageAsync(1);
 
-        pnlToolbar.Resize += (_, _) =>
-        {
-            btnAdd.Location = new Point(pnlToolbar.Width - btnAdd.Width - 4, 1);
-        };
+        // Nút Sửa / Xoá đặt cạnh nút Thêm học viên.
+        _btnSua = UI.UiHelpers.CreateSecondaryButton("Sửa", 80, 30);
+        _btnSua.Click += BtnSua_Click;
+
+        _btnXoa = UI.UiHelpers.CreateDangerButton("Xoá", 80, 30);
+        _btnXoa.Click += BtnXoa_Click;
+
+        pnlToolbar.Controls.Add(_btnSua);
+        pnlToolbar.Controls.Add(_btnXoa);
+
+        pnlToolbar.Resize += (_, _) => SapXepNut();
+        SapXepNut();
 
         cboStatus.Items.Add(AllOption);
         cboStatus.Items.AddRange(StudentStatuses.All.ToArray());
@@ -51,12 +62,35 @@ public partial class UcHocVien : UserControl
 
     private async Task ReloadAsync(bool resetPage)
     {
+        // Người dùng có thể chuyển sang màn khác trong lúc chờ API -> control bị Dispose.
+        // Lúc đó lưới đã bị hủy (Columns rỗng) nên Rows.Add sẽ ném
+        // "No row can be added to a DataGridView control that does not have columns".
+        if (IsDisposed || Disposing)
+        {
+            return;
+        }
+
         if (resetPage)
         {
             _currentPage = 1;
         }
 
         lblStatus.Text = string.Empty;
+
+        // Phòng hờ: luôn bảo đảm lưới CÓ CỘT trước khi thêm dòng.
+        // Nếu không, DataGridView.Rows.Add sẽ ném InvalidOperationException
+        // "No row can be added to a DataGridView control that does not have columns".
+        UI.UiHelpers.DamBaoCot(
+            dgvStudents,
+            ("MaHocVien", "Mã HV", 70),
+            ("HoTen", "Họ tên", 140),
+            ("NgaySinh", "Ngày sinh", 90),
+            ("GioiTinh", "Giới tính", 70),
+            ("Email", "Email", 140),
+            ("SoDienThoai", "SĐT", 90),
+            ("TrangThaiHocTap", "Trạng thái", 90),
+            ("NgayNhapHoc", "Ngày nhập học", 90));
+
         dgvStudents.Rows.Clear();
         UseWaitCursor = true;
 
@@ -70,6 +104,11 @@ public partial class UcHocVien : UserControl
             ("trangThai", status == AllOption ? null : status));
 
         var result = await AppSession.Api.GetAsync<PagedResult<StudentListItemDto>>(path);
+
+        if (IsDisposed || Disposing)
+        {
+            return;
+        }
 
         UseWaitCursor = false;
 
@@ -133,5 +172,91 @@ public partial class UcHocVien : UserControl
         {
             await ReloadAsync(resetPage: false);
         }
+    }
+
+    /// <summary>Xếp nút Thêm / Sửa / Xoá sát mép phải thanh công cụ.</summary>
+    private void SapXepNut()
+    {
+        var x = pnlToolbar.Width - btnAdd.Width - 4;
+        btnAdd.Location = new Point(x, 1);
+
+        x -= _btnSua.Width + 6;
+        _btnSua.Location = new Point(x, 4);
+
+        x -= _btnXoa.Width + 6;
+        _btnXoa.Location = new Point(x, 4);
+    }
+
+    /// <summary>Mã học viên của dòng đang chọn (null nếu chưa chọn).</summary>
+    private string? LayMaDangChon()
+    {
+        if (dgvStudents.CurrentRow is null)
+        {
+            return null;
+        }
+
+        var ma = Convert.ToString(dgvStudents.CurrentRow.Cells["MaHocVien"].Value);
+        return string.IsNullOrWhiteSpace(ma) ? null : ma;
+    }
+
+    private async void BtnSua_Click(object? sender, EventArgs e)
+    {
+        var maHocVien = LayMaDangChon();
+
+        if (maHocVien is null)
+        {
+            lblStatus.Text = "Chọn một học viên trong danh sách để sửa.";
+            return;
+        }
+
+        using var dialog = new FormSuaHocVien(maHocVien);
+        dialog.ShowDialog(FindForm());
+
+        if (dialog.DataChanged)
+        {
+            await ReloadAsync(resetPage: false);
+        }
+    }
+
+    private async void BtnXoa_Click(object? sender, EventArgs e)
+    {
+        var maHocVien = LayMaDangChon();
+
+        if (maHocVien is null)
+        {
+            lblStatus.Text = "Chọn một học viên trong danh sách để xóa.";
+            return;
+        }
+
+        var hoTen = Convert.ToString(dgvStudents.CurrentRow!.Cells["HoTen"].Value) ?? string.Empty;
+
+        var xacNhan = MessageBox.Show(
+            FindForm(),
+            $"Xóa vĩnh viễn học viên {maHocVien} — {hoTen}?\n\n"
+            + "Chỉ xóa được khi học viên chưa có đăng ký học / điểm danh / học phí. "
+            + "Thao tác không hoàn tác được.",
+            "Xác nhận xóa",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning,
+            MessageBoxDefaultButton.Button2);
+
+        if (xacNhan != DialogResult.Yes)
+        {
+            return;
+        }
+
+        var result = await AppSession.Api.DeleteAsync<bool>($"admin/students/{maHocVien}");
+
+        if (!result.Success)
+        {
+            lblStatus.ForeColor = UI.Theme.Danger;
+            lblStatus.Text = result.ErrorMessage;
+            return;
+        }
+
+        lblStatus.ForeColor = UI.Theme.Success;
+        lblStatus.Text = $"Đã xóa học viên {maHocVien}.";
+
+        await ReloadAsync(resetPage: false);
     }
 }

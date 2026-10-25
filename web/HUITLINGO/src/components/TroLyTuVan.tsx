@@ -5,7 +5,7 @@ type Message = { from: 'bot' | 'user'; text: string; options?: string[] }
 
 const BOT_FLOW: Record<string, { text: string; options?: string[]; next?: Record<string, string> }> = {
   start: {
-    text: 'Xin chào! Mình là trợ lý tư vấn của HUIT LingoHub. Bạn hoặc con em đang cần học tiếng Anh theo hướng nào?',
+    text: 'Xin chào! Mình là trợ lý tư vấn của LingoHub. Bạn hoặc con em đang cần học tiếng Anh theo hướng nào?',
     options: ['Thi IELTS', 'Học giao tiếp', 'Cho con em học', 'Học sinh phổ thông'],
     next: { 'Thi IELTS': 'ielts_level', 'Học giao tiếp': 'comm_level', 'Cho con em học': 'kids', 'Học sinh phổ thông': 'teen_level' },
   },
@@ -202,7 +202,7 @@ export default function ChatBot() {
               <Icon ten="Bot" size={22} color="#fff" />
             </div>
             <div>
-              <div style={{ color: '#fff', fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: 15 }}>HUIT LingoBot</div>
+              <div style={{ color: '#fff', fontFamily: "'Nunito', sans-serif", fontWeight: 800, fontSize: 15 }}>LingoBot</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', display: 'inline-block' }} />
                 <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12 }}>Trực tuyến — phản hồi ngay</span>
@@ -264,7 +264,7 @@ export default function ChatBot() {
           )}
 
           <div style={{ padding: '8px 16px 12px', textAlign: 'center', background: '#fff', borderTop: '1px solid #F1F5F9' }}>
-            <span style={{ fontSize: 11, color: '#CBD5E1' }}>HUIT LingoHub · Tư vấn miễn phí · 1800 6868</span>
+            <span style={{ fontSize: 11, color: '#CBD5E1' }}>LingoHub · Tư vấn miễn phí · 1800 6868</span>
           </div>
         </div>
       )}

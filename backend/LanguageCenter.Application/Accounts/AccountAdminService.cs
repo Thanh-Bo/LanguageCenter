@@ -238,7 +238,7 @@ public sealed class AccountAdminService : IAccountAdminService
             return OperationResult<ResetPasswordResponse>.NotFound($"Không tìm thấy tài khoản có id = {maTaiKhoan}.");
         }
 
-        // Mật khẩu tạm MỚI, random — KHÔNG dùng lại mật khẩu cũ, KHÔNG hard-code, KHÔNG log.
+        // Mật khẩu mặc định của trung tâm ("111111") — ghi đè hash cũ, không log plain text.
         var temporaryPassword = _temporaryPasswordGenerator.Generate();
         var passwordHash = _passwordHasherService.HashPassword(temporaryPassword);
 
@@ -248,7 +248,7 @@ public sealed class AccountAdminService : IAccountAdminService
         {
             Username = account.TenDangNhap,
             TemporaryPassword = temporaryPassword,
-            Message = "Đã đặt lại mật khẩu. Vui lòng gửi mật khẩu tạm này cho người dùng và yêu cầu đổi ngay sau khi đăng nhập."
+            Message = "Đã đặt lại mật khẩu về giá trị mặc định 111111. Vui lòng yêu cầu người dùng đổi mật khẩu ngay sau khi đăng nhập."
         });
     }
 

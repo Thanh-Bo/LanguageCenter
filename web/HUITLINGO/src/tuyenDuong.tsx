@@ -5,7 +5,6 @@ import PortalLayout from './components/layout/PortalLayout'
 import TrangChu from './pages/TrangChu'
 import KhoaHoc from './pages/KhoaHoc'
 import GiaoVien from './pages/GiaoVien'
-import HocPhi from './pages/HocPhi'
 import DangNhap from './pages/DangNhap'
 import CaiDat from './pages/CaiDat'
 import {
@@ -21,16 +20,17 @@ import {
   GVLichDay,
   GVLopCuaToi,
   GVThongBao,
-  GVTongQuan,
 } from './pages/giaovien/TeacherPages'
+import { GVTongQuan } from './pages/giaovien/TongQuanGiaoVien'
 import {
   HVDiemSo,
   HVHocPhi,
   HVKhaoSat,
   HVLichHoc,
-  HVTongQuan,
   HVThongBao,
 } from './pages/hocvien/StudentPages'
+import { HVTongQuan } from './pages/hocvien/TongQuanHocVien'
+import { HVTienDoKhoaHoc } from './pages/hocvien/TienDoKhoaHoc'
 import { NHOM_GIAO_VIEN, NHOM_HOC_VIEN, NHOM_QUAN_TRI } from './lib/roles'
 
 export const router = createBrowserRouter([
@@ -42,7 +42,6 @@ export const router = createBrowserRouter([
       { index: true, Component: TrangChu },
       { path: 'khoahoc', Component: KhoaHoc },
       { path: 'giaovien-public', Component: GiaoVien },
-      { path: 'hocphi', Component: HocPhi },
     ],
   },
 
@@ -99,6 +98,7 @@ export const router = createBrowserRouter([
         Component: PortalLayout,
         children: [
           { index: true, Component: HVTongQuan },
+          { path: 'khoa-hoc/:maLopHoc', Component: HVTienDoKhoaHoc },
           { path: 'lich-hoc', Component: HVLichHoc },
           { path: 'diem-so', Component: HVDiemSo },
           { path: 'hoc-phi', Component: HVHocPhi },

@@ -11,6 +11,9 @@ public partial class UcTroGiang : UserControl
     private int _currentPage = 1;
     private int _totalPages = 1;
 
+    private readonly Button _btnSua;
+    private readonly Button _btnXoa;
+
     public UcTroGiang()
     {
         InitializeComponent();
@@ -25,10 +28,18 @@ public partial class UcTroGiang : UserControl
         btnPrevPage.Click += async (_, _) => await ChangePageAsync(-1);
         btnNextPage.Click += async (_, _) => await ChangePageAsync(1);
 
-        pnlToolbar.Resize += (_, _) =>
-        {
-            btnAdd.Location = new Point(pnlToolbar.Width - btnAdd.Width - 4, 1);
-        };
+        // Nút Sửa / Xoá đặt cạnh nút Thêm trợ giảng.
+        _btnSua = UI.UiHelpers.CreateSecondaryButton("Sửa", 80, 30);
+        _btnSua.Click += BtnSua_Click;
+
+        _btnXoa = UI.UiHelpers.CreateDangerButton("Xoá", 80, 30);
+        _btnXoa.Click += BtnXoa_Click;
+
+        pnlToolbar.Controls.Add(_btnSua);
+        pnlToolbar.Controls.Add(_btnXoa);
+
+        pnlToolbar.Resize += (_, _) => SapXepNut();
+        SapXepNut();
 
         cboTrangThai.Items.Add(AllOption);
         cboTrangThai.Items.AddRange(WorkStatuses.All.ToArray());
@@ -51,12 +62,32 @@ public partial class UcTroGiang : UserControl
 
     private async Task ReloadAsync(bool resetPage)
     {
+        // Người dùng có thể chuyển sang màn khác trong lúc chờ API -> control bị Dispose.
+        // Lúc đó lưới đã bị hủy (Columns rỗng) nên Rows.Add sẽ ném
+        // "No row can be added to a DataGridView control that does not have columns".
+        if (IsDisposed || Disposing)
+        {
+            return;
+        }
+
         if (resetPage)
         {
             _currentPage = 1;
         }
 
         lblStatus.Text = string.Empty;
+
+        // Phòng hờ: luôn bảo đảm lưới CÓ CỘT trước khi thêm dòng.
+        UI.UiHelpers.DamBaoCot(
+            dgvAssistants,
+            ("MaGiaoVien", "Mã TG", 75),
+            ("HoTen", "Họ tên trợ giảng", 150),
+            ("Email", "Email", 140),
+            ("SoDienThoai", "SĐT", 95),
+            ("ChuyenMon", "Kỹ năng hỗ trợ / Chuyên môn", 160),
+            ("SoNamKinhNghiem", "Số năm KN", 80),
+            ("TrangThai", "Trạng thái", 90));
+
         dgvAssistants.Rows.Clear();
         UseWaitCursor = true;
 
@@ -70,6 +101,11 @@ public partial class UcTroGiang : UserControl
             ("loaiGiaoVien", TeacherTypes.TroGiang));
 
         var result = await AppSession.Api.GetAsync<PagedResult<TeacherListItemDto>>(path);
+
+        if (IsDisposed || Disposing)
+        {
+            return;
+        }
 
         UseWaitCursor = false;
 
@@ -123,7 +159,8 @@ public partial class UcTroGiang : UserControl
 
     private async void BtnAdd_Click(object? sender, EventArgs e)
     {
-        using var dialog = new FormSuaGiaoVien();
+        // Tab Trợ giảng: loại cố định "Trợ giảng".
+        using var dialog = new FormSuaGiaoVien(laTroGiang: true);
         dialog.ShowDialog(FindForm());
 
         if (dialog.DataChanged)
@@ -141,13 +178,98 @@ public partial class UcTroGiang : UserControl
 
         var teacherId = Convert.ToString(dgvAssistants.Rows[e.RowIndex].Cells["MaGiaoVien"].Value) ?? string.Empty;
 
-        using var dialog = new FormSuaGiaoVien(teacherId);
+        using var dialog = new FormSuaGiaoVien(teacherId, laTroGiang: true);
         dialog.ShowDialog(FindForm());
 
         if (dialog.DataChanged)
         {
             await ReloadAsync(resetPage: false);
         }
+    }
+
+    /// <summary>Xếp nút Thêm / Sửa / Xoá sát mép phải thanh công cụ.</summary>
+    private void SapXepNut()
+    {
+        var x = pnlToolbar.Width - btnAdd.Width - 4;
+        btnAdd.Location = new Point(x, 1);
+
+        x -= _btnSua.Width + 6;
+        _btnSua.Location = new Point(x, 4);
+
+        x -= _btnXoa.Width + 6;
+        _btnXoa.Location = new Point(x, 4);
+    }
+
+    /// <summary>Mã trợ giảng của dòng đang chọn (null nếu chưa chọn).</summary>
+    private string? LayMaDangChon()
+    {
+        if (dgvAssistants.CurrentRow is null)
+        {
+            return null;
+        }
+
+        var ma = Convert.ToString(dgvAssistants.CurrentRow.Cells["MaGiaoVien"].Value);
+        return string.IsNullOrWhiteSpace(ma) ? null : ma;
+    }
+
+    private async void BtnSua_Click(object? sender, EventArgs e)
+    {
+        var maTroGiang = LayMaDangChon();
+
+        if (maTroGiang is null)
+        {
+            lblStatus.Text = "Chọn một trợ giảng trong danh sách để sửa.";
+            return;
+        }
+
+        using var dialog = new FormSuaGiaoVien(maTroGiang, laTroGiang: true);
+        dialog.ShowDialog(FindForm());
+
+        if (dialog.DataChanged)
+        {
+            await ReloadAsync(resetPage: false);
+        }
+    }
+
+    private async void BtnXoa_Click(object? sender, EventArgs e)
+    {
+        var maTroGiang = LayMaDangChon();
+
+        if (maTroGiang is null)
+        {
+            lblStatus.Text = "Chọn một trợ giảng trong danh sách để xóa.";
+            return;
+        }
+
+        var hoTen = Convert.ToString(dgvAssistants.CurrentRow!.Cells["HoTen"].Value) ?? string.Empty;
+
+        var xacNhan = MessageBox.Show(
+            FindForm(),
+            $"Xóa vĩnh viễn trợ giảng {maTroGiang} — {hoTen}?\n\n"
+            + "Chỉ xóa được khi chưa có phân công / ca học. Thao tác không hoàn tác được.",
+            "Xác nhận xóa",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Warning,
+            MessageBoxDefaultButton.Button2);
+
+        if (xacNhan != DialogResult.Yes)
+        {
+            return;
+        }
+
+        var result = await AppSession.Api.DeleteAsync<bool>($"admin/teachers/{maTroGiang}");
+
+        if (!result.Success)
+        {
+            lblStatus.ForeColor = UI.Theme.Danger;
+            lblStatus.Text = result.ErrorMessage;
+            return;
+        }
+
+        lblStatus.ForeColor = UI.Theme.Success;
+        lblStatus.Text = $"Đã xóa trợ giảng {maTroGiang}.";
+
+        await ReloadAsync(resetPage: false);
     }
 }
 

@@ -130,7 +130,7 @@ export default function Teachers() {
             <Icon ten="GraduationCap" size={40} />
           </div>
           <h2 style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 900, fontSize: 32, color: '#fff', margin: '0 0 12px' }}>Bạn là giáo viên giỏi tiếng Anh?</h2>
-          <p style={{ color: '#94A3B8', fontSize: 16, margin: '0 0 28px' }}>HUIT LingoHub luôn tìm kiếm giáo viên tài năng, nhiệt huyết để cùng xây dựng thế hệ giỏi tiếng Anh.</p>
+          <p style={{ color: '#94A3B8', fontSize: 16, margin: '0 0 28px' }}>LingoHub luôn tìm kiếm giáo viên tài năng, nhiệt huyết để cùng xây dựng thế hệ giỏi tiếng Anh.</p>
           <a href="mailto:careers@lingohub.edu.vn" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#2563EB', color: '#fff', padding: '13px 28px', borderRadius: 10, textDecoration: 'none', fontWeight: 700, fontSize: 15 }}>
             Ứng tuyển ngay <Icon ten="ArrowRight" size={16} />
           </a>

@@ -25,6 +25,17 @@ public partial class FormChinh : Form
 {
     private UserControl? _currentView;
 
+    /// <summary>
+    /// Màn hình của lần điều hướng TRƯỚC ĐÓ — chỉ bị Dispose khi điều hướng tiếp theo.
+    /// <para>
+    /// Không Dispose ngay màn vừa rời đi: các lời gọi API của nó có thể còn đang chờ,
+    /// khi trả về mà control đã Dispose thì lưới mất hết cột và
+    /// <c>DataGridView.Rows.Add</c> ném "No row can be added to a DataGridView control
+    /// that does not have columns".
+    /// </para>
+    /// </summary>
+    private UserControl? _viewTruocDo;
+
     public FormChinh()
     {
         InitializeComponent();
@@ -86,7 +97,82 @@ public partial class FormChinh : Form
 
         AlignHeaderLabels();
         ApplyRolePermissions(role);
+
+        if (role == RoleNames.GiaoVien || role == RoleNames.TroGiang)
+        {
+            HienThiVaiTroKhongHoTro(role);
+            return;
+        }
+
         NavigateTo(NavItem.Dashboard);
+    }
+
+    /// <summary>
+    /// Bản WinForms CHỈ là phần mềm quản trị: mọi màn hình gọi <c>/api/admin/*</c>
+    /// (Quản trị viên / Nhân viên học vụ). Giáo viên &amp; Trợ giảng dùng bản Web,
+    /// nên hiện thông báo rõ ràng thay vì để các bảng dữ liệu trống + lỗi 403.
+    /// </summary>
+    private void HienThiVaiTroKhongHoTro(string role)
+    {
+        _currentView?.Dispose();
+        pnlContent.Controls.Clear();
+        lblPageTitle.Text = "Không hỗ trợ vai trò này trên bản WinForms";
+
+        var card = new Panel
+        {
+            Dock = DockStyle.Top,
+            Height = 260,
+            BackColor = Color.White,
+            Padding = new Padding(28)
+        };
+
+        card.Controls.Add(new Label
+        {
+            Text = "KHÔNG HỖ TRỢ VAI TRÒ NÀY TRÊN BẢN WINFORMS",
+            Font = UI.Theme.FontHeading,
+            ForeColor = UI.Theme.Danger,
+            AutoSize = true,
+            Location = new Point(28, 24)
+        });
+
+        card.Controls.Add(new Label
+        {
+            Text = $"Tài khoản đang đăng nhập: {AppSession.CurrentUser?.Username} — vai trò: {role}.\n\n"
+                + "Bản WinForms là PHẦN MỀM QUẢN TRỊ: toàn bộ màn hình gọi API /api/admin/* nên chỉ "
+                + "Quản trị viên và Nhân viên học vụ mới dùng được.\n"
+                + "Giáo viên / Trợ giảng đăng nhập vào đây sẽ bị từ chối (403) và các bảng dữ liệu trống.\n\n"
+                + "Vui lòng dùng bản Web để giảng dạy: http://localhost:5173",
+            Font = UI.Theme.FontRegular,
+            ForeColor = UI.Theme.TextMedium,
+            AutoSize = false,
+            Size = new Size(760, 130),
+            Location = new Point(28, 64)
+        });
+
+        var btnCopy = UI.UiHelpers.CreateSecondaryButton("Sao chép địa chỉ Web", 190, 36);
+        btnCopy.Location = new Point(28, 204);
+        btnCopy.Click += (_, _) =>
+        {
+            try
+            {
+                Clipboard.SetText("http://localhost:5173");
+                MessageBox.Show(this, "Đã sao chép địa chỉ bản Web.", "Thông báo",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch
+            {
+                MessageBox.Show(this, "http://localhost:5173", "Địa chỉ bản Web",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        };
+        card.Controls.Add(btnCopy);
+
+        var btnDangXuat = UI.UiHelpers.CreatePrimaryButton("Đăng xuất", 150, 36);
+        btnDangXuat.Location = new Point(230, 204);
+        btnDangXuat.Click += BtnNavLogout_Click;
+        card.Controls.Add(btnDangXuat);
+
+        pnlContent.Controls.Add(card);
     }
 
     private void ApplyRolePermissions(string role)
@@ -133,21 +219,11 @@ public partial class FormChinh : Form
             return true;
         }
 
-        // Giáo viên và Trợ giảng: Tuyệt đối KHÔNG có quyền truy cập vào các chức năng quản lý nhân sự, tài chính, tài khoản
+        // Giáo viên / Trợ giảng: bản WinForms chỉ có màn hình quản trị (mọi API là /api/admin/*)
+        // → mọi trang đều 403. Không mở phân hệ nào, hiện thông báo hướng dẫn thay vì màn trống.
         if (role == RoleNames.GiaoVien || role == RoleNames.TroGiang)
         {
-            return item switch
-            {
-                NavItem.Teachers => false,      // Giáo viên & Trợ giảng KHÔNG quản lý giáo viên
-                NavItem.Assistants => false,    // Giáo viên & Trợ giảng KHÔNG quản lý trợ giảng
-                NavItem.Accounts => false,      // KHÔNG quản lý tài khoản người dùng
-                NavItem.Tuition => false,       // KHÔNG quản lý học phí & biên nhận
-                NavItem.Reports => false,       // KHÔNG xem báo cáo doanh thu tài chính
-                NavItem.Assignments => false,   // KHÔNG phân công giảng dạy
-                NavItem.Enrollment => false,    // KHÔNG xếp học viên vào lớp
-                NavItem.Courses => false,       // KHÔNG quản lý chương trình/học phí khóa học
-                _ => true                       // Được phép: Dashboard, Lớp học, Lịch học, Điểm số, Học viên, Thông báo
-            };
+            return false;
         }
 
         return true;
@@ -173,7 +249,12 @@ public partial class FormChinh : Form
 
         HighlightActiveButton(item);
 
-        _currentView?.Dispose();
+        // Dọn màn của lần điều hướng trước đó (request của nó đã kịp xong),
+        // KHÔNG Dispose màn vừa rời đi vì nó có thể còn chờ dữ liệu.
+        _viewTruocDo?.Dispose();
+        _viewTruocDo = _currentView;
+        _currentView = null;
+
         pnlContent.Controls.Clear();
 
         UserControl view = item switch
