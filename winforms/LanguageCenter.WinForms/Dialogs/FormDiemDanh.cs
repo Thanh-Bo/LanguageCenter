@@ -78,6 +78,10 @@ public sealed class FormDiemDanh : Form
         _grid.ReadOnly = false;
         _grid.EditMode = DataGridViewEditMode.EditOnEnter;
 
+        // StyleGrid đặt AutoSizeColumnsMode = Fill (bỏ qua Width) → tắt để cột tick đủ rộng,
+        // chỉ 2 cột Họ tên / Ghi chú tự co giãn.
+        _grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None;
+
         _grid.Columns.Add(new DataGridViewTextBoxColumn
         {
             Name = "MaHocVien",
@@ -127,17 +131,17 @@ public sealed class FormDiemDanh : Form
         _grid.CellValueChanged += Grid_CellValueChanged;
 
         _lblThongBao.AutoSize = false;
-        _lblThongBao.Size = new Size(520, 36);
+        _lblThongBao.Size = new Size(430, 40);
         _lblThongBao.Location = new Point(20, 448);
         _lblThongBao.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
         _lblThongBao.ForeColor = Theme.Muted;
         _lblThongBao.Font = Theme.FontSub;
 
-        _btnLuu.Location = new Point(560, 468);
+        _btnLuu.Location = new Point(472, 452);
         _btnLuu.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         _btnLuu.Click += async (_, _) => await LuuAsync();
 
-        _btnDong.Location = new Point(720, 468);
+        _btnDong.Location = new Point(634, 452);
         _btnDong.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         _btnDong.Click += (_, _) => Close();
 

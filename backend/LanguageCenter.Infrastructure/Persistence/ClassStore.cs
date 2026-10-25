@@ -61,6 +61,8 @@ public sealed class ClassStore : IClassStore
                 NgayKetThucThucTe = x.NgayKetThucThucTe,
                 GioBatDau = x.GioBatDau,
                 GioKetThuc = x.GioKetThuc,
+                ThuBuoi1 = x.ThuBuoi1,
+                ThuBuoi2 = x.ThuBuoi2,
                 SiSoToiDa = x.SiSoToiDa,
                 SiSoHienTai = x.DangKyHocs.Count(
                     d => d.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
@@ -101,6 +103,8 @@ public sealed class ClassStore : IClassStore
                 NgayKetThucThucTe = x.NgayKetThucThucTe,
                 GioBatDau = x.GioBatDau,
                 GioKetThuc = x.GioKetThuc,
+                ThuBuoi1 = x.ThuBuoi1,
+                ThuBuoi2 = x.ThuBuoi2,
                 SiSoToiDa = x.SiSoToiDa,
                 SiSoHienTai = x.DangKyHocs.Count(
                     d => d.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
@@ -192,7 +196,12 @@ public sealed class ClassStore : IClassStore
             NgayKetThucDuKien = request.NgayKetThucDuKien,
             NgayKetThucThucTe = null,
             GioBatDau = request.GioBatDau,
-            GioKetThuc = request.GioKetThuc,
+            // Mỗi buổi cố định 2 giờ → giờ kết thúc do server tự tính.
+            GioKetThuc = request.GioBatDau is { } gioBatDauTaoLop
+                ? gioBatDauTaoLop.AddHours(2)
+                : request.GioKetThuc,
+            ThuBuoi1 = request.ThuBuoi1,
+            ThuBuoi2 = request.ThuBuoi2,
             SiSoToiDa = request.SiSoToiDa,
             TrangThai = ClassStatuses.ChuanBiMo
         };
@@ -263,11 +272,22 @@ public sealed class ClassStore : IClassStore
         if (changes.GioBatDau is not null)
         {
             entity.GioBatDau = changes.GioBatDau;
+            // Mỗi buổi cố định 2 giờ → giờ kết thúc luôn suy ra từ giờ bắt đầu.
+            entity.GioKetThuc = changes.GioBatDau.Value.AddHours(2);
+        }
+        else if (changes.GioKetThuc is not null && entity.GioBatDau is { } gioBatDauHienTai)
+        {
+            entity.GioKetThuc = gioBatDauHienTai.AddHours(2);
         }
 
-        if (changes.GioKetThuc is not null)
+        if (changes.ThuBuoi1 is not null)
         {
-            entity.GioKetThuc = changes.GioKetThuc;
+            entity.ThuBuoi1 = changes.ThuBuoi1;
+        }
+
+        if (changes.ThuBuoi2 is not null)
+        {
+            entity.ThuBuoi2 = changes.ThuBuoi2;
         }
 
         if (changes.SiSoToiDa is not null)

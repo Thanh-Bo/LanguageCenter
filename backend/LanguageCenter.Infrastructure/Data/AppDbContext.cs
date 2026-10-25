@@ -29,6 +29,7 @@ public class AppDbContext : DbContext
     public DbSet<ChuongTrinh> ChuongTrinhs { get; set; } = null!;
     public DbSet<CapDo> CapDos { get; set; } = null!;
     public DbSet<KhoaHoc> KhoaHocs { get; set; } = null!;
+    public DbSet<NoiDungBaiHoc> NoiDungBaiHocs { get; set; } = null!;
     public DbSet<KiemTraDauVao> KiemTraDauVaos { get; set; } = null!;
 
     // 14..20
@@ -36,6 +37,7 @@ public class AppDbContext : DbContext
     public DbSet<LopHoc> LopHocs { get; set; } = null!;
     public DbSet<PhanCongGiangDay> PhanCongGiangDays { get; set; } = null!;
     public DbSet<UuDai> UuDais { get; set; } = null!;
+    public DbSet<NgayLe> NgayLes { get; set; } = null!;
     public DbSet<DangKyHoc> DangKyHocs { get; set; } = null!;
     public DbSet<LichHoc> LichHocs { get; set; } = null!;
     public DbSet<CaHoc> CaHocs { get; set; } = null!;

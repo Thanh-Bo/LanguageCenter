@@ -265,37 +265,21 @@ public sealed class SessionService : ISessionService
         GenerateSessionsRequest request,
         CancellationToken cancellationToken)
     {
-        if (request.TuNgay == default || request.DenNgay == default)
-        {
-            return OperationResult<GenerateSessionsResponse>.BadRequest(
-                "Khoảng ngày không hợp lệ.",
-                ["Từ ngày và đến ngày đều bắt buộc."]);
-        }
-
-        if (request.DenNgay < request.TuNgay)
-        {
-            return OperationResult<GenerateSessionsResponse>.BadRequest(
-                "Khoảng ngày không hợp lệ.",
-                ["Đến ngày phải lớn hơn hoặc bằng từ ngày."]);
-        }
-
-        if ((request.DenNgay.DayNumber - request.TuNgay.DayNumber) > 366)
-        {
-            return OperationResult<GenerateSessionsResponse>.BadRequest(
-                "Khoảng ngày quá lớn.",
-                ["Chỉ cho phép tạo tối đa 366 ngày trong một lần."]);
-        }
-
         var outcome = await _sessionStore.GenerateSessionsAsync(
             request.MaLichHoc,
-            request.TuNgay,
-            request.DenNgay,
             cancellationToken);
 
         if (!outcome.ScheduleFound)
         {
             return OperationResult<GenerateSessionsResponse>.NotFound(
                 $"Không tìm thấy lịch học có id = {request.MaLichHoc}.");
+        }
+
+        if (!string.IsNullOrWhiteSpace(outcome.Loi))
+        {
+            return OperationResult<GenerateSessionsResponse>.BadRequest(
+                "Không thể sinh ca học.",
+                [outcome.Loi]);
         }
 
         var response = new GenerateSessionsResponse

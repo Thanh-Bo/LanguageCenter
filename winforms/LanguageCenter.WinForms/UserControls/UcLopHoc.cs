@@ -157,7 +157,10 @@ public partial class UcLopHoc : UserControl
                 c.GioBatDau is { } gioBD && c.GioKetThuc is { } gioKT
                     ? $"{gioBD:HH\\:mm} – {gioKT:HH\\:mm}"
                     : "—",
-                c.SoCaHoc > 0 ? $"{c.SoCaHoc} ca" : "Chưa sinh ca",
+                TenThu(c.ThuBuoi1) is { } t1 && TenThu(c.ThuBuoi2) is { } t2
+                    ? $"{t1} · {t2}"
+                    : "—",
+                c.SoCaHoc > 0 ? $"{c.SoCaHoc}/20 buổi" : "Chưa sinh buổi",
                 UiHelpers.FormatDate(c.NgayBatDau),
                 UiHelpers.FormatDate(c.NgayKetThucDuKien),
                 c.TrangThai
@@ -195,6 +198,19 @@ public partial class UcLopHoc : UserControl
     }
 
     private ClassListItemDto? LopDangChon => dgvClasses.CurrentRow?.Tag as ClassListItemDto;
+
+    /// <summary>1 → "Thứ 2" … 7 → "Chủ nhật"; null nếu chưa khai báo.</summary>
+    private static string? TenThu(byte? thu) => thu switch
+    {
+        1 => "Thứ 2",
+        2 => "Thứ 3",
+        3 => "Thứ 4",
+        4 => "Thứ 5",
+        5 => "Thứ 6",
+        6 => "Thứ 7",
+        7 => "Chủ nhật",
+        _ => null
+    };
 
     private IReadOnlyList<string> DanhSachHocVu() => _all
         .Select(c => c.MaNhanVienHocVu)

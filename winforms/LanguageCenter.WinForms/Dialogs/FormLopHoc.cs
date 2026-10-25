@@ -14,6 +14,12 @@ public sealed class FormLopHoc : Form
     private string? _loiKhoaHoc;
     private bool _dangNap;
 
+    /// <summary>Thứ trong tuần: index 0 = Thứ 2 … index 6 = Chủ nhật (khớp 1..7 của DB).</summary>
+    private static readonly string[] ThuTrongTuan =
+    [
+        "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"
+    ];
+
     private readonly TextBox _txtMaLop = UiHelpers.CreateTextBox(320);
     private readonly TextBox _txtTenLop = UiHelpers.CreateTextBox(320);
     private readonly ComboBox _cboChuongTrinh = UiHelpers.CreateComboBox(320);
@@ -25,6 +31,8 @@ public sealed class FormLopHoc : Form
     private readonly NumericUpDown _numSiSo = new();
     private readonly DateTimePicker _dtpGioBatDau = new();
     private readonly DateTimePicker _dtpGioKetThuc = new();
+    private readonly ComboBox _cboThu1 = UiHelpers.CreateComboBox(160);
+    private readonly ComboBox _cboThu2 = UiHelpers.CreateComboBox(160);
     private readonly Label _lblThongBao = new();
     private readonly Button _btnLuu = UiHelpers.CreatePrimaryButton("Lưu lớp học", 150, 36);
     private readonly Button _btnHuy = UiHelpers.CreateSecondaryButton("Hủy bỏ", 110, 36);
@@ -46,7 +54,7 @@ public sealed class FormLopHoc : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(620, 600);
+        ClientSize = new Size(620, 660);
         BackColor = Color.White;
         Font = Theme.FontRegular;
 
@@ -104,7 +112,13 @@ public sealed class FormLopHoc : Form
         _dtpKetThuc.Width = 320;
 
         DatTruong("Ngày bắt đầu", _dtpBatDau, 336);
-        DatTruong("Ngày kết thúc dự kiến", _dtpKetThuc, 392);
+        DatTruong("Ngày kết thúc (tự động — 10 tuần)", _dtpKetThuc, 392);
+
+        // NGÀY KẾT THÚC KHÔNG CHO SỬA: suy ra từ Ngày bắt đầu (10 tuần = 20 buổi),
+        // sau đó sẽ được backend chốt CHÍNH XÁC khi bấm "Sinh 20 buổi" (có dời ngày lễ).
+        _dtpKetThuc.Enabled = false;
+        _dtpKetThuc.BackColor = Color.FromArgb(241, 245, 249);
+        _dtpBatDau.ValueChanged += (_, _) => CapNhatNgayKetThucDuKien();
 
         _numSiSo.Minimum = 1;
         _numSiSo.Maximum = 300;
@@ -124,7 +138,7 @@ public sealed class FormLopHoc : Form
 
         Controls.Add(new Label
         {
-            Text = "Giờ kết thúc",
+            Text = "Giờ kết thúc (tự động +2 giờ)",
             AutoSize = true,
             ForeColor = Theme.TextMedium,
             Font = Theme.FontSub,
@@ -147,17 +161,57 @@ public sealed class FormLopHoc : Form
         _dtpGioKetThuc.Location = new Point(392, 468);
         _dtpGioKetThuc.Value = DateTime.Today.AddHours(19).AddMinutes(30);
 
+        // MỖI BUỔI 2 GIỜ → giờ kết thúc tự tính từ giờ bắt đầu, KHÔNG cho nhập.
+        _dtpGioKetThuc.Enabled = false;
+        _dtpGioKetThuc.BackColor = Color.FromArgb(241, 245, 249);
+        _dtpGioBatDau.ValueChanged += (_, _) => CapNhatGioKetThuc();
+        CapNhatGioKetThuc();
+
+        // 2 THỨ HỌC trong tuần (10 tuần × 2 buổi). Đây là nguồn để "Sinh 20 buổi".
+        Controls.Add(new Label
+        {
+            Text = "Thứ buổi 1 *",
+            AutoSize = true,
+            ForeColor = Theme.TextMedium,
+            Font = Theme.FontSub,
+            Location = new Point(24, 496)
+        });
+
+        Controls.Add(new Label
+        {
+            Text = "Thứ buổi 2 *",
+            AutoSize = true,
+            ForeColor = Theme.TextMedium,
+            Font = Theme.FontSub,
+            Location = new Point(200, 496)
+        });
+
+        foreach (var cbo in new[] { _cboThu1, _cboThu2 })
+        {
+            foreach (var thu in ThuTrongTuan)
+            {
+                cbo.Items.Add(thu);
+            }
+
+            cbo.Location = new Point(cbo == _cboThu1 ? 24 : 200, 516);
+            cbo.SelectedIndexChanged += (_, _) => CapNhatNgayKetThucDuKien();
+            Controls.Add(cbo);
+        }
+
+        _cboThu1.SelectedIndex = 0;   // Thứ 2
+        _cboThu2.SelectedIndex = 2;   // Thứ 4
+
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(572, 40);
-        _lblThongBao.Location = new Point(24, 500);
+        _lblThongBao.Location = new Point(24, 552);
         _lblThongBao.ForeColor = Theme.Danger;
         _lblThongBao.Font = Theme.FontSub;
         Controls.Add(_lblThongBao);
 
-        _btnLuu.Location = new Point(320, 548);
+        _btnLuu.Location = new Point(320, 600);
         _btnLuu.Click += async (_, _) => await LuuAsync();
 
-        _btnHuy.Location = new Point(478, 548);
+        _btnHuy.Location = new Point(478, 600);
         _btnHuy.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
         Controls.Add(_btnLuu);
@@ -287,6 +341,60 @@ public sealed class FormLopHoc : Form
             ?? $"Chương trình '{chuongTrinh}' chưa có khóa học nào.";
     }
 
+    /// <summary>
+    /// Mỗi buổi học CỐ ĐỊNH 2 giờ → Giờ kết thúc = Giờ bắt đầu + 2 giờ (chỉ xem, không nhập tay).
+    /// Nếu vượt quá 23:59 thì kẹp lại vì ô chỉ chọn giờ trong ngày.
+    /// </summary>
+    private void CapNhatGioKetThuc()
+    {
+        var batDau = _dtpGioBatDau.Value;
+        var ketThuc = batDau.AddHours(2);
+
+        if (ketThuc.Date > batDau.Date)
+        {
+            ketThuc = batDau.Date.AddHours(23).AddMinutes(59);
+        }
+
+        _dtpGioKetThuc.Value = ketThuc;
+    }
+
+    /// <summary>
+    /// Ngày kết thúc = ngày của BUỔI 20 trong khung 10 tuần × 2 buổi:
+    /// ngày đầu tiên ≥ Ngày bắt đầu rơi vào Thứ buổi 1, rồi + 63 ngày + chênh lệch 2 thứ.
+    /// <para>
+    /// Lớp đã sinh buổi (SoCaHoc &gt; 0) thì GIỬ NGUYÊN ngày thật của buổi cuối
+    /// (có thể lệch nếu bị dời vì ngày lễ) — không ghi đè bằng ước tính.
+    /// </para>
+    /// </summary>
+    private void CapNhatNgayKetThucDuKien()
+    {
+        if (_existing is { SoCaHoc: > 0 })
+        {
+            return;
+        }
+
+        var thu1 = _cboThu1.SelectedIndex + 1;
+        var thu2 = _cboThu2.SelectedIndex + 1;
+
+        if (thu1 <= 0 || thu2 <= 0 || thu1 == thu2)
+        {
+            return;
+        }
+
+        if (thu1 > thu2)
+        {
+            (thu1, thu2) = (thu2, thu1);
+        }
+
+        var batDau = DateOnly.FromDateTime(_dtpBatDau.Value);
+        var dow = batDau.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)batDau.DayOfWeek;
+
+        var ngayDau = batDau.AddDays(((thu1 - dow) + 7) % 7);
+        var ngayCuoi = ngayDau.AddDays(63 + (thu2 - thu1));
+
+        _dtpKetThuc.Value = ngayCuoi.ToDateTime(TimeOnly.MinValue);
+    }
+
     private void NapDuLieu(IReadOnlyList<string>? nhanVienHocVu)
     {
         // Nhân viên học vụ (backend chưa có endpoint danh mục nhân viên → lấy từ dữ liệu lớp đã có)
@@ -301,6 +409,7 @@ public sealed class FormLopHoc : Form
         if (_existing is null)
         {
             DoVaoComboChuongTrinh();
+            CapNhatNgayKetThucDuKien();
             return;
         }
 
@@ -332,12 +441,23 @@ public sealed class FormLopHoc : Form
             _dtpGioBatDau.Value = DateTime.Today.Add(gioBD.ToTimeSpan());
         }
 
-        if (_existing.GioKetThuc is { } gioKT)
+        // Giờ kết thúc luôn = giờ bắt đầu + 2 giờ (không lấy giá trị cũ trong DB).
+        CapNhatGioKetThuc();
+
+        if (_existing.ThuBuoi1 is >= 1 and <= 7)
         {
-            _dtpGioKetThuc.Value = DateTime.Today.Add(gioKT.ToTimeSpan());
+            _cboThu1.SelectedIndex = _existing.ThuBuoi1.Value - 1;
+        }
+
+        if (_existing.ThuBuoi2 is >= 1 and <= 7)
+        {
+            _cboThu2.SelectedIndex = _existing.ThuBuoi2.Value - 1;
         }
 
         _numSiSo.Value = Math.Clamp(_existing.SiSoToiDa, (int)_numSiSo.Minimum, (int)_numSiSo.Maximum);
+
+        // Lớp đã sinh buổi → giữ ngày kết thúc thật; chưa sinh → tính lại theo 2 thứ.
+        CapNhatNgayKetThucDuKien();
     }
 
     private async Task LuuAsync()
@@ -383,6 +503,15 @@ public sealed class FormLopHoc : Form
             return;
         }
 
+        var thuBuoi1 = (byte)(_cboThu1.SelectedIndex + 1);
+        var thuBuoi2 = (byte)(_cboThu2.SelectedIndex + 1);
+
+        if (_cboThu1.SelectedIndex < 0 || _cboThu2.SelectedIndex < 0 || thuBuoi1 == thuBuoi2)
+        {
+            _lblThongBao.Text = "Thứ buổi 1 và Thứ buổi 2 phải KHÁC nhau (mỗi tuần 2 buổi vào 2 thứ khác nhau).";
+            return;
+        }
+
         _btnLuu.Enabled = false;
         UseWaitCursor = true;
 
@@ -399,6 +528,8 @@ public sealed class FormLopHoc : Form
                 ngayKetThucDuKien = ketThuc.ToString("yyyy-MM-dd"),
                 gioBatDau = gioBatDau.ToString("HH:mm:ss"),
                 gioKetThuc = gioKetThuc.ToString("HH:mm:ss"),
+                thuBuoi1,
+                thuBuoi2,
                 siSoToiDa = (int)_numSiSo.Value
             });
         }
@@ -412,6 +543,8 @@ public sealed class FormLopHoc : Form
                 ngayKetThucDuKien = ketThuc.ToString("yyyy-MM-dd"),
                 gioBatDau = gioBatDau.ToString("HH:mm:ss"),
                 gioKetThuc = gioKetThuc.ToString("HH:mm:ss"),
+                thuBuoi1,
+                thuBuoi2,
                 siSoToiDa = (int)_numSiSo.Value
             });
         }

@@ -247,23 +247,27 @@ partial class UcXepLop
 
         // Bảng học viên trong lớp
         dgvInClass.Dock = DockStyle.Fill;
-        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaHocVien", HeaderText = "Mã HV", FillWeight = 80 });
-        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenHocVien", HeaderText = "Họ và tên học viên", FillWeight = 160 });
-        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "SoDienThoai", HeaderText = "SĐT", FillWeight = 100 });
+        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaHocVien", HeaderText = "Mã HV", FillWeight = 70 });
+        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenHocVien", HeaderText = "Họ và tên học viên", FillWeight = 150 });
+        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgaySinh", HeaderText = "Ngày sinh", FillWeight = 85 });
+        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "GioiTinh", HeaderText = "Giới tính", FillWeight = 65 });
+        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "SoDienThoai", HeaderText = "SĐT", FillWeight = 95 });
         dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "Email", HeaderText = "Email", FillWeight = 150 });
-        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayXepLop", HeaderText = "Ngày xếp lớp", FillWeight = 100 });
-        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrangThaiHocPhi", HeaderText = "Học phí", FillWeight = 110 });
+        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayXepLop", HeaderText = "Ngày xếp lớp", FillWeight = 95 });
+        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "HocPhi", HeaderText = "Học phí", FillWeight = 95 });
+        dgvInClass.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrangThai", HeaderText = "Trạng thái", FillWeight = 95 });
 
         // Bảng học viên chờ xếp lớp
         dgvPending.Dock = DockStyle.Fill;
         dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaDangKy", HeaderText = "Mã ĐK", FillWeight = 60 });
-        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaHocVien", HeaderText = "Mã HV", FillWeight = 80 });
-        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenHocVien", HeaderText = "Họ và tên học viên", FillWeight = 160 });
-        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "SoDienThoai", HeaderText = "SĐT", FillWeight = 100 });
-        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "KhoaHoc", HeaderText = "Khóa học đăng ký", FillWeight = 160 });
-        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayDangKy", HeaderText = "Ngày đăng ký", FillWeight = 100 });
-        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "HocPhi", HeaderText = "Tình trạng học phí", FillWeight = 110 });
-        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "GhiChu", HeaderText = "Ghi chú xếp lớp", FillWeight = 160 });
+        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaHocVien", HeaderText = "Mã HV", FillWeight = 70 });
+        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenHocVien", HeaderText = "Họ và tên học viên", FillWeight = 150 });
+        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "SoDienThoai", HeaderText = "SĐT", FillWeight = 95 });
+        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "Email", HeaderText = "Email", FillWeight = 150 });
+        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "KhoaHoc", HeaderText = "Khóa học đăng ký", FillWeight = 140 });
+        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayDangKy", HeaderText = "Ngày đăng ký", FillWeight = 95 });
+        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "HocPhi", HeaderText = "Học phí", FillWeight = 95 });
+        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrangThai", HeaderText = "Trạng thái", FillWeight = 95 });
 
         pnlGridContainer.Controls.Add(dgvInClass);
         pnlGridContainer.Controls.Add(dgvPending);

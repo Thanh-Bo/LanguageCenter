@@ -1,10 +1,17 @@
 // Thời khóa biểu dạng lưới tuần — dùng chung cho Học viên (Lịch học) và Giáo viên (Lịch dạy).
 import { useEffect, useRef, useState } from 'react'
 import type { SessionListItem } from '../lib/api/types'
-import { congNgayIso, dauTuanIso, dinhDangKhoangGio, dinhDangNgay, homNayIso } from '../lib/format'
+import {
+  congNgayIso,
+  dauTuanIso,
+  dinhDangKhoangGio,
+  dinhDangNgay,
+  homNayIso,
+  thuTrongTuan,
+} from '../lib/format'
 import { thongDiepLoi } from '../lib/useApi'
 import { Icon } from './BieuTuong'
-import { DangTai, LOP_NUT_CHINH, LOP_NUT_PHU, LoiTrang } from './ui'
+import { DangTai, LOP_INPUT, LOP_NHAN, LOP_NUT_CHINH, LOP_NUT_PHU, LoiTrang, Nhan } from './ui'
 
 const NHAN_THU = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN']
 
@@ -136,6 +143,7 @@ export function ThoiKhoaBieuTuan({
   dongPhu = (ca) => [ca.tenPhong, ca.tenGiaoVienThucTe],
   moTaRong = 'Tuần này bạn không có ca học nào.',
   nhanDem = 'ca học',
+  onChonNgay,
 }: {
   duLieu: SessionListItem[]
   tuanBatDau: string
@@ -148,9 +156,19 @@ export function ThoiKhoaBieuTuan({
   dongPhu?: (ca: SessionListItem) => Array<string | null | undefined>
   moTaRong?: string
   nhanDem?: string
+  /** Bấm vào một ngày (ô lịch hoặc ô chọn ngày) → trả về ngày ISO vừa chọn. */
+  onChonNgay?: (ngay: string) => void
 }) {
   const cacNgay = NHAN_THU.map((_, i) => congNgayIso(tuanBatDau, i))
   const homNay = homNayIso()
+
+  // Ngày đang được bấm chọn trên lưới (để xem chi tiết / chuyển sang điểm danh).
+  const [ngayChon, setNgayChon] = useState<string | null>(null)
+
+  const chonNgay = (ngay: string) => {
+    setNgayChon((cu) => (cu === ngay ? null : ngay))
+    onChonNgay?.(ngay)
+  }
 
   const caTheoNgay = new Map<string, SessionListItem[]>(cacNgay.map((n) => [n, []]))
   for (const ca of duLieu) {
@@ -190,6 +208,37 @@ export function ThoiKhoaBieuTuan({
           </button>
         </div>
 
+        {/* Chọn ngày CHÍNH XÁC: tự nhảy về tuần chứa ngày đó và chọn ngày đó. */}
+        <div className="flex items-end gap-2">
+          <div>
+            <label className={LOP_NHAN} htmlFor="tkb-ngay">
+              Chọn ngày
+            </label>
+            <input
+              id="tkb-ngay"
+              type="date"
+              value={ngayChon ?? homNay}
+              onChange={(e) => {
+                const ngay = e.target.value
+                if (!ngay) return
+                onDoiTuan(dauTuanIso(ngay))
+                chonNgay(ngay)
+              }}
+              className={`${LOP_INPUT} h-10`}
+            />
+          </div>
+          {ngayChon && (
+            <button
+              type="button"
+              onClick={() => setNgayChon(null)}
+              className={`${LOP_NUT_PHU} h-10`}
+              title="Bỏ chọn ngày"
+            >
+              <Icon name="close" className="size-4" />
+            </button>
+          )}
+        </div>
+
         <div className="sm:text-right">
           <p className="text-sm font-semibold text-slate-900">
             Tuần {dinhDangNgay(tuanBatDau)} – {dinhDangNgay(tuanKetThuc)}
@@ -222,20 +271,34 @@ export function ThoiKhoaBieuTuan({
                   {cacNgay.map((ngay, i) => (
                     <th
                       key={ngay}
-                      className={`border-b border-l border-slate-200 px-2 py-3 text-center ${
-                        ngay === homNay ? 'bg-blue-50' : 'bg-slate-50'
+                      className={`border-b border-l border-slate-200 p-0 text-center ${
+                        ngayChon === ngay
+                          ? 'bg-blue-100'
+                          : ngay === homNay
+                            ? 'bg-blue-50'
+                            : 'bg-slate-50'
                       }`}
                     >
-                      <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        {NHAN_THU[i]}
-                      </p>
-                      <p
-                        className={`text-sm font-bold ${
-                          ngay === homNay ? 'text-blue-600' : 'text-slate-800'
-                        }`}
+                      <button
+                        type="button"
+                        onClick={() => chonNgay(ngay)}
+                        title={`Xem chi tiết ${thuTrongTuan(ngay)} ${dinhDangNgay(ngay)}`}
+                        className="w-full cursor-pointer px-2 py-3 transition hover:bg-blue-100/70"
                       >
-                        {dinhDangNgay(ngay)}
-                      </p>
+                        <span className="block text-xs font-semibold tracking-wide text-slate-500 uppercase">
+                          {NHAN_THU[i]}
+                        </span>
+                        <span
+                          className={`block text-sm font-bold ${
+                            ngay === homNay ? 'text-blue-600' : 'text-slate-800'
+                          }`}
+                        >
+                          {dinhDangNgay(ngay)}
+                        </span>
+                        <span className="mt-1 block text-[10px] font-semibold text-slate-400">
+                          {(caTheoNgay.get(ngay) ?? []).length || '—'}
+                        </span>
+                      </button>
                     </th>
                   ))}
                 </tr>
@@ -254,8 +317,14 @@ export function ThoiKhoaBieuTuan({
                       return (
                         <td
                           key={ngay}
-                          className={`h-28 border-b border-l border-slate-200 p-1.5 align-top ${
-                            ngay === homNay ? 'bg-blue-50/40' : ''
+                          onClick={() => chonNgay(ngay)}
+                          title={`Chọn ${thuTrongTuan(ngay)} ${dinhDangNgay(ngay)}`}
+                          className={`h-28 cursor-pointer border-b border-l border-slate-200 p-1.5 align-top transition ${
+                            ngayChon === ngay
+                              ? 'bg-blue-50 ring-2 ring-inset ring-blue-500'
+                              : ngay === homNay
+                                ? 'bg-blue-50/40'
+                                : 'hover:bg-slate-50'
                           }`}
                         >
                           <div className="space-y-1">
@@ -271,6 +340,58 @@ export function ThoiKhoaBieuTuan({
               </tbody>
             </table>
           </div>
+
+          {/* Chi tiết ca của NGÀY ĐƯỢC CHỌN (bấm vào lịch hoặc ô Chọn ngày). */}
+          {ngayChon && (
+            <section className="rounded-2xl border border-blue-200 bg-blue-50/40 p-4 shadow-sm">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h3 className="text-sm font-bold text-slate-900">
+                  {thuTrongTuan(ngayChon)}, {dinhDangNgay(ngayChon)}
+                  <span className="ml-2 text-xs font-semibold text-slate-500">
+                    {(caTheoNgay.get(ngayChon) ?? []).length} {nhanDem}
+                  </span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setNgayChon(null)}
+                  className={LOP_NUT_PHU}
+                >
+                  Bỏ chọn ngày
+                </button>
+              </div>
+
+              {(caTheoNgay.get(ngayChon) ?? []).length === 0 ? (
+                <p className="rounded-xl border border-dashed border-slate-300 bg-white p-4 text-center text-sm text-slate-500">
+                  Ngày này không có {nhanDem}.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {(caTheoNgay.get(ngayChon) ?? []).map((ca) => (
+                    <li
+                      key={ca.maCaHoc}
+                      className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-3"
+                    >
+                      <span className="w-32 shrink-0 text-sm font-bold text-slate-900">
+                        {dinhDangKhoangGio(ca.gioBatDau, ca.gioKetThuc)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-slate-900">
+                          {ca.maLop} · {ca.tenLop}
+                        </p>
+                        <p className="truncate text-xs text-slate-500">
+                          {dongPhu(ca)
+                            .filter((x): x is string => Boolean(x))
+                            .join(' · ')}
+                          {ca.noiDungBaiHoc ? ` · ${ca.noiDungBaiHoc}` : ''}
+                        </p>
+                      </div>
+                      <Nhan>{ca.trangThai}</Nhan>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
             <span className="flex items-center gap-1.5">

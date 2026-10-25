@@ -20,6 +20,9 @@ public partial class UcLichHoc : UserControl
     private Button _btnDiemDanh = null!;
     private Button _btnTrangThai = null!;
     private Button _btnSinhCa = null!;
+    private Button _btnNgayLe = null!;
+    private Button _btnSuaLich = null!;
+    private Button _btnXoaLich = null!;
 
     public UcLichHoc()
     {
@@ -59,6 +62,23 @@ public partial class UcLichHoc : UserControl
         _btnSinhCa.Click += BtnSinhCa_Click;
         _btnSinhCa.Visible = false;
         pnlToolbar.Controls.Add(_btnSinhCa);
+
+        // Khai báo / sửa ngày lễ — buổi trùng ngày lễ sẽ được dời sang tuần sau.
+        _btnNgayLe = UiHelpers.CreateSecondaryButton("Ngày lễ", 120, 34);
+        _btnNgayLe.Click += BtnNgayLe_Click;
+        _btnNgayLe.Visible = false;
+        pnlToolbar.Controls.Add(_btnNgayLe);
+
+        // Sửa / xóa lịch học tuần (mỗi dòng = 1 lớp với đủ 2 thứ học).
+        _btnSuaLich = UiHelpers.CreateSecondaryButton("Sửa lịch", 120, 34);
+        _btnSuaLich.Click += BtnSuaLich_Click;
+        _btnSuaLich.Visible = false;
+        pnlToolbar.Controls.Add(_btnSuaLich);
+
+        _btnXoaLich = UiHelpers.CreateDangerButton("Xóa lịch", 120, 34);
+        _btnXoaLich.Click += BtnXoaLich_Click;
+        _btnXoaLich.Visible = false;
+        pnlToolbar.Controls.Add(_btnXoaLich);
 
         DungThanhCongCu();
 
@@ -146,7 +166,7 @@ public partial class UcLichHoc : UserControl
             Padding = new Padding(0, 2, 4, 0)
         };
 
-        foreach (var button in new[] { btnAdd, _btnSinhCa, _btnTrangThai, _btnDiemDanh })
+        foreach (var button in new[] { btnAdd, _btnSinhCa, _btnTrangThai, _btnDiemDanh, _btnNgayLe, _btnSuaLich, _btnXoaLich })
         {
             button.Margin = new Padding(8, 0, 0, 0);
         }
@@ -154,6 +174,9 @@ public partial class UcLichHoc : UserControl
         // Thứ tự Add = thứ tự từ PHẢI sang TRÁI.
         flpHanhDong.Controls.Add(btnAdd);
         flpHanhDong.Controls.Add(_btnSinhCa);
+        flpHanhDong.Controls.Add(_btnNgayLe);
+        flpHanhDong.Controls.Add(_btnSuaLich);
+        flpHanhDong.Controls.Add(_btnXoaLich);
         flpHanhDong.Controls.Add(_btnTrangThai);
         flpHanhDong.Controls.Add(_btnDiemDanh);
 
@@ -210,10 +233,13 @@ public partial class UcLichHoc : UserControl
         var usingRooms = _rooms.Count(r => r.TrangThai == "Đang sử dụng");
         var tongCaHoc = _overview?.CaHoc.TongSo ?? _sessions.Count;
 
+        // Mỗi lớp có 2 dòng lịch (2 buổi/tuần) → đếm theo LỚP cho đúng nghĩa "thời khóa biểu".
+        var soLopCoLich = _schedules.Select(s => s.MaLopHoc).Distinct().Count();
+
         tblStats.Controls.Clear();
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tổng số phòng học", $"{_rooms.Count} Phòng", "Các phòng chuẩn âm thanh & máy lạnh", Theme.Primary), 0, 0);
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Đang sử dụng", $"{usingRooms} Phòng", "Các lớp đang học trong ca", Theme.Success), 1, 0);
-        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Lịch học tuần", $"{_schedules.Count} Thời khóa biểu", "Lịch học cố định theo lớp", Theme.Purple), 2, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Lịch học tuần", $"{soLopCoLich} Thời khóa biểu", "Lịch học cố định theo lớp (2 buổi/tuần)", Theme.Purple), 2, 0);
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Ca học thực tế", $"{tongCaHoc} Buổi học", "Tiến độ bài học đang diễn ra", Theme.Warning), 3, 0);
     }
 
@@ -241,6 +267,9 @@ public partial class UcLichHoc : UserControl
         if (_btnTrangThai is not null) _btnTrangThai.Visible = _currentTab != 0;
         if (_btnTrangThai is not null) _btnTrangThai.Text = _currentTab == 2 ? "Trạng thái ca" : "Trạng thái lịch";
         if (_btnSinhCa is not null) _btnSinhCa.Visible = _currentTab == 1;
+        if (_btnNgayLe is not null) _btnNgayLe.Visible = _currentTab == 1;
+        if (_btnSuaLich is not null) _btnSuaLich.Visible = _currentTab == 1;
+        if (_btnXoaLich is not null) _btnXoaLich.Visible = _currentTab == 1;
 
         btnAdd.Text = _currentTab switch
         {
@@ -324,27 +353,36 @@ public partial class UcLichHoc : UserControl
             if (!string.IsNullOrWhiteSpace(kw))
             {
                 query = query.Where(s => s.TenLop.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
+                                         s.MaLop.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
                                          s.TenPhong.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
                                          ThuText(s.ThuTrongTuan).Contains(kw, StringComparison.OrdinalIgnoreCase));
             }
 
-            var list = query.OrderBy(s => s.TenLop).ToList();
+            // Mỗi LỚP = 1 dòng (gộp đủ 2 thứ/tuần), cột "Thứ học" hiện cả 2 thứ.
+            var list = query
+                .GroupBy(s => s.MaLopHoc)
+                .Select(g => TaoDongLichTuan(g.OrderBy(x => x.ThuTrongTuan).ToList()))
+                .OrderBy(x => x.TenLop)
+                .ToList();
+
             dgvSchedules.Rows.Clear();
             foreach (var s in list)
             {
                 var rowIdx = dgvSchedules.Rows.Add(
                     s.MaLop,
                     s.TenLop,
-                    s.TenPhong,
-                    ThuText(s.ThuTrongTuan),
-                    $"{s.GioBatDau:HH\\:mm} - {s.GioKetThuc:HH\\:mm}",
-                    UiHelpers.FormatDate(s.NgayApDungTu),
+                    s.PhongText,
+                    s.ThuText,
+                    s.GioText,
+                    s.NgayApDungText,
                     s.TrangThai
                 );
                 dgvSchedules.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(s.TrangThai);
                 dgvSchedules.Rows[rowIdx].Tag = s;
             }
-            lblSummary.Text = $"Hiển thị {list.Count}/{_schedules.Count} thời khóa biểu tuần";
+
+            var soLop = list.Count;
+            lblSummary.Text = $"Hiển thị {soLop} lớp có lịch tuần · {_schedules.Count} dòng lịch (mỗi lớp 2 buổi/tuần)";
         }
         else
         {
@@ -393,16 +431,17 @@ public partial class UcLichHoc : UserControl
     };
 
     /// <summary>
-    /// Sinh ca học hàng loạt từ lịch định kỳ đang chọn — <c>POST /api/admin/sessions/generate</c>.
+    /// Sinh ĐÚNG 20 buổi (10 tuần × 2 buổi) cho lớp của lịch đang chọn —
+    /// <c>POST /api/admin/sessions/generate</c>.
     /// <para>
-    /// Backend chỉ tạo ca cho các ngày khớp <c>ThuTrongTuan</c> nằm trong khoảng
-    /// [Từ ngày, Đến ngày] giao với khoảng áp dụng của lịch; ngày đã có ca thì bỏ qua,
-    /// ngày trùng phòng/giáo viên thì trả về danh sách xung đột kèm lý do.
+    /// Backend tự: lấy 2 lịch của lớp, bắt đầu từ Ngày bắt đầu của lớp, dời buổi trùng ngày lễ
+    /// sang tuần sau, gắn giáo viên/trợ giảng đang phân công, gắn nội dung bài học theo số buổi,
+    /// và cập nhật lại Ngày kết thúc dự kiến của lớp.
     /// </para>
     /// </summary>
     private async void BtnSinhCa_Click(object? sender, EventArgs e)
     {
-        if (dgvSchedules.CurrentRow?.Tag is not ScheduleListItemDto lich)
+        if (dgvSchedules.CurrentRow?.Tag is not LichTuanItem nhom)
         {
             MessageBox.Show(FindForm(),
                 "Vui lòng chọn một lịch học trong bảng (tab 'Lịch học') để sinh ca.",
@@ -410,9 +449,17 @@ public partial class UcLichHoc : UserControl
             return;
         }
 
-        using var dlg = new FormSinhCaHoc(lich);
+        var lich = nhom.DongDau;
 
-        if (dlg.ShowDialog(FindForm()) != DialogResult.OK)
+        var xacNhan = MessageBox.Show(FindForm(),
+            $"Sinh 20 buổi học (10 tuần × 2 buổi) cho lớp '{lich.TenLop}'?" + Environment.NewLine + Environment.NewLine
+            + "• Bắt đầu từ Ngày bắt đầu của lớp" + Environment.NewLine
+            + "• Buổi trùng ngày lễ sẽ tự dời sang tuần sau" + Environment.NewLine
+            + "• Ngày kết thúc dự kiến của lớp sẽ được cập nhật",
+            "Sinh 20 buổi học", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+            MessageBoxDefaultButton.Button1);
+
+        if (xacNhan != DialogResult.Yes)
         {
             return;
         }
@@ -421,12 +468,7 @@ public partial class UcLichHoc : UserControl
 
         var result = await AppSession.Api.PostAsync<GenerateSessionsResponseDto>(
             "admin/sessions/generate",
-            new
-            {
-                maLichHoc = lich.MaLichHoc,
-                tuNgay = dlg.TuNgay.ToString("yyyy-MM-dd"),
-                denNgay = dlg.DenNgay.ToString("yyyy-MM-dd")
-            });
+            new { maLichHoc = lich.MaLichHoc });
 
         UseWaitCursor = false;
 
@@ -443,12 +485,11 @@ public partial class UcLichHoc : UserControl
         var thongBao = new List<string>
         {
             $"Lớp: {lich.TenLop}",
-            $"Khoảng áp dụng thực tế: {UiHelpers.FormatDate(data.ApDungTuThucTe)} → {UiHelpers.FormatDate(data.ApDungDenThucTe)}",
-            $"Số ngày khớp thứ trong tuần: {data.TongNgayKhop}",
+            $"Khung: 20 buổi (10 tuần × 2 buổi) · {UiHelpers.FormatDate(data.ApDungTuThucTe)} → {UiHelpers.FormatDate(data.ApDungDenThucTe)}",
             string.Empty,
-            $"• Tạo mới: {data.NgayTao.Count} ca",
-            $"• Đã có sẵn (bỏ qua): {data.NgayDaCo.Count} ca",
-            $"• Xung đột: {data.NgayXungDot.Count} ca"
+            $"• Tạo mới: {data.NgayTao.Count} buổi",
+            $"• Đã có sẵn (bỏ qua): {data.NgayDaCo.Count} buổi",
+            $"• Dời / xung đột: {data.NgayXungDot.Count}"
         };
 
         foreach (var xungDot in data.NgayXungDot.Take(10))
@@ -490,7 +531,7 @@ public partial class UcLichHoc : UserControl
         }
         else if (_currentTab == 1)
         {
-            if (dgvSchedules.CurrentRow?.Tag is not ScheduleListItemDto lich)
+            if (dgvSchedules.CurrentRow?.Tag is not LichTuanItem nhom)
             {
                 MessageBox.Show(FindForm(), "Vui lòng chọn một lịch học trong danh sách.",
                     "Chưa chọn lịch", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -499,9 +540,9 @@ public partial class UcLichHoc : UserControl
 
             foreach (var trangThai in new[] { "Hoạt động", "Ngừng áp dụng" })
             {
-                var item = menu.Items.Add($"{lich.MaLop} → {trangThai}");
-                item.Enabled = trangThai != lich.TrangThai;
-                item.Click += async (_, _) => await DoiTrangThaiLichAsync(lich, trangThai);
+                var item = menu.Items.Add($"{nhom.MaLop} → {trangThai}");
+                item.Enabled = trangThai != nhom.TrangThai;
+                item.Click += async (_, _) => await DoiTrangThaiLichAsync(nhom, trangThai);
             }
         }
         else
@@ -528,17 +569,21 @@ public partial class UcLichHoc : UserControl
         await ReloadAsync();
     }
 
-    private async Task DoiTrangThaiLichAsync(ScheduleListItemDto lich, string trangThai)
+    private async Task DoiTrangThaiLichAsync(LichTuanItem nhom, string trangThai)
     {
-        var result = await AppSession.Api.PatchAsync<ScheduleListItemDto>(
-            $"admin/schedules/{lich.MaLichHoc}/status", new { trangThai });
-
-        if (!result.Success)
+        // Mỗi lớp có 2 dòng lịch (2 thứ/tuần) → đổi trạng thái cho CẢ 2.
+        foreach (var dong in nhom.Dongs)
         {
-            MessageBox.Show(FindForm(),
-                string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không đổi được trạng thái lịch học." : result.ErrorMessage,
-                "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
+            var result = await AppSession.Api.PatchAsync<ScheduleListItemDto>(
+                $"admin/schedules/{dong.MaLichHoc}/status", new { trangThai });
+
+            if (!result.Success)
+            {
+                MessageBox.Show(FindForm(),
+                    string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không đổi được trạng thái lịch học." : result.ErrorMessage,
+                    "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
         }
 
         await ReloadAsync();
@@ -559,6 +604,14 @@ public partial class UcLichHoc : UserControl
         {
             await ReloadAsync();
         }
+    }
+
+    /// <summary>Mở màn quản lý NGÀY LỄ (thêm / sửa / xóa) — dùng khi sinh ca học.</summary>
+    private async void BtnNgayLe_Click(object? sender, EventArgs e)
+    {
+        using var dlg = new FormNgayLe();
+
+        dlg.ShowDialog(FindForm());
     }
 
     private async void BtnAdd_Click(object? sender, EventArgs e)
@@ -607,13 +660,124 @@ public partial class UcLichHoc : UserControl
     private async void DgvSchedules_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
     {
         if (e.RowIndex < 0) return;
-        if (dgvSchedules.Rows[e.RowIndex].Tag is not ScheduleListItemDto lich) return;
+        if (dgvSchedules.Rows[e.RowIndex].Tag is not LichTuanItem nhom) return;
 
-        using var dlg = new FormLichHoc(_classes, _rooms, lich);
+        await SuaLichTuanAsync(nhom);
+    }
+
+    /// <summary>Sửa lịch học tuần của lớp đang chọn (phòng học + trạng thái của cả 2 dòng lịch).</summary>
+    private async void BtnSuaLich_Click(object? sender, EventArgs e)
+    {
+        if (dgvSchedules.CurrentRow?.Tag is not LichTuanItem nhom)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một lớp trong bảng để sửa lịch học tuần.",
+                "Chưa chọn lịch", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        await SuaLichTuanAsync(nhom);
+    }
+
+    private async Task SuaLichTuanAsync(LichTuanItem nhom)
+    {
+        using var dlg = new FormSuaLichTuan(nhom.Dongs, _rooms);
+
         if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
         {
             await ReloadAsync();
         }
+    }
+
+    /// <summary>Xóa lịch học tuần (cả 2 thứ) — backend chặn nếu lớp đã sinh buổi học.</summary>
+    private async void BtnXoaLich_Click(object? sender, EventArgs e)
+    {
+        if (dgvSchedules.CurrentRow?.Tag is not LichTuanItem nhom)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một lớp trong bảng để xóa lịch học tuần.",
+                "Chưa chọn lịch", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var xacNhan = MessageBox.Show(FindForm(),
+            $"Xóa lịch học tuần của lớp '{nhom.TenLop}' ({nhom.MaLop})?" + Environment.NewLine + Environment.NewLine
+            + $"• Thứ học: {nhom.ThuText}" + Environment.NewLine
+            + $"• Khung giờ: {nhom.GioText}" + Environment.NewLine + Environment.NewLine
+            + "Chỉ xóa được khi lớp CHƯA sinh buổi học nào.",
+            "Xác nhận xóa lịch tuần", MessageBoxButtons.YesNo, MessageBoxIcon.Warning,
+            MessageBoxDefaultButton.Button2);
+
+        if (xacNhan != DialogResult.Yes)
+        {
+            return;
+        }
+
+        UseWaitCursor = true;
+
+        foreach (var dong in nhom.Dongs)
+        {
+            var result = await AppSession.Api.DeleteAsync<ScheduleListItemDto>($"admin/schedules/{dong.MaLichHoc}");
+
+            if (!result.Success)
+            {
+                UseWaitCursor = false;
+                MessageBox.Show(FindForm(), result.ThongDiepDayDu(),
+                    "Xóa lịch thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                await ReloadAsync();
+                return;
+            }
+        }
+
+        UseWaitCursor = false;
+        await ReloadAsync();
+    }
+
+    /// <summary>
+    /// Gộp các dòng lịch của CÙNG 1 lớp thành 1 dòng hiển thị:
+    /// phòng, ĐỦ 2 thứ học (lấy từ lớp), khung giờ và ngày áp dụng.
+    /// </summary>
+    private LichTuanItem TaoDongLichTuan(IReadOnlyList<ScheduleListItemDto> dong)
+    {
+        var dau = dong[0];
+        var lop = _classes.FirstOrDefault(c => c.MaLopHoc == dau.MaLopHoc);
+
+        var dsThu = new List<int>();
+
+        if (lop?.ThuBuoi1 is { } thu1) dsThu.Add(thu1);
+        if (lop?.ThuBuoi2 is { } thu2 && !dsThu.Contains(thu2)) dsThu.Add(thu2);
+
+        if (dsThu.Count == 0)
+        {
+            dsThu = dong.Select(x => x.ThuTrongTuan).Distinct().OrderBy(x => x).ToList();
+        }
+
+        var phong = string.Join(" · ", dong
+            .Select(x => x.TenPhong)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct());
+
+        return new LichTuanItem(
+            dong,
+            phong.Length == 0 ? "—" : phong,
+            dsThu.Count == 0 ? "—" : string.Join(" · ", dsThu.Select(ThuText)),
+            $"{dau.GioBatDau:HH\\:mm} - {dau.GioKetThuc:HH\\:mm}",
+            UiHelpers.FormatDate(dau.NgayApDungTu),
+            dong.Any(x => x.TrangThai == "Hoạt động") ? "Hoạt động" : dau.TrangThai);
+    }
+
+    /// <summary>Một dòng "Lịch học tuần" = 1 LỚP, gộp mọi dòng lịch của lớp đó.</summary>
+    private sealed record LichTuanItem(
+        IReadOnlyList<ScheduleListItemDto> Dongs,
+        string PhongText,
+        string ThuText,
+        string GioText,
+        string NgayApDungText,
+        string TrangThai)
+    {
+        public ScheduleListItemDto DongDau => Dongs[0];
+
+        public string MaLop => DongDau.MaLop;
+
+        public string TenLop => DongDau.TenLop;
     }
 
     private async void DgvShifts_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)

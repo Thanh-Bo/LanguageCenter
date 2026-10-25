@@ -60,6 +60,7 @@ public sealed class ClassService : IClassService
             ngayKetThucThucTe: null);
 
         ValidateGioHoc(request.GioBatDau, request.GioKetThuc, errors);
+        ValidateThuHoc(request.ThuBuoi1, request.ThuBuoi2, errors);
 
         if (errors.Count > 0)
         {
@@ -145,6 +146,11 @@ public sealed class ClassService : IClassService
         ValidateGioHoc(
             request.GioBatDau ?? current.GioBatDau,
             request.GioKetThuc ?? current.GioKetThuc,
+            errors);
+
+        ValidateThuHoc(
+            request.ThuBuoi1 ?? current.ThuBuoi1,
+            request.ThuBuoi2 ?? current.ThuBuoi2,
             errors);
 
         if (errors.Count > 0)
@@ -296,7 +302,30 @@ public sealed class ClassService : IClassService
            && request.NgayKetThucThucTe is null
            && request.GioBatDau is null
            && request.GioKetThuc is null
+           && request.ThuBuoi1 is null
+           && request.ThuBuoi2 is null
            && request.SiSoToiDa is null;
+
+    /// <summary>Buổi 1 và buổi 2 phải là 2 thứ KHÁC nhau trong tuần (1..7).</summary>
+    private static void ValidateThuHoc(byte? thuBuoi1, byte? thuBuoi2, List<string> errors)
+    {
+        static bool HopLe(byte? t) => t is >= 1 and <= 7;
+
+        if (thuBuoi1 is not null && !HopLe(thuBuoi1))
+        {
+            errors.Add("Thứ buổi 1 phải từ 1 (Thứ Hai) đến 7 (Chủ Nhật).");
+        }
+
+        if (thuBuoi2 is not null && !HopLe(thuBuoi2))
+        {
+            errors.Add("Thứ buổi 2 phải từ 1 (Thứ Hai) đến 7 (Chủ Nhật).");
+        }
+
+        if (HopLe(thuBuoi1) && HopLe(thuBuoi2) && thuBuoi1 == thuBuoi2)
+        {
+            errors.Add("Thứ buổi 1 và buổi 2 phải KHÁC nhau (mỗi tuần 2 buổi vào 2 thứ khác nhau).");
+        }
+    }
 
     /// <summary>Giờ kết thúc buổi học phải SAU giờ bắt đầu (nếu đã có đủ 2 giờ).</summary>
     private static void ValidateGioHoc(TimeOnly? gioBatDau, TimeOnly? gioKetThuc, List<string> errors)

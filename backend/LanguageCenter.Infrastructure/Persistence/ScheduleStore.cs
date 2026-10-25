@@ -67,8 +67,9 @@ public sealed class ScheduleStore : IScheduleStore
                 MaPhong = x.PhongHoc.MaPhong,
                 TenPhong = x.PhongHoc.TenPhong,
                 ThuTrongTuan = x.ThuTrongTuan,
-                GioBatDau = x.GioBatDau,
-                GioKetThuc = x.GioKetThuc,
+                // Giờ học LUÔN lấy từ LopHoc (nguồn duy nhất) → sửa giờ ở form Lớp là lịch đổi theo.
+                GioBatDau = x.LopHoc.GioBatDau ?? x.GioBatDau,
+                GioKetThuc = x.LopHoc.GioKetThuc ?? x.GioKetThuc,
                 NgayApDungTu = x.NgayApDungTu,
                 NgayApDungDen = x.NgayApDungDen,
                 TrangThai = x.TrangThai,
@@ -101,8 +102,9 @@ public sealed class ScheduleStore : IScheduleStore
                 MaPhong = x.PhongHoc.MaPhong,
                 TenPhong = x.PhongHoc.TenPhong,
                 ThuTrongTuan = x.ThuTrongTuan,
-                GioBatDau = x.GioBatDau,
-                GioKetThuc = x.GioKetThuc,
+                // Giờ học LUÔN lấy từ LopHoc (nguồn duy nhất) → sửa giờ ở form Lớp là lịch đổi theo.
+                GioBatDau = x.LopHoc.GioBatDau ?? x.GioBatDau,
+                GioKetThuc = x.LopHoc.GioKetThuc ?? x.GioKetThuc,
                 NgayApDungTu = x.NgayApDungTu,
                 NgayApDungDen = x.NgayApDungDen,
                 TrangThai = x.TrangThai,
@@ -153,13 +155,22 @@ public sealed class ScheduleStore : IScheduleStore
         CreateScheduleRequest request,
         CancellationToken cancellationToken)
     {
+        // Giờ học lấy theo LỚP (form Lớp học là nơi khai giờ) — mỗi buổi cố định 2 giờ.
+        var lopGioBatDau = await _dbContext.LopHocs
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == request.MaLopHoc)
+            .Select(x => x.GioBatDau)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var gioBatDau = lopGioBatDau ?? request.GioBatDau;
+
         var entity = new LichHoc
         {
             MaLopHoc = request.MaLopHoc,
             MaPhongHoc = request.MaPhongHoc,
             ThuTrongTuan = (byte)request.ThuTrongTuan,
-            GioBatDau = request.GioBatDau,
-            GioKetThuc = request.GioKetThuc,
+            GioBatDau = gioBatDau,
+            GioKetThuc = gioBatDau.AddHours(2),
             NgayApDungTu = request.NgayApDungTu,
             NgayApDungDen = request.NgayApDungDen,
             TrangThai = ScheduleStatuses.HoatDong
@@ -208,10 +219,8 @@ public sealed class ScheduleStore : IScheduleStore
             entity.GioBatDau = changes.GioBatDau.Value;
         }
 
-        if (changes.GioKetThuc is not null)
-        {
-            entity.GioKetThuc = changes.GioKetThuc.Value;
-        }
+        // Mỗi buổi cố định 2 giờ → giờ kết thúc LUÔN suy ra từ giờ bắt đầu.
+        entity.GioKetThuc = entity.GioBatDau.AddHours(2);
 
         if (changes.NgayApDungTu is not null)
         {

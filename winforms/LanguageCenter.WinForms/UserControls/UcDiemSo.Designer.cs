@@ -82,8 +82,8 @@ partial class UcDiemSo
 
         cboLopHoc.Font = new Font("Segoe UI", 9.5f);
         cboLopHoc.DropDownStyle = ComboBoxStyle.DropDownList;
-        cboLopHoc.Width = 240;
-        cboLopHoc.Location = new Point(65, 4);
+        cboLopHoc.Width = 215;
+        cboLopHoc.Location = new Point(76, 4);
 
         btnRefresh.Text = "Làm mới";
         btnRefresh.Size = new Size(105, 32);

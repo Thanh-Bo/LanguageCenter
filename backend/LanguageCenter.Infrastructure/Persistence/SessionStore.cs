@@ -302,7 +302,8 @@ public sealed class SessionStore : ISessionStore
             MaTroGiangThucTe = TextValue.Required(request.MaTroGiangThucTe)?.Trim(),
             NgayHoc = request.NgayHoc,
             GioBatDau = request.GioBatDau,
-            GioKetThuc = request.GioKetThuc,
+            // Mỗi buổi cố định 2 tiếng — không cho lệch giờ kết thúc.
+            GioKetThuc = request.GioBatDau.AddHours(2),
             NoiDungBaiHoc = TextValue.Required(request.NoiDungBaiHoc),
             TrangThai = SessionStatuses.ChuaDienRa,
             LyDoThayDoi = TextValue.Required(request.LyDoThayDoi)
@@ -360,11 +361,12 @@ public sealed class SessionStore : ISessionStore
         if (changes.GioBatDau is not null)
         {
             entity.GioBatDau = changes.GioBatDau.Value;
+            // Mỗi buổi cố định 2 tiếng → giờ kết thúc luôn suy ra từ giờ bắt đầu.
+            entity.GioKetThuc = changes.GioBatDau.Value.AddHours(2);
         }
-
-        if (changes.GioKetThuc is not null)
+        else if (changes.GioKetThuc is not null)
         {
-            entity.GioKetThuc = changes.GioKetThuc.Value;
+            entity.GioKetThuc = entity.GioBatDau.AddHours(2);
         }
 
         if (changes.NoiDungBaiHoc is not null)
@@ -434,83 +436,178 @@ public sealed class SessionStore : ISessionStore
     }
 
     // ========================================================================
-    // TẠO HÀNG LOẠT TỪ LỊCH ĐỊNH KỲ
+    // TẠO HÀNG LOẠT TỪ LỊCH ĐỊNH KỲ — KHUNG CỐ ĐỊNH 20 BUỔI / 10 TUẦN
     // ========================================================================
+
+    /// <summary>Số buổi cố định của mỗi lớp: 10 tuần × 2 buổi.</summary>
+    public const int SoBuoiCoDinh = 20;
 
     public async Task<GenerateOutcome> GenerateSessionsAsync(
         int maLichHoc,
-        DateOnly tuNgay,
-        DateOnly denNgay,
         CancellationToken cancellationToken)
     {
         // EnableRetryOnFailure cấm BeginTransaction trực tiếp -> phải bọc ExecutionStrategy.
         var strategy = _dbContext.Database.CreateExecutionStrategy();
 
         return await strategy.ExecuteAsync(
-            () => GenerateCoreAsync(maLichHoc, tuNgay, denNgay, cancellationToken));
+            () => GenerateCoreAsync(maLichHoc, cancellationToken));
     }
 
+    /// <summary>
+    /// Sinh ĐÚNG 20 buổi cho lớp của lịch <paramref name="maLichHoc"/>:
+    /// <list type="number">
+    ///   <item>Lấy 2 lịch định kỳ của lớp (2 thứ khác nhau) → buổi lẻ / buổi chẵn.</item>
+    ///   <item>Buổi 1 bắt đầu từ <c>LopHoc.NgayBatDau</c>, mỗi tuần 2 buổi.</item>
+    ///   <item>Buổi nào rơi vào <c>NgayLe</c> thì dời +7 ngày VÀ dời toàn bộ buổi phía sau
+    ///         để luôn giữ 2 buổi/tuần.</item>
+    ///   <item>Buổi thứ i lấy nội dung <c>NoiDungBaiHoc</c> có <c>SoBuoi = i</c> của khóa.</item>
+    ///   <item>Cuối cùng cập nhật <c>LopHoc.NgayKetThucDuKien</c> = ngày buổi 20.</item>
+    /// </list>
+    /// </summary>
     private async Task<GenerateOutcome> GenerateCoreAsync(
         int maLichHoc,
-        DateOnly tuNgay,
-        DateOnly denNgay,
         CancellationToken cancellationToken)
     {
-        var empty = new GenerateOutcome(
-            false, maLichHoc, tuNgay, denNgay, null, null, 0, [], [], []);
-
-        var lich = await _dbContext.LichHocs
+        var lichGoc = await _dbContext.LichHocs
             .AsNoTracking()
             .Where(x => x.MaLichHoc == maLichHoc)
+            .Select(x => new { x.MaLichHoc, x.MaLopHoc })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lichGoc is null)
+        {
+            return new GenerateOutcome(false, maLichHoc, default, default, null, null, 0, [], [], []);
+        }
+
+        var lop = await _dbContext.LopHocs
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == lichGoc.MaLopHoc)
             .Select(x => new
             {
-                x.MaLichHoc,
                 x.MaLopHoc,
-                x.MaPhongHoc,
-                x.ThuTrongTuan,
+                x.MaKhoaHoc,
+                x.NgayBatDau,
+                x.ThuBuoi1,
+                x.ThuBuoi2,
                 x.GioBatDau,
-                x.GioKetThuc,
-                x.NgayApDungTu,
-                x.NgayApDungDen,
-                x.TrangThai
+                x.GioKetThuc
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (lich is null)
+        if (lop is null)
         {
-            return empty;
+            return new GenerateOutcome(false, maLichHoc, default, default, null, null, 0, [], [], []);
         }
 
-        // Giao khoảng yêu cầu với khoảng áp dụng của lịch.
-        var from = tuNgay > lich.NgayApDungTu ? tuNgay : lich.NgayApDungTu;
-
-        var to = denNgay;
-
-        if (lich.NgayApDungDen is { } gioiHan && gioiHan < to)
-        {
-            to = gioiHan;
-        }
-
-        if (to < from)
-        {
-            return new GenerateOutcome(
-                true, maLichHoc, tuNgay, denNgay, from, to, 0, [], [], []);
-        }
-
-        var ngayDaCo = await _dbContext.CaHocs
+        // Lịch định kỳ của lớp (nguồn PHÒNG HỌC + dự phòng thứ/giờ).
+        var lichCuaLop = await _dbContext.LichHocs
             .AsNoTracking()
-            .Where(x => x.MaLichHoc == maLichHoc && x.NgayHoc >= from && x.NgayHoc <= to)
-            .Select(x => x.NgayHoc)
+            .Where(x => x.MaLopHoc == lop.MaLopHoc && x.TrangThai != ScheduleStatuses.NgungApDung)
+            .OrderBy(x => x.ThuTrongTuan)
+            .Select(x => new
+            {
+                x.MaLichHoc,
+                x.MaPhongHoc,
+                x.ThuTrongTuan,
+                x.GioBatDau,
+                x.GioKetThuc
+            })
             .ToListAsync(cancellationToken);
 
-        var daCoSet = ngayDaCo.ToHashSet();
+        // Thứ học: ƯU TIÊN 2 thứ khai báo trên lớp; chưa có thì lấy từ Lịch học tuần.
+        byte? thu1 = lop.ThuBuoi1;
+        byte? thu2 = lop.ThuBuoi2;
 
-        // Ca học đã chiếm phòng trong khoảng này (để kiểm tra xung đột phòng theo từng ngày).
+        if (thu1 is null || thu2 is null)
+        {
+            if (lichCuaLop.Count < 2)
+            {
+                return new GenerateOutcome(
+                    true, maLichHoc, lop.NgayBatDau, lop.NgayBatDau, null, null, 0, [], [], [])
+                {
+                    Loi = "Lớp chưa khai báo 2 thứ học. Hãy vào Lớp học → Sửa lớp để chọn "
+                          + "Thứ buổi 1 / Thứ buổi 2 trước khi sinh buổi."
+                };
+            }
+
+            thu1 = lichCuaLop[0].ThuTrongTuan;
+            thu2 = lichCuaLop[1].ThuTrongTuan;
+        }
+
+        // Sắp xếp để buổi 1 luôn là thứ sớm hơn trong tuần.
+        if (thu1 > thu2)
+        {
+            (thu1, thu2) = (thu2, thu1);
+        }
+
+        // Giờ học: ưu tiên giờ của lớp, chưa có thì lấy của lịch, cuối cùng 18:00.
+        var gioBatDau = lop.GioBatDau
+                        ?? lichCuaLop.FirstOrDefault()?.GioBatDau
+                        ?? new TimeOnly(18, 0);
+
+        // MỖI BUỔI CỐ ĐỊNH 2 GIỜ → giờ kết thúc luôn = giờ bắt đầu + 2 giờ.
+        var gioKetThuc = gioBatDau.AddHours(2);
+
+        // Phòng học: lịch của lớp → lịch bất kỳ → phòng đầu tiên trong hệ thống.
+        var maPhongHoc = lichCuaLop.FirstOrDefault()?.MaPhongHoc
+                         ?? await _dbContext.PhongHocs
+                             .AsNoTracking()
+                             .OrderBy(x => x.MaPhongHoc)
+                             .Select(x => (int?)x.MaPhongHoc)
+                             .FirstOrDefaultAsync(cancellationToken);
+
+        if (maPhongHoc is null)
+        {
+            return new GenerateOutcome(
+                true, maLichHoc, lop.NgayBatDau, lop.NgayBatDau, null, null, 0, [], [], [])
+            {
+                Loi = "Hệ thống chưa có phòng học nào. Hãy tạo ít nhất 1 phòng trước khi sinh buổi."
+            };
+        }
+
+        var maLichLe = lichCuaLop.FirstOrDefault(x => x.ThuTrongTuan == thu1)?.MaLichHoc;
+        var maLichChan = lichCuaLop.FirstOrDefault(x => x.ThuTrongTuan == thu2)?.MaLichHoc;
+
+        // Ngày lễ (để dời buổi).
+        var ngayLe = (await _dbContext.NgayLes
+                .AsNoTracking()
+                .Select(x => x.Ngay)
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        // Nội dung 20 buổi của khóa.
+        var noiDung = await _dbContext.NoiDungBaiHocs
+            .AsNoTracking()
+            .Where(x => x.MaKhoaHoc == lop.MaKhoaHoc)
+            .ToDictionaryAsync(x => x.SoBuoi, x => x.TieuDe, cancellationToken);
+
+        // Giáo viên chính / trợ giảng đang được phân công.
+        var phanCong = await _dbContext.PhanCongGiangDays
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == lop.MaLopHoc
+                        && x.TrangThai == AssignmentStatuses.DangPhanCong
+                        && x.MaGiaoVien != null)
+            .OrderByDescending(x => x.MaPhanCong)
+            .Select(x => new { x.MaGiaoVien, x.VaiTroPhanCong })
+            .ToListAsync(cancellationToken);
+
+        var maGiaoVienChinh = phanCong
+            .FirstOrDefault(x => x.VaiTroPhanCong == AssignmentRoles.GiaoVienChinh)?.MaGiaoVien;
+        var maTroGiang = phanCong
+            .FirstOrDefault(x => x.VaiTroPhanCong == AssignmentRoles.TroGiang)?.MaGiaoVien;
+
+        // Ngày đã có ca của lớp (sinh lại không tạo trùng).
+        var ngayDaCoSet = (await _dbContext.CaHocs
+                .AsNoTracking()
+                .Where(x => x.MaLopHoc == lop.MaLopHoc)
+                .Select(x => x.NgayHoc)
+                .ToListAsync(cancellationToken))
+            .ToHashSet();
+
+        // Ca học đã chiếm phòng (kiểm tra xung đột phòng).
         var caTheoPhong = await _dbContext.CaHocs
             .AsNoTracking()
-            .Where(x => x.MaPhongHoc == lich.MaPhongHoc
-                        && x.NgayHoc >= from
-                        && x.NgayHoc <= to
+            .Where(x => x.MaPhongHoc == maPhongHoc.Value
                         && x.TrangThai != SessionStatuses.DaHuy)
             .Select(x => new { x.NgayHoc, x.GioBatDau, x.GioKetThuc })
             .ToListAsync(cancellationToken);
@@ -518,18 +615,33 @@ public sealed class SessionStore : ISessionStore
         var ngayTao = new List<DateOnly>();
         var ngayBoQua = new List<DateOnly>();
         var ngayXungDot = new List<GenerateConflict>();
-        var tongNgayKhop = 0;
 
-        for (var ngay = from; ngay <= to; ngay = ngay.AddDays(1))
+        var ngayBuoiDau = TimNgayDauTien(lop.NgayBatDau, thu1!.Value);
+        var doLechThu = ((int)thu2!.Value - (int)thu1.Value + 7) % 7;
+
+        // Số ngày phải dời thêm do trùng ngày lễ (cộng dồn cho mọi buổi phía sau).
+        var soNgayDoi = 0;
+
+        for (var buoi = 1; buoi <= SoBuoiCoDinh; buoi++)
         {
-            if (!MatchesWeekday(ngay, lich.ThuTrongTuan))
+            var laBuoiLe = buoi % 2 == 1;
+
+            var tuan = (buoi - 1) / 2;
+            var lechTrongTuan = laBuoiLe ? 0 : doLechThu;
+
+            var ngay = ngayBuoiDau.AddDays(tuan * 7 + lechTrongTuan + soNgayDoi);
+
+            // Dời nếu trùng ngày lễ (mỗi lần +7 ngày, lặp nếu tuần sau cũng lễ).
+            while (ngayLe.Contains(ngay))
             {
-                continue;
+                ngay = ngay.AddDays(7);
+                soNgayDoi += 7;
+                ngayXungDot.Add(new GenerateConflict(
+                    ngay.AddDays(-7),
+                    $"Buổi {buoi} trùng ngày lễ → dời sang {ngay:dd/MM/yyyy}."));
             }
 
-            tongNgayKhop++;
-
-            if (daCoSet.Contains(ngay))
+            if (ngayDaCoSet.Contains(ngay))
             {
                 ngayBoQua.Add(ngay);
                 continue;
@@ -537,8 +649,8 @@ public sealed class SessionStore : ISessionStore
 
             var xungDotPhong = caTheoPhong.Any(
                 x => x.NgayHoc == ngay
-                     && x.GioBatDau < lich.GioKetThuc
-                     && lich.GioBatDau < x.GioKetThuc);
+                     && x.GioBatDau < gioKetThuc
+                     && gioBatDau < x.GioKetThuc);
 
             if (xungDotPhong)
             {
@@ -546,14 +658,19 @@ public sealed class SessionStore : ISessionStore
                 continue;
             }
 
+            noiDung.TryGetValue(buoi, out var tieuDe);
+
             _dbContext.CaHocs.Add(new CaHoc
             {
-                MaLopHoc = lich.MaLopHoc,
-                MaLichHoc = lich.MaLichHoc,
-                MaPhongHoc = lich.MaPhongHoc,
+                MaLopHoc = lop.MaLopHoc,
+                MaLichHoc = laBuoiLe ? maLichLe : maLichChan,
+                MaPhongHoc = maPhongHoc.Value,
                 NgayHoc = ngay,
-                GioBatDau = lich.GioBatDau,
-                GioKetThuc = lich.GioKetThuc,
+                GioBatDau = gioBatDau,
+                GioKetThuc = gioKetThuc,
+                MaGiaoVienThucTe = maGiaoVienChinh,
+                MaTroGiangThucTe = maTroGiang,
+                NoiDungBaiHoc = TaoNoiDungBuoi(buoi, tieuDe),
                 TrangThai = SessionStatuses.ChuaDienRa,
                 LyDoThayDoi = null
             });
@@ -561,7 +678,19 @@ public sealed class SessionStore : ISessionStore
             ngayTao.Add(ngay);
         }
 
-        if (ngayTao.Count > 0)
+        // Ngày kết thúc lớp = ngày của buổi cuối cùng trong khung 20 buổi.
+        var ngayKetThuc = ngayTao.Count > 0            ? ngayTao.Max()
+            : ngayBuoiDau.AddDays(9 * 7 + doLechThu + soNgayDoi);
+
+        var lopEntity = await _dbContext.LopHocs
+            .FirstOrDefaultAsync(x => x.MaLopHoc == lop.MaLopHoc, cancellationToken);
+
+        if (lopEntity is not null)
+        {
+            lopEntity.NgayKetThucDuKien = ngayKetThuc;
+        }
+
+        if (ngayTao.Count > 0 || lopEntity is not null)
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
@@ -569,14 +698,23 @@ public sealed class SessionStore : ISessionStore
         return new GenerateOutcome(
             true,
             maLichHoc,
-            tuNgay,
-            denNgay,
-            from,
-            to,
-            tongNgayKhop,
+            ngayBuoiDau,
+            ngayKetThuc,
+            ngayBuoiDau,
+            ngayKetThuc,
+            SoBuoiCoDinh,
             ngayTao,
             ngayBoQua,
             ngayXungDot);
+    }
+
+    /// <summary>Ngày đầu tiên ≥ <paramref name="tuNgay"/> rơi vào <paramref name="thu"/> (1 = Thứ Hai … 7 = CN).</summary>
+    private static DateOnly TimNgayDauTien(DateOnly tuNgay, byte thu)
+    {
+        var dow = tuNgay.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)tuNgay.DayOfWeek;
+        var lech = ((int)thu - dow + 7) % 7;
+
+        return tuNgay.AddDays(lech);
     }
 
     /// <summary>DateOnly.DayOfWeek: Chủ Nhật = 0 → quy đổi sang 1..7 với Thứ Hai = 1.</summary>
@@ -585,6 +723,31 @@ public sealed class SessionStore : ISessionStore
         var dow = ngay.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)ngay.DayOfWeek;
 
         return dow == thuTrongTuan;
+    }
+
+    /// <summary>
+    /// Nội dung buổi học ghi vào <c>CaHoc.NoiDungBaiHoc</c> dạng "Buổi N — Tiêu đề".
+    /// <para>
+    /// Dữ liệu seed cũ có tiêu đề đã kèm sẵn tiền tố "Buổi N — " nên phải bỏ đi
+    /// để tránh lặp thành "Buổi 1 — Buổi 1 — …".
+    /// </para>
+    /// </summary>
+    private static string TaoNoiDungBuoi(int buoi, string? tieuDe)
+    {
+        if (string.IsNullOrWhiteSpace(tieuDe))
+        {
+            return $"Buổi {buoi}";
+        }
+
+        var tieuDeSach = tieuDe.Trim();
+        var tienTo = $"Buổi {buoi} — ";
+
+        if (tieuDeSach.StartsWith(tienTo, StringComparison.OrdinalIgnoreCase))
+        {
+            tieuDeSach = tieuDeSach[tienTo.Length..].Trim();
+        }
+
+        return tieuDeSach.Length == 0 ? $"Buổi {buoi}" : $"Buổi {buoi} — {tieuDeSach}";
     }
 
     private static IQueryable<SessionListItemDto> ProjectList(IQueryable<CaHoc> source)

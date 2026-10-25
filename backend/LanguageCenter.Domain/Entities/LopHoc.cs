@@ -25,6 +25,12 @@ public class LopHoc
     /// <summary>Giờ kết thúc buổi học mặc định của lớp (NULL = chưa xác định).</summary>
     public TimeOnly? GioKetThuc { get; set; }
 
+    /// <summary>Thứ của buổi 1 trong tuần (1 = Thứ Hai … 7 = Chủ Nhật).</summary>
+    public byte? ThuBuoi1 { get; set; }
+
+    /// <summary>Thứ của buổi 2 trong tuần (1 = Thứ Hai … 7 = Chủ Nhật).</summary>
+    public byte? ThuBuoi2 { get; set; }
+
     public int SiSoToiDa { get; set; }
 
     public string TrangThai { get; set; } = null!;

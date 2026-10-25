@@ -248,17 +248,7 @@ public partial class UcXepLop : UserControl
 
         foreach (var s in inClass)
         {
-            var rowIdx = dgvInClass.Rows.Add(
-                s.MaHocVien,
-                s.TenHocVien,
-                "—",
-                "—",
-                s.NgayXepLop.HasValue ? UiHelpers.FormatDateTime(s.NgayXepLop) : "—",
-                s.TrangThaiDangKy
-            );
-            dgvInClass.Rows[rowIdx].Tag = s.MaDangKy;
-            dgvInClass.Rows[rowIdx].Cells["TrangThaiHocPhi"].Style.ForeColor =
-                s.TrangThaiDangKy == "Đã xếp lớp" ? Theme.Success : Theme.Warning;
+            ThemDongTrongLop(s);
         }
 
         _inClassCount = inClass.Count;
@@ -280,30 +270,65 @@ public partial class UcXepLop : UserControl
         if (!string.IsNullOrWhiteSpace(kw))
         {
             query = query.Where(e => e.TenHocVien.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
-                                     e.MaHocVien.Contains(kw, StringComparison.OrdinalIgnoreCase));
+                                     e.MaHocVien.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
+                                     (e.SoDienThoai ?? string.Empty).Contains(kw, StringComparison.OrdinalIgnoreCase) ||
+                                     (e.Email ?? string.Empty).Contains(kw, StringComparison.OrdinalIgnoreCase));
         }
 
         dgvInClass.Rows.Clear();
         var list = query.ToList();
         foreach (var s in list)
         {
-            var rowIdx = dgvInClass.Rows.Add(
-                s.MaHocVien,
-                s.TenHocVien,
-                "—",
-                "—",
-                s.NgayXepLop.HasValue ? UiHelpers.FormatDateTime(s.NgayXepLop) : "—",
-                s.TrangThaiDangKy
-            );
-            dgvInClass.Rows[rowIdx].Tag = s.MaDangKy;
-            dgvInClass.Rows[rowIdx].Cells["TrangThaiHocPhi"].Style.ForeColor =
-                s.TrangThaiDangKy == "Đã xếp lớp" ? Theme.Success : Theme.Warning;
+            ThemDongTrongLop(s);
         }
 
         if (_currentTab == 0)
         {
             lblSummary.Text = $"Tìm thấy {list.Count} học viên trong lớp {_currentClass.TenLop}.";
         }
+    }
+
+    /// <summary>
+    /// Đổ 1 đăng ký học vào bảng "Học viên trong lớp" — hiển thị đầy đủ thông tin cá nhân
+    /// (ngày sinh, giới tính, SĐT, email) lấy từ hồ sơ học viên, kèm học phí và trạng thái.
+    /// </summary>
+    private void ThemDongTrongLop(EnrollmentListItemDto s)
+    {
+        var rowIdx = dgvInClass.Rows.Add(
+            s.MaHocVien,
+            s.TenHocVien,
+            s.NgaySinh == default ? "—" : s.NgaySinh.ToString("dd/MM/yyyy"),
+            string.IsNullOrWhiteSpace(s.GioiTinh) ? "—" : s.GioiTinh,
+            string.IsNullOrWhiteSpace(s.SoDienThoai) ? "—" : s.SoDienThoai,
+            string.IsNullOrWhiteSpace(s.Email) ? "—" : s.Email,
+            s.NgayXepLop.HasValue ? UiHelpers.FormatDateTime(s.NgayXepLop) : "—",
+            $"{s.HocPhiSauGiam:N0} ₫",
+            s.TrangThaiDangKy);
+
+        var row = dgvInClass.Rows[rowIdx];
+        row.Tag = s.MaDangKy;
+        row.Cells["TrangThai"].Style.ForeColor =
+            s.TrangThaiDangKy == "Đã xếp lớp" ? Theme.Success : Theme.Warning;
+    }
+
+    /// <summary>Đổ 1 đăng ký học vào bảng "chờ xếp lớp" — đúng thứ tự cột của lưới.</summary>
+    private void ThemDongChoXepLop(EnrollmentListItemDto p)
+    {
+        var rowIdx = dgvPending.Rows.Add(
+            p.MaDangKy,
+            p.MaHocVien,
+            p.TenHocVien,
+            string.IsNullOrWhiteSpace(p.SoDienThoai) ? "—" : p.SoDienThoai,
+            string.IsNullOrWhiteSpace(p.Email) ? "—" : p.Email,
+            p.TenKhoaHoc,
+            UiHelpers.FormatDateTime(p.NgayDangKy),
+            $"{p.HocPhiSauGiam:N0} ₫",
+            p.TrangThaiDangKy);
+
+        var row = dgvPending.Rows[rowIdx];
+        row.Tag = p;
+        row.Cells["HocPhi"].Style.ForeColor = Theme.Warning;
+        row.Cells["TrangThai"].Style.ForeColor = Theme.Warning;
     }
 
     private void FilterPendingStudents()
@@ -324,24 +349,15 @@ public partial class UcXepLop : UserControl
         {
             query = query.Where(e => e.TenHocVien.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
                                      e.MaHocVien.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
-                                     e.TenKhoaHoc.Contains(kw, StringComparison.OrdinalIgnoreCase));
+                                     e.TenKhoaHoc.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
+                                     (e.SoDienThoai ?? string.Empty).Contains(kw, StringComparison.OrdinalIgnoreCase) ||
+                                     (e.Email ?? string.Empty).Contains(kw, StringComparison.OrdinalIgnoreCase));
         }
 
         var list = query.OrderBy(e => e.NgayDangKy).ToList();
         foreach (var p in list)
         {
-            var rowIdx = dgvPending.Rows.Add(
-                p.MaDangKy,
-                p.MaHocVien,
-                p.TenHocVien,
-                "—",
-                p.TenKhoaHoc,
-                UiHelpers.FormatDateTime(p.NgayDangKy),
-                p.TrangThaiDangKy,
-                $"Học phí sau giảm: {p.HocPhiSauGiam:N0} ₫"
-            );
-            dgvPending.Rows[rowIdx].Tag = p;
-            dgvPending.Rows[rowIdx].Cells["HocPhi"].Style.ForeColor = Theme.Warning;
+            ThemDongChoXepLop(p);
         }
 
         _pendingCount = list.Count;

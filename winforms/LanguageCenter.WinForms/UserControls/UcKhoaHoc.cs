@@ -14,6 +14,9 @@ public partial class UcKhoaHoc : UserControl
     private IReadOnlyList<ProgramListItemDto> _programs = Array.Empty<ProgramListItemDto>();
     private bool _dangNap;
 
+    /// <summary>Nút mở màn nhập NỘI DUNG 20 BUỔI HỌC của khóa đang chọn.</summary>
+    private readonly Button _btnNoiDung = UiHelpers.CreateSecondaryButton("Nội dung 20 buổi", 155, 32);
+
     public UcKhoaHoc()
     {
         InitializeComponent();
@@ -37,9 +40,13 @@ public partial class UcKhoaHoc : UserControl
         btnRefresh.Click += async (_, _) => await ReloadAsync();
         btnAdd.Click += BtnAdd_Click;
 
+        _btnNoiDung.Click += BtnNoiDung_Click;
+        pnlToolbar.Controls.Add(_btnNoiDung);
+
         pnlToolbar.Resize += (_, _) =>
         {
             btnAdd.Location = new Point(pnlToolbar.Width - btnAdd.Width - 4, 3);
+            _btnNoiDung.Location = new Point(btnAdd.Left - _btnNoiDung.Width - 8, 3);
         };
 
         SwitchTab(0);
@@ -311,6 +318,26 @@ public partial class UcKhoaHoc : UserControl
     private void ReloadData()
     {
         _ = ReloadAsync();
+    }
+
+    /// <summary>
+    /// Mở màn nhập NỘI DUNG 20 BUỔI HỌC — mặc định chọn khóa đang chọn trong bảng.
+    /// Khi sinh ca học, "Nội dung" của từng buổi sẽ lấy theo đúng số buổi ở đây.
+    /// </summary>
+    private void BtnNoiDung_Click(object? sender, EventArgs e)
+    {
+        if (_courses.Count == 0)
+        {
+            MessageBox.Show(FindForm(), "Chưa có khóa học nào trong hệ thống.",
+                "Thiếu dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var maDangChon = (dgvCourses.CurrentRow?.Tag as CourseListItemDto)?.MaKhoaHoc;
+
+        using var dlg = new FormNoiDungBaiHoc(_courses, maDangChon);
+
+        dlg.ShowDialog(FindForm());
     }
 
     private async void BtnAdd_Click(object? sender, EventArgs e)

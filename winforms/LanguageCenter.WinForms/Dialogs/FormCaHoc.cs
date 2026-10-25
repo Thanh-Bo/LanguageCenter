@@ -47,7 +47,7 @@ public sealed class FormCaHoc : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(600, 740);
+        ClientSize = new Size(600, 752);
         BackColor = Color.White;
         Font = Theme.FontRegular;
 
@@ -82,14 +82,14 @@ public sealed class FormCaHoc : Form
         _dtpBatDau.ShowUpDown = true;
         _dtpBatDau.Width = 140;
         _dtpBatDau.Value = DateTime.Today.AddHours(18);
-        _dtpBatDau.Location = new Point(24, 416);
+        _dtpBatDau.Location = new Point(24, 434);
         Controls.Add(new Label
         {
             Text = "Giờ bắt đầu",
             AutoSize = true,
             ForeColor = Theme.TextMedium,
             Font = Theme.FontSub,
-            Location = new Point(24, 396)
+            Location = new Point(24, 414)
         });
         Controls.Add(_dtpBatDau);
 
@@ -97,44 +97,44 @@ public sealed class FormCaHoc : Form
         _dtpKetThuc.ShowUpDown = true;
         _dtpKetThuc.Width = 140;
         _dtpKetThuc.Value = DateTime.Today.AddHours(19).AddMinutes(30);
-        _dtpKetThuc.Location = new Point(200, 416);
+        _dtpKetThuc.Location = new Point(200, 434);
         Controls.Add(new Label
         {
             Text = "Giờ kết thúc",
             AutoSize = true,
             ForeColor = Theme.TextMedium,
             Font = Theme.FontSub,
-            Location = new Point(200, 396)
+            Location = new Point(200, 414)
         });
         Controls.Add(_dtpKetThuc);
 
         _txtNoiDung.Multiline = true;
         _txtNoiDung.ScrollBars = ScrollBars.Vertical;
         _txtNoiDung.Size = new Size(552, 80);
-        _txtNoiDung.Location = new Point(24, 476);
+        _txtNoiDung.Location = new Point(24, 494);
         Controls.Add(new Label
         {
             Text = "Nội dung bài học",
             AutoSize = true,
             ForeColor = Theme.TextMedium,
             Font = Theme.FontSub,
-            Location = new Point(24, 456)
+            Location = new Point(24, 474)
         });
         Controls.Add(_txtNoiDung);
 
-        DatTruong("Lý do thay đổi (nếu có)", _txtLyDo, 566);
+        DatTruong("Lý do thay đổi (nếu có)", _txtLyDo, 590);
 
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(552, 34);
-        _lblThongBao.Location = new Point(24, 626);
+        _lblThongBao.Location = new Point(24, 648);
         _lblThongBao.ForeColor = Theme.Danger;
         _lblThongBao.Font = Theme.FontSub;
         Controls.Add(_lblThongBao);
 
-        _btnLuu.Location = new Point(304, 672);
+        _btnLuu.Location = new Point(304, 692);
         _btnLuu.Click += async (_, _) => await LuuAsync();
 
-        _btnHuy.Location = new Point(462, 672);
+        _btnHuy.Location = new Point(462, 692);
         _btnHuy.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
         Controls.Add(_btnLuu);

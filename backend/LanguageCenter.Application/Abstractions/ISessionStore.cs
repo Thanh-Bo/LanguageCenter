@@ -55,11 +55,12 @@ public interface ISessionStore
 
     Task<WriteOutcome> DeleteAsync(int maCaHoc, CancellationToken cancellationToken);
 
-    /// <summary>Tạo nhiều ca học từ một lịch định kỳ — idempotent, có transaction.</summary>
+    /// <summary>
+    /// Sinh ĐÚNG 20 buổi (10 tuần × 2 buổi) cho lớp của lịch định kỳ — idempotent, có transaction.
+    /// Tự dời buổi trùng ngày lễ và gắn nội dung bài học theo số buổi.
+    /// </summary>
     Task<GenerateOutcome> GenerateSessionsAsync(
         int maLichHoc,
-        DateOnly tuNgay,
-        DateOnly denNgay,
         CancellationToken cancellationToken);
 
     Task<IReadOnlyList<SessionListItemDto>> ListByClassIdsAsync(
@@ -91,7 +92,11 @@ public sealed record GenerateOutcome(
     int TongNgayKhop,
     IReadOnlyList<DateOnly> NgayTao,
     IReadOnlyList<DateOnly> NgayDaCo,
-    IReadOnlyList<GenerateConflict> NgayXungDot);
+    IReadOnlyList<GenerateConflict> NgayXungDot)
+{
+    /// <summary>Lỗi nghiệp vụ (ví dụ chưa đủ 2 lịch học) — có giá trị thì trả 400 cho client.</summary>
+    public string? Loi { get; init; }
+}
 
 /// <summary>Một ngày không tạo được ca học và lý do.</summary>
 public sealed record GenerateConflict(DateOnly NgayHoc, string LyDo);

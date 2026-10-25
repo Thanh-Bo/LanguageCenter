@@ -46,6 +46,14 @@ public sealed class CreateClassRequest
     /// <summary>Giờ kết thúc buổi học của lớp, ví dụ 19:30. Phải sau <see cref="GioBatDau"/>.</summary>
     public TimeOnly? GioKetThuc { get; set; }
 
+    /// <summary>Thứ của buổi 1 trong tuần (1 = Thứ Hai … 7 = Chủ Nhật).</summary>
+    [Range(1, 7, ErrorMessage = "Thứ buổi 1 phải từ 1 (Thứ Hai) đến 7 (Chủ Nhật).")]
+    public byte? ThuBuoi1 { get; set; }
+
+    /// <summary>Thứ của buổi 2 trong tuần — phải KHÁC <see cref="ThuBuoi1"/>.</summary>
+    [Range(1, 7, ErrorMessage = "Thứ buổi 2 phải từ 1 (Thứ Hai) đến 7 (Chủ Nhật).")]
+    public byte? ThuBuoi2 { get; set; }
+
     [Range(1, 500, ErrorMessage = "Sĩ số tối đa phải lớn hơn 0.")]
     public int SiSoToiDa { get; set; }
 }
@@ -76,6 +84,14 @@ public sealed class UpdateClassRequest
 
     /// <summary>Giờ kết thúc buổi học của lớp (để trống = không đổi).</summary>
     public TimeOnly? GioKetThuc { get; set; }
+
+    /// <summary>Thứ của buổi 1 trong tuần (1 = Thứ Hai … 7 = Chủ Nhật).</summary>
+    [Range(1, 7, ErrorMessage = "Thứ buổi 1 phải từ 1 (Thứ Hai) đến 7 (Chủ Nhật).")]
+    public byte? ThuBuoi1 { get; set; }
+
+    /// <summary>Thứ của buổi 2 trong tuần — phải KHÁC <see cref="ThuBuoi1"/>.</summary>
+    [Range(1, 7, ErrorMessage = "Thứ buổi 2 phải từ 1 (Thứ Hai) đến 7 (Chủ Nhật).")]
+    public byte? ThuBuoi2 { get; set; }
 
     [Range(1, 500, ErrorMessage = "Sĩ số tối đa phải lớn hơn 0.")]
     public int? SiSoToiDa { get; set; }
@@ -127,6 +143,12 @@ public sealed class ClassListItemDto
     /// <summary>Giờ kết thúc buổi học mặc định của lớp.</summary>
     public TimeOnly? GioKetThuc { get; init; }
 
+    /// <summary>Thứ buổi 1 (1 = Thứ Hai … 7 = Chủ Nhật).</summary>
+    public byte? ThuBuoi1 { get; init; }
+
+    /// <summary>Thứ buổi 2 (1 = Thứ Hai … 7 = Chủ Nhật).</summary>
+    public byte? ThuBuoi2 { get; init; }
+
     public int SiSoToiDa { get; init; }
 
     /// <summary>Số học viên đang chiếm chỗ ("Đã xếp lớp" + "Hoàn thành").</summary>
@@ -174,6 +196,12 @@ public sealed class ClassDetailDto
 
     /// <summary>Giờ kết thúc buổi học mặc định của lớp.</summary>
     public TimeOnly? GioKetThuc { get; init; }
+
+    /// <summary>Thứ buổi 1 (1 = Thứ Hai … 7 = Chủ Nhật).</summary>
+    public byte? ThuBuoi1 { get; init; }
+
+    /// <summary>Thứ buổi 2 (1 = Thứ Hai … 7 = Chủ Nhật).</summary>
+    public byte? ThuBuoi2 { get; init; }
 
     public int SiSoToiDa { get; init; }
 

@@ -597,6 +597,10 @@ public sealed class ClassListItemDto
     public TimeOnly? GioBatDau { get; init; }
     /// <summary>Giờ kết thúc buổi học mặc định của lớp (NULL = chưa xác định).</summary>
     public TimeOnly? GioKetThuc { get; init; }
+    /// <summary>Thứ buổi 1 (1 = Thứ Hai … 7 = Chủ Nhật).</summary>
+    public byte? ThuBuoi1 { get; init; }
+    /// <summary>Thứ buổi 2 (1 = Thứ Hai … 7 = Chủ Nhật).</summary>
+    public byte? ThuBuoi2 { get; init; }
     public string TrangThai { get; init; } = string.Empty;
 }
 
@@ -691,6 +695,24 @@ public sealed class CourseListItemDto
     public int SoLop { get; init; }
 }
 
+public sealed class LessonContentDto
+{
+    public int MaNoiDung { get; init; }
+    public int MaKhoaHoc { get; init; }
+    public int SoBuoi { get; init; }
+    public string TieuDe { get; init; } = string.Empty;
+    public string? NoiDung { get; init; }
+    public string? MucTieu { get; init; }
+}
+
+public sealed class HolidayDto
+{
+    public int MaNgayLe { get; init; }
+    public DateOnly Ngay { get; init; }
+    public string TenNgayLe { get; init; } = string.Empty;
+    public string? GhiChu { get; init; }
+}
+
 public sealed class LevelListItemDto
 {
     public int MaCapDo { get; init; }
@@ -722,6 +744,10 @@ public sealed class EnrollmentListItemDto
     public int MaDangKy { get; init; }
     public string MaHocVien { get; init; } = string.Empty;
     public string TenHocVien { get; init; } = string.Empty;
+    public DateOnly NgaySinh { get; init; }
+    public string? GioiTinh { get; init; }
+    public string? SoDienThoai { get; init; }
+    public string? Email { get; init; }
     public int MaKhoaHoc { get; init; }
     public string TenKhoaHoc { get; init; } = string.Empty;
     public int? MaLopHoc { get; init; }

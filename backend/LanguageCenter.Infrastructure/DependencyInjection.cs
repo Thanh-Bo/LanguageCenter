@@ -65,6 +65,9 @@ public static class DependencyInjection
         services.AddScoped<ISurveyStore, SurveyStore>();
         services.AddScoped<IReportStore, ReportStore>();
 
+        // ---------- Phase 8: cấu hình học vụ (20 buổi học + ngày lễ) ----------
+        services.AddScoped<IAcademicSetupStore, AcademicSetupStore>();
+
         // Sinh mật khẩu tạm là logic thuần, không giữ state -> singleton.
         services.AddSingleton<ITemporaryPasswordGenerator, TemporaryPasswordGenerator>();
     }

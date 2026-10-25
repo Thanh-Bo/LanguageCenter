@@ -33,6 +33,9 @@ public sealed class FormLichHoc : Form
     /// <summary>Mã các lớp ĐÃ có lịch học — không cho tạo thêm lịch thứ 2 cho cùng lớp.</summary>
     private HashSet<int> _lopDaLich = new();
 
+    /// <summary>Thứ đã được xếp lịch của từng lớp (MaLopHoc → các thứ).</summary>
+    private readonly Dictionary<int, HashSet<int>> _thuDaLich = new();
+
     public bool DataChanged { get; private set; }
 
     public FormLichHoc(
@@ -50,7 +53,7 @@ public sealed class FormLichHoc : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(600, 560);
+        ClientSize = new Size(600, 590);
         BackColor = Color.White;
         Font = Theme.FontRegular;
 
@@ -82,16 +85,46 @@ public sealed class FormLichHoc : Form
 
         _lopDaLich = result.Data.Items.Select(x => x.MaLopHoc).ToHashSet();
 
+        _thuDaLich.Clear();
+
+        foreach (var lich in result.Data.Items)
+        {
+            if (!_thuDaLich.TryGetValue(lich.MaLopHoc, out var ds))
+            {
+                ds = [];
+                _thuDaLich[lich.MaLopHoc] = ds;
+            }
+
+            ds.Add(lich.ThuTrongTuan);
+        }
+
         NapComboLop();
+        NapComboThu();
 
         if (_cboLop.Items.Count == 0)
         {
             _lblThongBao.Text =
-                "Tất cả lớp học đều đã có lịch học. Hãy chọn dòng trong bảng để Sửa lịch "
+                "Tất cả lớp học đã đủ 2 lịch (2 buổi/tuần). Hãy chọn dòng trong bảng để Sửa lịch "
                 + "thay vì tạo mới.";
             _btnLuu.Enabled = false;
             _lblGoiY.Text = string.Empty;
         }
+    }
+
+    /// <summary>Số thứ học của lớp còn THIẾU lịch (mỗi lớp học 2 thứ/tuần).</summary>
+    private int SoThuConThieu(ClassListItemDto lop)
+    {
+        var dsThu = new HashSet<int>();
+
+        if (lop.ThuBuoi1 is { } thu1) dsThu.Add(thu1);
+        if (lop.ThuBuoi2 is { } thu2) dsThu.Add(thu2);
+
+        // Lớp chưa khai 2 thứ → vẫn cho xếp tối đa 2 dòng lịch.
+        var tongSoThu = dsThu.Count > 0 ? dsThu.Count : 2;
+
+        var daCo = _thuDaLich.TryGetValue(lop.MaLopHoc, out var thuDaLich) ? thuDaLich.Count : 0;
+
+        return tongSoThu - daCo;
     }
 
     /// <summary>Dựng combo Lớp học: bỏ qua các lớp đã có lịch (trừ khi đang SỬA lịch của lớp đó).</summary>
@@ -103,7 +136,8 @@ public sealed class FormLichHoc : Form
 
         if (_existing is null)
         {
-            nguon = nguon.Where(c => !_lopDaLich.Contains(c.MaLopHoc));
+            // Mỗi lớp cần ĐỦ 2 thứ (2 buổi/tuần) — chỉ ẩn khi đã đủ, không ẩn sau dòng đầu tiên.
+            nguon = nguon.Where(c => SoThuConThieu(c) > 0);
         }
 
         _cboLop.Items.Clear();
@@ -167,8 +201,6 @@ public sealed class FormLichHoc : Form
         DatTruong("Phòng học *", _cboPhong, 116);
         DatTruong("Thứ trong tuần *", _cboThu, 176);
 
-        foreach (var t in ThuLabels) _cboThu.Items.Add(t);
-        _cboThu.SelectedIndex = 0;
 
         _dtpGioBatDau.Format = DateTimePickerFormat.Time;
         _dtpGioBatDau.ShowUpDown = true;
@@ -264,9 +296,15 @@ public sealed class FormLichHoc : Form
 
         if (_existing is null)
         {
-            // Đổi lớp → tự điền giờ học & khoảng ngày theo khung giờ của lớp.
-            _cboLop.SelectedIndexChanged += (_, _) => DienGoiYGioHoc();
+            // Đổi lớp → tự điền giờ học, khoảng ngày và 2 thứ học của lớp.
+            _cboLop.SelectedIndexChanged += (_, _) =>
+            {
+                DienGoiYGioHoc();
+                NapComboThu();
+            };
+
             DienGoiYGioHoc();
+            NapComboThu();
             return;
         }
 
@@ -289,9 +327,9 @@ public sealed class FormLichHoc : Form
             }
         }
 
-        _cboThu.SelectedIndex = Math.Clamp(_existing.ThuTrongTuan - 1, 0, 6);
-        _dtpGioBatDau.Value = DateTime.Today.Add(_existing.GioBatDau.ToTimeSpan());
-        _dtpGioKetThuc.Value = DateTime.Today.Add(_existing.GioKetThuc.ToTimeSpan());
+        NapComboThu();
+        ChonThu(_existing.ThuTrongTuan);
+        _dtpGioBatDau.Value = DateTime.Today.Add(_existing.GioBatDau.ToTimeSpan());        _dtpGioKetThuc.Value = DateTime.Today.Add(_existing.GioKetThuc.ToTimeSpan());
         _dtpTuNgay.Value = _existing.NgayApDungTu.ToDateTime(TimeOnly.MinValue);
 
         if (_existing.NgayApDungDen.HasValue)
@@ -391,6 +429,16 @@ public sealed class FormLichHoc : Form
         _btnLuu.Enabled = false;
         UseWaitCursor = true;
 
+        var thuTrongTuan = ThuDangChon();
+
+        if (thuTrongTuan is null)
+        {
+            UseWaitCursor = false;
+            _btnLuu.Enabled = true;
+            _lblThongBao.Text = "Vui lòng chọn thứ trong tuần.";
+            return;
+        }
+
         ApiResult<ScheduleListItemDto> result;
 
         if (_existing is null)
@@ -399,7 +447,7 @@ public sealed class FormLichHoc : Form
             {
                 maLopHoc = lop.MaLopHoc,
                 maPhongHoc = phong.MaPhongHoc,
-                thuTrongTuan = _cboThu.SelectedIndex + 1,
+                thuTrongTuan = thuTrongTuan.Value,
                 gioBatDau = gioBatDau.ToString("HH:mm:ss"),
                 gioKetThuc = gioKetThuc.ToString("HH:mm:ss"),
                 ngayApDungTu = tuNgay.ToString("yyyy-MM-dd"),
@@ -411,7 +459,7 @@ public sealed class FormLichHoc : Form
             result = await AppSession.Api.PatchAsync<ScheduleListItemDto>($"admin/schedules/{_existing.MaLichHoc}", new
             {
                 maPhongHoc = phong.MaPhongHoc,
-                thuTrongTuan = _cboThu.SelectedIndex + 1,
+                thuTrongTuan = thuTrongTuan.Value,
                 gioBatDau = gioBatDau.ToString("HH:mm:ss"),
                 gioKetThuc = gioKetThuc.ToString("HH:mm:ss"),
                 ngayApDungTu = tuNgay.ToString("yyyy-MM-dd"),
@@ -433,6 +481,97 @@ public sealed class FormLichHoc : Form
         DataChanged = true;
         DialogResult = DialogResult.OK;
         Close();
+    }
+
+    /// <summary>
+    /// Nạp combo THỨ THEO LỚP: lớp chỉ học 2 thứ cố định (ThuBuoi1 / ThuBuoi2),
+    /// nên chỉ cho chọn trong 2 thứ đó. Mặc định chọn thứ CHƯA được xếp lịch.
+    /// </summary>
+    private void NapComboThu()
+    {
+        if (_cboLop.SelectedItem is not LopItem item)
+        {
+            _cboThu.Items.Clear();
+            return;
+        }
+
+        var thuDangChon = ThuDangChon();
+
+        var lop = _classes.FirstOrDefault(c => c.MaLopHoc == item.MaLopHoc);
+
+        var dsThu = new List<int>();
+
+        if (lop?.ThuBuoi1 is { } thu1) dsThu.Add(thu1);
+        if (lop?.ThuBuoi2 is { } thu2 && !dsThu.Contains(thu2)) dsThu.Add(thu2);
+
+        var lopCoKhaiThu = dsThu.Count > 0;
+
+        if (!lopCoKhaiThu)
+        {
+            // Lớp chưa khai 2 thứ → cho chọn tự do, kèm cảnh báo.
+            dsThu = [1, 2, 3, 4, 5, 6, 7];
+        }
+
+        _thuDaLich.TryGetValue(item.MaLopHoc, out var daDung);
+
+        // Ẩn thứ đã xếp lịch (chỉ khi TẠO MỚI) để mỗi lớp đúng 2 dòng lịch.
+        var conLai = _existing is null && daDung is not null
+            ? dsThu.Where(t => !daDung.Contains(t)).ToList()
+            : dsThu;
+
+        if (conLai.Count == 0)
+        {
+            conLai = dsThu; // đã đủ thứ → cho sửa lại thay vì chặn
+        }
+
+        _cboThu.Items.Clear();
+
+        foreach (var thu in conLai)
+        {
+            _cboThu.Items.Add(new ThuItem(thu, ThuLabels[thu - 1]));
+        }
+
+        var viTri = 0;
+
+        if (thuDangChon is { } cu)
+        {
+            var i = conLai.IndexOf(cu);
+            if (i >= 0) viTri = i;
+        }
+        else if (daDung is not null)
+        {
+            var i = conLai.FindIndex(t => !daDung.Contains(t));
+            if (i >= 0) viTri = i;
+        }
+
+        if (_cboThu.Items.Count > 0)
+        {
+            _cboThu.SelectedIndex = viTri;
+        }
+
+        _lblThongBao.Text = lopCoKhaiThu
+            ? string.Empty
+            : $"Lớp '{lop?.MaLop}' chưa khai 2 thứ học. Vào Lớp học → Sửa lớp để đặt Thứ buổi 1 / Thứ buổi 2.";
+    }
+
+    /// <summary>Chọn đúng thứ của lịch đang sửa (thêm vào combo nếu lớp không khai thứ đó).</summary>
+    private void ChonThu(int thu)
+    {
+        for (var i = 0; i < _cboThu.Items.Count; i++)
+        {
+            if (_cboThu.Items[i] is ThuItem it && it.Thu == thu)
+            {
+                _cboThu.SelectedIndex = i;
+                return;
+            }
+        }
+    }
+
+    private int? ThuDangChon() => (_cboThu.SelectedItem as ThuItem)?.Thu;
+
+    private sealed record ThuItem(int Thu, string MoTa)
+    {
+        public override string ToString() => MoTa;
     }
 
     private sealed record LopItem(int MaLopHoc, string MoTa)

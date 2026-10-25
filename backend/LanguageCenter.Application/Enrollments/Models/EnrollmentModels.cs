@@ -92,6 +92,18 @@ public sealed class EnrollmentListItemDto
 
     public string TenHocVien { get; init; } = string.Empty;
 
+    /// <summary>Ngày sinh học viên — lấy từ hồ sơ <c>HocVien</c>.</summary>
+    public DateOnly NgaySinh { get; init; }
+
+    /// <summary>Giới tính học viên — lấy từ hồ sơ <c>HocVien</c>.</summary>
+    public string? GioiTinh { get; init; }
+
+    /// <summary>Số điện thoại học viên — lấy từ hồ sơ <c>HocVien</c>.</summary>
+    public string? SoDienThoai { get; init; }
+
+    /// <summary>Email học viên — lấy từ hồ sơ <c>HocVien</c>.</summary>
+    public string? Email { get; init; }
+
     public int MaKhoaHoc { get; init; }
 
     public string TenKhoaHoc { get; init; } = string.Empty;

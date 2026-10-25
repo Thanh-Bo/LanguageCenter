@@ -1,4 +1,5 @@
 using LanguageCenter.Application.Accounts;
+using LanguageCenter.Application.AcademicSetup;
 using LanguageCenter.Application.Attendance;
 using LanguageCenter.Application.Auth;
 using LanguageCenter.Application.Classes;
@@ -65,6 +66,9 @@ public static class DependencyInjection
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<ISurveyService, SurveyService>();
         services.AddScoped<IReportService, ReportService>();
+
+        // ---------- Phase 8: cấu hình học vụ (20 buổi học + ngày lễ) ----------
+        services.AddScoped<IAcademicSetupService, AcademicSetupService>();
 
         return services;
     }

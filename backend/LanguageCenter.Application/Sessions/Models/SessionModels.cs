@@ -73,17 +73,18 @@ public sealed class UpdateSessionRequest
     public string? LyDoThayDoi { get; set; }
 }
 
-/// <summary>Body của <c>POST /api/admin/sessions/generate</c>.</summary>
+/// <summary>
+/// Body của <c>POST /api/admin/sessions/generate</c>.
+/// <para>
+/// Hệ thống sinh ĐÚNG 20 buổi (10 tuần × 2 buổi) bắt đầu từ <c>LopHoc.NgayBatDau</c>,
+/// tự dời buổi trùng ngày lễ → không cần client gửi khoảng ngày.
+/// </para>
+/// </summary>
 public sealed class GenerateSessionsRequest
 {
+    /// <summary>Lịch định kỳ bất kỳ của lớp cần sinh ca (hệ thống tự lấy cả 2 lịch của lớp).</summary>
     [Range(1, int.MaxValue, ErrorMessage = "Lịch học là bắt buộc.")]
     public int MaLichHoc { get; set; }
-
-    [Required(ErrorMessage = "Từ ngày là bắt buộc.")]
-    public DateOnly TuNgay { get; set; }
-
-    [Required(ErrorMessage = "Đến ngày là bắt buộc.")]
-    public DateOnly DenNgay { get; set; }
 }
 
 /// <summary>Tham số lọc danh sách ca học.</summary>

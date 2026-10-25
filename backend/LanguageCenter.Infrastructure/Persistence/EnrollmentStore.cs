@@ -66,6 +66,11 @@ public sealed class EnrollmentStore : IEnrollmentStore
                 MaDangKy = x.MaDangKy,
                 MaHocVien = x.MaHocVien,
                 TenHocVien = x.HocVien.HoTen,
+                // Thông tin cá nhân: lấy từ hồ sơ học viên để màn Xếp lớp không bị trống.
+                NgaySinh = x.HocVien.NgaySinh,
+                GioiTinh = x.HocVien.GioiTinh,
+                SoDienThoai = x.HocVien.SoDienThoai,
+                Email = x.HocVien.Email,
                 MaKhoaHoc = x.MaKhoaHoc,
                 TenKhoaHoc = x.KhoaHoc.TenKhoaHoc,
                 MaLopHoc = x.MaLopHoc,
