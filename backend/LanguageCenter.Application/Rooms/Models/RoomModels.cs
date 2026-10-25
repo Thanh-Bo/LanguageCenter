@@ -34,10 +34,12 @@ public sealed class RoomListItemDto
 /// <summary>Body của <c>POST /api/admin/rooms</c> — tạo phòng học mới.</summary>
 public sealed class CreateRoomRequest
 {
-    /// <summary>Mã phòng — UNIQUE, ví dụ "P101". Tự động chuyển chữ HOA.</summary>
-    [Required(ErrorMessage = "Mã phòng là bắt buộc.")]
+    /// <summary>
+    /// Mã phòng — ĐỂ TRỐNG thì hệ thống tự sinh (<c>P101</c>, <c>P102</c>… theo số lớn nhất đang có).
+    /// Nếu client tự gửi thì vẫn được tự động chuyển chữ HOA.
+    /// </summary>
     [StringLength(30, ErrorMessage = "Mã phòng tối đa 30 ký tự.")]
-    public string MaPhong { get; set; } = string.Empty;
+    public string? MaPhong { get; set; }
 
     [Required(ErrorMessage = "Tên phòng là bắt buộc.")]
     [StringLength(100, MinimumLength = 1, ErrorMessage = "Tên phòng tối đa 100 ký tự.")]

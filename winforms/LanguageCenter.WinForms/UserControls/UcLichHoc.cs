@@ -25,6 +25,8 @@ public partial class UcLichHoc : UserControl
     {
         InitializeComponent();
 
+        DamBaoCotBang();
+
         UI.UiHelpers.StyleGrid(dgvRooms);
         UI.UiHelpers.StyleGrid(dgvSchedules);
         UI.UiHelpers.StyleGrid(dgvShifts);
@@ -65,6 +67,47 @@ public partial class UcLichHoc : UserControl
 
         SwitchTab(0);
         Load += async (_, _) => await ReloadAsync();
+    }
+
+    /// <summary>
+    /// Bảo đảm CẢ 3 bảng LUÔN có cột trước khi thêm dòng.
+    /// <para>
+    /// <c>DataGridView.Rows.Add</c> ném InvalidOperationException
+    /// ("No row can be added to a DataGridView control that does not have columns")
+    /// khi <c>Columns.Count == 0</c>. Cột đã khai báo trong Designer, nhưng nếu vì lý do nào đó
+    /// (Designer lệch, build cũ, designer không nạp) mà mất thì hàm này dựng lại — màn hình
+    /// không sập. Hàm idempotent: đã có cột thì bỏ qua.
+    /// </para>
+    /// </summary>
+    private void DamBaoCotBang()
+    {
+        UiHelpers.DamBaoCot(dgvRooms,
+            ("MaPhong", "Mã phòng", 85),
+            ("TenPhong", "Tên phòng học", 160),
+            ("ViTri", "Vị trí", 140),
+            ("SucChua", "Sức chứa", 80),
+            ("ThietBi", "Trang thiết bị chuyên dụng", 240),
+            ("TrangThai", "Trạng thái", 95));
+
+        UiHelpers.DamBaoCot(dgvSchedules,
+            ("MaLop", "Mã lớp", 85),
+            ("TenLop", "Lớp học", 160),
+            ("TenPhong", "Phòng học", 90),
+            ("ThuText", "Thứ học trong tuần", 170),
+            ("KhungGio", "Khung giờ học", 120),
+            ("NgayApDungTu", "Ngày áp dụng", 90),
+            ("TrangThai", "Trạng thái", 95));
+
+        UiHelpers.DamBaoCot(dgvShifts,
+            ("MaCaHoc", "Mã ca", 60),
+            ("NgayHoc", "Ngày học", 85),
+            ("TenLop", "Lớp học", 150),
+            ("TenPhong", "Phòng học", 85),
+            ("GiaoVien", "Giáo viên giảng dạy", 130),
+            ("TroGiang", "Trợ giảng", 110),
+            ("GioHoc", "Thời gian", 110),
+            ("NoiDung", "Nội dung bài học", 200),
+            ("TrangThai", "Trạng thái", 95));
     }
 
     /// <summary>
@@ -241,6 +284,9 @@ public partial class UcLichHoc : UserControl
 
     private void ApplyFilter()
     {
+        // Chốt chặn cuối: không bao giờ thêm dòng vào bảng chưa có cột.
+        DamBaoCotBang();
+
         var kw = txtSearch.Text.Trim();
         var filter = cboFilter.SelectedItem?.ToString() ?? AllOption;
 

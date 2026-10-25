@@ -15,6 +15,12 @@ public interface IClassStore
     /// <summary>Trùng mã lớp (UNIQUE trong database).</summary>
     Task<bool> CodeExistsAsync(string maLop, int? exceptId, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Sinh mã lớp kế tiếp cho khóa học: <c>{Ký hiệu cấp độ}-{STT:00}</c>.
+    /// Trả về <c>null</c> nếu khóa học/cấp độ không có ký hiệu.
+    /// </summary>
+    Task<string?> GenerateNextCodeAsync(int maKhoaHoc, CancellationToken cancellationToken);
+
     Task<WriteResult> CreateAsync(CreateClassRequest request, CancellationToken cancellationToken);
 
     Task<WriteOutcome> UpdateAsync(int maLopHoc, UpdateClassRequest changes, CancellationToken cancellationToken);

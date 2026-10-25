@@ -18,6 +18,8 @@ public partial class UcKhoaHoc : UserControl
     {
         InitializeComponent();
 
+        DamBaoCotBang();
+
         UI.UiHelpers.StyleGrid(dgvCourses);
         UI.UiHelpers.StyleGrid(dgvLevels);
         UI.UiHelpers.StyleGrid(dgvPrograms);
@@ -42,6 +44,45 @@ public partial class UcKhoaHoc : UserControl
 
         SwitchTab(0);
         Load += async (_, _) => await ReloadAsync();
+    }
+
+    /// <summary>
+    /// Bảo đảm 3 lưới đều có cột trước khi nạp dữ liệu — chống lỗi
+    /// "No row can be added to a DataGridView control that does not have columns"
+    /// khi Designer chưa nạp cột.
+    /// </summary>
+    private void DamBaoCotBang()
+    {
+        UI.UiHelpers.DamBaoCot(dgvCourses,
+            ("MaKhoaHoc", "Mã khóa", 85),
+            ("TenKhoaHoc", "Tên khóa học", 190),
+            ("TenChuongTrinh", "Chương trình", 130),
+            ("CapDo", "Cấp độ", 120),
+            ("SoBuoi", "Số buổi", 70),
+            ("TongSoGio", "Thời lượng", 80),
+            ("HocPhiCoBan", "Học phí niêm yết", 110),
+            ("NgayBatDau", "Khai giảng", 85),
+            ("TrangThai", "Trạng thái", 95));
+
+        UI.UiHelpers.DamBaoCot(dgvLevels,
+            ("MaCapDo", "Mã CĐ", 60),
+            ("TenCapDo", "Tên cấp độ đào tạo", 180),
+            ("KyHieu", "Ký hiệu", 85),
+            ("TenChuongTrinh", "Chương trình", 130),
+            ("ThuTu", "Thứ tự", 60),
+            ("ThoiLuong", "Thời lượng (tuần)", 90),
+            ("DieuKienDauVao", "Điều kiện đầu vào", 140),
+            ("KetQuaDauRa", "Chuẩn đầu ra cam kết", 150),
+            ("TrangThai", "Trạng thái", 90));
+
+        UI.UiHelpers.DamBaoCot(dgvPrograms,
+            ("MaChuongTrinh", "Mã CT", 60),
+            ("TenChuongTrinh", "Tên chương trình đào tạo", 160),
+            ("NhomDoiTuong", "Nhóm đối tượng mục tiêu", 180),
+            ("DoTuoi", "Độ tuổi", 75),
+            ("MucTieu", "Mục tiêu cam kết", 170),
+            ("MoTa", "Mô tả tổng quan", 180),
+            ("TrangThai", "Trạng thái", 90));
     }
 
     /// <summary>Tải khóa học, cấp độ và chương trình từ API.</summary>

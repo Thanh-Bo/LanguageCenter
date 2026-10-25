@@ -340,7 +340,7 @@ public partial class UcXepLop : UserControl
                 p.TrangThaiDangKy,
                 $"Học phí sau giảm: {p.HocPhiSauGiam:N0} ₫"
             );
-            dgvPending.Rows[rowIdx].Tag = p.MaDangKy;
+            dgvPending.Rows[rowIdx].Tag = p;
             dgvPending.Rows[rowIdx].Cells["HocPhi"].Style.ForeColor = Theme.Warning;
         }
 
@@ -445,7 +445,9 @@ public partial class UcXepLop : UserControl
             return;
         }
 
-        if (dgvPending.CurrentRow == null)
+        var dangKy = DangKyDangChon();
+
+        if (dangKy is null)
         {
             MessageBox.Show(FindForm(), "Vui lòng chọn một học viên trong danh sách chờ xếp lớp.", "Chưa chọn học viên", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
@@ -457,8 +459,21 @@ public partial class UcXepLop : UserControl
             return;
         }
 
-        var regId = Convert.ToInt32(dgvPending.CurrentRow.Tag ?? dgvPending.CurrentRow.Cells["MaDangKy"].Value);
-        var studentName = dgvPending.CurrentRow.Cells["TenHocVien"].Value?.ToString() ?? "Học viên";
+        // Chặn sớm: lớp đang chọn phải CÙNG KHÓA HỌC với đăng ký (backend cũng kiểm tra).
+        if (_currentClass.MaKhoaHoc != dangKy.MaKhoaHoc)
+        {
+            MessageBox.Show(FindForm(),
+                $"Đăng ký của \"{dangKy.TenHocVien}\" thuộc khóa:\n"
+                + $"   • {dangKy.TenKhoaHoc}\n\n"
+                + $"Lớp đang chọn \"{_currentClass.TenLop}\" thuộc khóa:\n"
+                + $"   • {_currentClass.TenKhoaHoc}\n\n"
+                + "Hai khóa khác nhau nên không thể xếp lớp.\n"
+                + "Hãy chọn lớp đúng khóa ở ô chọn lớp phía trên.",
+                "Khác khóa học", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        var studentName = dangKy.TenHocVien;
 
         var confirm = MessageBox.Show(
             FindForm(),
@@ -476,19 +491,23 @@ public partial class UcXepLop : UserControl
 
         // Phase 4: gán lớp cho đăng ký học (kiểm tra sĩ số + trạng thái ở backend)
         var result = await AppSession.Api.PatchAsync<EnrollmentListItemDto>(
-            $"admin/enrollments/{regId}/assign-class",
+            $"admin/enrollments/{dangKy.MaDangKy}/assign-class",
             new { maLopHoc = _currentClass.MaLopHoc });
 
         UseWaitCursor = false;
 
         if (!result.Success)
         {
-            MessageBox.Show(FindForm(), result.ErrorMessage, "Xếp lớp thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            MessageBox.Show(FindForm(), result.ThongDiepDayDu(), "Xếp lớp thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 
         await ReloadAsync();
     }
+
+    /// <summary>Đăng ký đang chọn ở bảng "chờ xếp lớp" (null nếu chưa chọn dòng nào).</summary>
+    private EnrollmentListItemDto? DangKyDangChon()
+        => dgvPending.CurrentRow?.Tag as EnrollmentListItemDto;
 
     /// <summary>
     /// Từ chối (hủy) một đăng ký học còn chờ xếp lớp — chuyển trạng thái sang "Đã hủy".
@@ -500,7 +519,9 @@ public partial class UcXepLop : UserControl
     /// </summary>
     private async void BtnTuChoiDangKy_Click(object? sender, EventArgs e)
     {
-        if (dgvPending.CurrentRow is null)
+        var dangKyTuChoi = DangKyDangChon();
+
+        if (dangKyTuChoi is null)
         {
             MessageBox.Show(FindForm(),
                 "Vui lòng chọn một đăng ký trong danh sách chờ xếp lớp cần từ chối.",
@@ -508,9 +529,9 @@ public partial class UcXepLop : UserControl
             return;
         }
 
-        var regId = Convert.ToInt32(dgvPending.CurrentRow.Tag ?? dgvPending.CurrentRow.Cells["MaDangKy"].Value);
-        var studentName = dgvPending.CurrentRow.Cells["TenHocVien"].Value?.ToString() ?? "Học viên";
-        var tenKhoaHoc = dgvPending.CurrentRow.Cells["KhoaHoc"].Value?.ToString() ?? "khóa học";
+        var regId = dangKyTuChoi.MaDangKy;
+        var studentName = dangKyTuChoi.TenHocVien;
+        var tenKhoaHoc = dangKyTuChoi.TenKhoaHoc;
 
         var xacNhan = MessageBox.Show(FindForm(),
             $"Từ chối đăng ký của học viên \"{studentName}\" cho khóa \"{tenKhoaHoc}\"?\n\n"

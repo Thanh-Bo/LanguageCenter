@@ -130,13 +130,57 @@ public sealed class ClassStore : IClassStore
                 x.MaLopHoc, x.MaLop, x.MaKhoaHoc, x.SiSoToiDa, x.TrangThai))
             .FirstOrDefaultAsync(cancellationToken);
 
+    /// <summary>
+    /// Sinh mã lớp kế tiếp: <c>{KyHieuCapDo}-{STT:00}</c> — ví dụ cấp độ <c>TEEN-2</c> → <c>TEEN-2-01</c>,
+    /// <c>TEEN-2-02</c>... STT lấy theo mã lớn nhất đang có cùng tiền tố.
+    /// </summary>
+    public async Task<string?> GenerateNextCodeAsync(int maKhoaHoc, CancellationToken cancellationToken)
+    {
+        var kyHieu = await _dbContext.KhoaHocs
+            .AsNoTracking()
+            .Where(x => x.MaKhoaHoc == maKhoaHoc)
+            .Join(
+                _dbContext.CapDos.AsNoTracking(),
+                khoa => khoa.MaCapDo,
+                cap => cap.MaCapDo,
+                (khoa, cap) => cap.KyHieuCapDo)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(kyHieu))
+        {
+            return null;
+        }
+
+        var prefix = kyHieu.Trim().ToUpperInvariant() + "-";
+
+        var codes = await _dbContext.LopHocs
+            .AsNoTracking()
+            .Where(x => x.MaLop.StartsWith(prefix))
+            .Select(x => x.MaLop)
+            .ToListAsync(cancellationToken);
+
+        var max = 0;
+
+        foreach (var code in codes)
+        {
+            var duoi = code[prefix.Length..].Trim();
+
+            if (int.TryParse(duoi, out var so) && so > max)
+            {
+                max = so;
+            }
+        }
+
+        return $"{prefix}{(max + 1):00}";
+    }
+
     public async Task<WriteResult> CreateAsync(
         CreateClassRequest request,
         CancellationToken cancellationToken)
     {
         var entity = new LopHoc
         {
-            MaLop = request.MaLop.Trim(),
+            MaLop = (request.MaLop ?? string.Empty).Trim(),
             TenLop = request.TenLop.Trim(),
             MaKhoaHoc = request.MaKhoaHoc,
             MaNhanVienHocVu = request.MaNhanVienHocVu.Trim(),

@@ -165,6 +165,30 @@ public partial class FormSuaGiaoVien : Form
             return;
         }
 
+        // Tạo mới: bắt buộc đủ thông tin để hồ sơ dùng được ngay (lịch dạy, liên hệ, hợp đồng).
+        if (!_isEditMode)
+        {
+            var thieu = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(txtEmail.Text) || !txtEmail.Text.Contains('@'))
+            {
+                thieu.Add("Email hợp lệ");
+            }
+
+            if (string.IsNullOrWhiteSpace(txtSoDienThoai.Text)) thieu.Add("Số điện thoại");
+            if (string.IsNullOrWhiteSpace(cboGioiTinh.Text)) thieu.Add("Giới tính");
+            if (!chkNgaySinh.Checked) thieu.Add("Ngày sinh");
+            if (string.IsNullOrWhiteSpace(txtDiaChi.Text)) thieu.Add("Địa chỉ");
+            if (string.IsNullOrWhiteSpace(txtChuyenMon.Text)) thieu.Add("Chuyên môn");
+            if (string.IsNullOrWhiteSpace(cboLoaiGiaoVien.Text)) thieu.Add("Loại giáo viên");
+
+            if (thieu.Count > 0)
+            {
+                lblMessage.Text = "Vui lòng nhập đủ thông tin: " + string.Join(", ", thieu) + ".";
+                return;
+            }
+        }
+
         if (!_isEditMode && string.IsNullOrWhiteSpace(cboLoaiGiaoVien.Text))
         {
             lblMessage.Text = "Vui lòng chọn Loại giáo viên (Giáo viên / Trợ giảng).";

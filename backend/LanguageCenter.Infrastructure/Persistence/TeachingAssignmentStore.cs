@@ -60,8 +60,8 @@ public sealed class TeachingAssignmentStore : ITeachingAssignmentStore
                 MaKhoaHoc = x.LopHoc.MaKhoaHoc,
                 TenKhoaHoc = x.LopHoc.KhoaHoc.TenKhoaHoc,
                 MaGiaoVien = x.MaGiaoVien,
-                TenGiaoVien = x.GiaoVien.HoTen,
-                LoaiGiaoVien = x.GiaoVien.LoaiGiaoVien,
+                TenGiaoVien = x.GiaoVien == null ? null : x.GiaoVien.HoTen,
+                LoaiGiaoVien = x.GiaoVien == null ? null : x.GiaoVien.LoaiGiaoVien,
                 VaiTroPhanCong = x.VaiTroPhanCong,
                 NgayBatDau = x.NgayBatDau,
                 NgayKetThuc = x.NgayKetThuc,
@@ -91,8 +91,8 @@ public sealed class TeachingAssignmentStore : ITeachingAssignmentStore
                 MaKhoaHoc = x.LopHoc.MaKhoaHoc,
                 TenKhoaHoc = x.LopHoc.KhoaHoc.TenKhoaHoc,
                 MaGiaoVien = x.MaGiaoVien,
-                TenGiaoVien = x.GiaoVien.HoTen,
-                LoaiGiaoVien = x.GiaoVien.LoaiGiaoVien,
+                TenGiaoVien = x.GiaoVien == null ? null : x.GiaoVien.HoTen,
+                LoaiGiaoVien = x.GiaoVien == null ? null : x.GiaoVien.LoaiGiaoVien,
                 VaiTroPhanCong = x.VaiTroPhanCong,
                 NgayBatDau = x.NgayBatDau,
                 NgayKetThuc = x.NgayKetThuc,
@@ -132,19 +132,175 @@ public sealed class TeachingAssignmentStore : ITeachingAssignmentStore
                 cancellationToken);
     }
 
+    public Task<bool> HasSamePersonOverlapAsync(
+        int maLopHoc,
+        string maGiaoVien,
+        DateOnly ngayBatDau,
+        DateOnly? ngayKetThuc,
+        int? exceptId,
+        CancellationToken cancellationToken)
+    {
+        var code = maGiaoVien.Trim();
+        var end = ngayKetThuc ?? MaxDate;
+
+        return _dbContext.PhanCongGiangDays
+            .AsNoTracking()
+            .AnyAsync(
+                x => x.MaLopHoc == maLopHoc
+                     && x.MaGiaoVien == code
+                     && x.TrangThai != AssignmentStatuses.DaHuy
+                     && x.NgayBatDau <= end
+                     && (x.NgayKetThuc ?? MaxDate) >= ngayBatDau
+                     && (exceptId == null || x.MaPhanCong != exceptId),
+                cancellationToken);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// So sánh trong bộ nhớ: số dòng <c>LichHoc</c> của một lớp rất nhỏ (1–3 dòng),
+    /// đổi lại truy vấn rõ ràng và không phụ thuộc khả năng dịch LINQ phức tạp của EF.
+    /// </remarks>
+    public async Task<IReadOnlyList<TeachingScheduleConflict>> FindScheduleConflictsAsync(
+        int maLopHoc,
+        string maGiaoVien,
+        DateOnly ngayBatDau,
+        DateOnly? ngayKetThuc,
+        int? exceptId,
+        CancellationToken cancellationToken)
+    {
+        var code = maGiaoVien.Trim();
+        var end = ngayKetThuc ?? MaxDate;
+
+        var lichCuaLop = await _dbContext.LichHocs
+            .AsNoTracking()
+            .Where(l => l.MaLopHoc == maLopHoc && l.TrangThai != ScheduleStatuses.NgungApDung)
+            .Select(l => new
+            {
+                l.ThuTrongTuan,
+                l.GioBatDau,
+                l.GioKetThuc,
+                l.NgayApDungTu,
+                l.NgayApDungDen
+            })
+            .ToListAsync(cancellationToken);
+
+        if (lichCuaLop.Count == 0)
+        {
+            return Array.Empty<TeachingScheduleConflict>();
+        }
+
+        // Các lớp khác mà người này đang được phân công trong khoảng ngày chồng lấn.
+        var lopKhac = await _dbContext.PhanCongGiangDays
+            .AsNoTracking()
+            .Where(x => x.MaGiaoVien == code
+                        && x.MaLopHoc != maLopHoc
+                        && x.TrangThai != AssignmentStatuses.DaHuy
+                        && x.NgayBatDau <= end
+                        && (x.NgayKetThuc ?? MaxDate) >= ngayBatDau
+                        && (exceptId == null || x.MaPhanCong != exceptId))
+            .Select(x => new { x.MaLopHoc, x.LopHoc.MaLop, x.LopHoc.TenLop })
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        if (lopKhac.Count == 0)
+        {
+            return Array.Empty<TeachingScheduleConflict>();
+        }
+
+        var maCacLopKhac = lopKhac.Select(x => x.MaLopHoc).ToList();
+
+        var lichLopKhac = await _dbContext.LichHocs
+            .AsNoTracking()
+            .Where(l => maCacLopKhac.Contains(l.MaLopHoc) && l.TrangThai != ScheduleStatuses.NgungApDung)
+            .Select(l => new
+            {
+                l.MaLopHoc,
+                l.ThuTrongTuan,
+                l.GioBatDau,
+                l.GioKetThuc,
+                l.NgayApDungTu,
+                l.NgayApDungDen
+            })
+            .ToListAsync(cancellationToken);
+
+        var tenLop = lopKhac
+            .GroupBy(x => x.MaLopHoc)
+            .ToDictionary(g => g.Key, g => (g.First().MaLop, g.First().TenLop));
+
+        var conflicts = new List<TeachingScheduleConflict>();
+
+        foreach (var a in lichCuaLop)
+        {
+            var aDen = a.NgayApDungDen ?? MaxDate;
+
+            foreach (var b in lichLopKhac)
+            {
+                if (a.ThuTrongTuan != b.ThuTrongTuan)
+                {
+                    continue;
+                }
+
+                var bDen = b.NgayApDungDen ?? MaxDate;
+
+                // Khoảng ngày áp dụng phải chồng lấn.
+                if (a.NgayApDungTu > bDen || b.NgayApDungTu > aDen)
+                {
+                    continue;
+                }
+
+                // Giờ phải chồng lấn (biên bằng nhau không tính là trùng).
+                if (a.GioBatDau >= b.GioKetThuc || b.GioBatDau >= a.GioKetThuc)
+                {
+                    continue;
+                }
+
+                var info = tenLop[b.MaLopHoc];
+
+                conflicts.Add(new TeachingScheduleConflict(
+                    info.MaLop,
+                    info.TenLop,
+                    a.ThuTrongTuan,
+                    b.GioBatDau,
+                    b.GioKetThuc));
+            }
+        }
+
+        return conflicts
+            .GroupBy(c => (c.MaLop, c.ThuTrongTuan, c.GioBatDau, c.GioKetThuc))
+            .Select(g => g.First())
+            .ToList();
+    }
+
+    public Task<bool> PlaceholderExistsAsync(
+        int maLopHoc,
+        string vaiTroPhanCong,
+        CancellationToken cancellationToken)
+        => _dbContext.PhanCongGiangDays
+            .AsNoTracking()
+            .AnyAsync(
+                x => x.MaLopHoc == maLopHoc
+                     && x.VaiTroPhanCong == vaiTroPhanCong
+                     && x.MaGiaoVien == null
+                     && x.TrangThai == AssignmentStatuses.ChoPhanCong,
+                cancellationToken);
+
     public async Task<WriteResult> CreateAsync(
         CreateAssignmentRequest request,
         CancellationToken cancellationToken)
     {
+        var maGiaoVien = TextValue.Optional(request.MaGiaoVien);
+
         var entity = new PhanCongGiangDay
         {
             MaLopHoc = request.MaLopHoc,
-            MaGiaoVien = request.MaGiaoVien.Trim(),
+            MaGiaoVien = maGiaoVien,
             VaiTroPhanCong = request.VaiTroPhanCong.Trim(),
             NgayBatDau = request.NgayBatDau,
             NgayKetThuc = request.NgayKetThuc,
             GhiChu = TextValue.Optional(request.GhiChu),
-            TrangThai = AssignmentStatuses.DangPhanCong
+            TrangThai = maGiaoVien is null
+                ? AssignmentStatuses.ChoPhanCong
+                : AssignmentStatuses.DangPhanCong
         };
 
         _dbContext.PhanCongGiangDays.Add(entity);
@@ -177,7 +333,17 @@ public sealed class TeachingAssignmentStore : ITeachingAssignmentStore
 
         if (changes.MaGiaoVien is not null)
         {
-            entity.MaGiaoVien = changes.MaGiaoVien.Trim();
+            var maGiaoVienMoi = TextValue.Optional(changes.MaGiaoVien);
+            entity.MaGiaoVien = maGiaoVienMoi;
+
+            // Gắn người → chuyển "Chờ phân công" sang "Đang phân công";
+            // Bỏ người → quay lại "Chờ phân công" (giữ nguyên nếu đã kết thúc / đã hủy).
+            if (entity.TrangThai is AssignmentStatuses.DangPhanCong or AssignmentStatuses.ChoPhanCong)
+            {
+                entity.TrangThai = maGiaoVienMoi is null
+                    ? AssignmentStatuses.ChoPhanCong
+                    : AssignmentStatuses.DangPhanCong;
+            }
         }
 
         if (changes.VaiTroPhanCong is not null)

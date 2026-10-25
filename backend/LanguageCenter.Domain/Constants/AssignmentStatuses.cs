@@ -8,15 +8,18 @@ public static class AssignmentStatuses
 {
     public const string DangPhanCong = "Đang phân công";
 
+    /// <summary>Khung phân công đã tạo nhưng CHƯA gắn giáo viên / trợ giảng.</summary>
+    public const string ChoPhanCong = "Chờ phân công";
+
     public const string DaKetThuc = "Đã kết thúc";
 
     public const string DaHuy = "Đã hủy";
 
     public static readonly IReadOnlyList<string> All =
-        [DangPhanCong, DaKetThuc, DaHuy];
+        [ChoPhanCong, DangPhanCong, DaKetThuc, DaHuy];
 
     /// <summary>Phân công còn hiệu lực — dùng để chặn trùng lặp.</summary>
-    public static readonly IReadOnlyList<string> Active = [DangPhanCong];
+    public static readonly IReadOnlyList<string> Active = [DangPhanCong, ChoPhanCong];
 
     public static bool IsValid(string? status)
         => status is not null && All.Contains(status);

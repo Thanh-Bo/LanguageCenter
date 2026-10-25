@@ -19,18 +19,27 @@ public sealed class CreateAssignmentRequest
     [Range(1, int.MaxValue, ErrorMessage = "Lớp học là bắt buộc.")]
     public int MaLopHoc { get; set; }
 
-    [Required(ErrorMessage = "Giáo viên / trợ giảng là bắt buộc.")]
-    [StringLength(20, MinimumLength = 1)]
-    public string MaGiaoVien { get; set; } = string.Empty;
+    /// <summary>
+    /// ĐỂ TRỐNG = tạo "khung" phân công chưa gắn người (trạng thái <c>Chờ phân công</c>),
+    /// sau đó gắn giáo viên / trợ giảng bằng <c>PATCH</c>.
+    /// </summary>
+    [StringLength(20)]
+    public string? MaGiaoVien { get; set; }
 
     [Required(ErrorMessage = "Vai trò phân công là bắt buộc.")]
     [StringLength(50)]
     public string VaiTroPhanCong { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc.")]
+    /// <summary>
+    /// KHÔNG cần client gửi: ngày bắt đầu phân công LUÔN lấy theo <c>LopHoc.NgayBatDau</c>
+    /// (server ghi đè giá trị client gửi lên).
+    /// </summary>
     public DateOnly NgayBatDau { get; set; }
 
-    /// <summary>Để trống = phân công không có ngày kết thúc (còn hiệu lực).</summary>
+    /// <summary>
+    /// KHÔNG cần client gửi: ngày kết thúc LUÔN lấy theo <c>LopHoc.NgayKetThucDuKien</c>
+    /// (server ghi đè). Muốn kết thúc sớm thì dùng <c>PATCH .../status</c>.
+    /// </summary>
     public DateOnly? NgayKetThuc { get; set; }
 
     [StringLength(500, ErrorMessage = "Ghi chú tối đa 500 ký tự.")]
@@ -43,7 +52,7 @@ public sealed class CreateAssignmentRequest
 /// </summary>
 public sealed class UpdateAssignmentRequest
 {
-    [StringLength(20, MinimumLength = 1)]
+    [StringLength(20)]
     public string? MaGiaoVien { get; set; }
 
     [StringLength(50)]
@@ -89,11 +98,12 @@ public sealed class AssignmentListItemDto
 
     public string TenKhoaHoc { get; init; } = string.Empty;
 
-    public string MaGiaoVien { get; init; } = string.Empty;
+    /// <summary>NULL = chưa gắn người (khung "Chờ phân công").</summary>
+    public string? MaGiaoVien { get; init; }
 
-    public string TenGiaoVien { get; init; } = string.Empty;
+    public string? TenGiaoVien { get; init; }
 
-    public string LoaiGiaoVien { get; init; } = string.Empty;
+    public string? LoaiGiaoVien { get; init; }
 
     public string VaiTroPhanCong { get; init; } = string.Empty;
 
@@ -119,11 +129,12 @@ public sealed class AssignmentDetailDto
 
     public string TenKhoaHoc { get; init; } = string.Empty;
 
-    public string MaGiaoVien { get; init; } = string.Empty;
+    /// <summary>NULL = chưa gắn người (khung "Chờ phân công").</summary>
+    public string? MaGiaoVien { get; init; }
 
-    public string TenGiaoVien { get; init; } = string.Empty;
+    public string? TenGiaoVien { get; init; }
 
-    public string LoaiGiaoVien { get; init; } = string.Empty;
+    public string? LoaiGiaoVien { get; init; }
 
     public string VaiTroPhanCong { get; init; } = string.Empty;
 

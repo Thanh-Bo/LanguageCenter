@@ -108,6 +108,35 @@ public static class UiHelpers
     }
 
     /// <summary>
+    /// Bảo đảm <paramref name="grid"/> luôn có cột trước khi nạp dữ liệu.
+    /// <para>
+    /// <c>DataGridView.Rows.Add</c> ném InvalidOperationException
+    /// ("No row can be added to a DataGridView control that does not have columns")
+    /// khi <c>Columns.Count == 0</c>. Bình thường cột đã khai báo trong file Designer;
+    /// hàm này chỉ dựng bổ sung khi thiếu nên gọi bao nhiêu lần cũng an toàn.
+    /// </para>
+    /// </summary>
+    public static void DamBaoCot(
+        DataGridView grid,
+        params (string Ten, string TieuDe, int TrongSo)[] cot)
+    {
+        if (grid.Columns.Count > 0)
+        {
+            return;
+        }
+
+        foreach (var (ten, tieuDe, trongSo) in cot)
+        {
+            grid.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = ten,
+                HeaderText = tieuDe,
+                FillWeight = trongSo
+            });
+        }
+    }
+
+    /// <summary>
     /// Thẻ số liệu (KPI) ở đầu mỗi màn hình: tiêu đề nhỏ — số lớn — dòng ghi chú.
     /// <para>
     /// Dùng Dock=Top + AutoEllipsis thay vì Location/AutoSize cố định để:

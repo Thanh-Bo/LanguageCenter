@@ -15,6 +15,12 @@ public interface ITeacherStore
     /// <summary>Lấy chi tiết giáo viên theo mã (kèm Bằng cấp + Chứng chỉ — chỉ đọc ở Phase 3).</summary>
     Task<TeacherDetailDto?> GetByCodeAsync(string maGiaoVien, CancellationToken cancellationToken);
 
+    /// <summary>Số điện thoại đã dùng cho hồ sơ giáo viên khác chưa.</summary>
+    Task<bool> PhoneExistsAsync(
+        string soDienThoai,
+        string? exceptMaGiaoVien,
+        CancellationToken cancellationToken);
+
     /// <summary>Danh sách giáo viên có phân trang / tìm kiếm / lọc — thực hiện ở tầng SQL.</summary>
     Task<PagedResult<TeacherListItemDto>> ListAsync(TeacherListQuery query, CancellationToken cancellationToken);
 

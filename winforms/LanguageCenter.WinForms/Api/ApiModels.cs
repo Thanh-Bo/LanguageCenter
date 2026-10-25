@@ -756,9 +756,10 @@ public sealed class AssignmentListItemDto
     public string TenLop { get; init; } = string.Empty;
     public int MaKhoaHoc { get; init; }
     public string TenKhoaHoc { get; init; } = string.Empty;
-    public string MaGiaoVien { get; init; } = string.Empty;
-    public string TenGiaoVien { get; init; } = string.Empty;
-    public string LoaiGiaoVien { get; init; } = string.Empty;
+    /// <summary>NULL = khung phân công chưa gắn người (trạng thái "Chờ phân công").</summary>
+    public string? MaGiaoVien { get; init; }
+    public string? TenGiaoVien { get; init; }
+    public string? LoaiGiaoVien { get; init; }
     public string VaiTroPhanCong { get; init; } = string.Empty;
     public DateOnly NgayBatDau { get; init; }
     public DateOnly? NgayKetThuc { get; init; }

@@ -16,9 +16,12 @@ namespace LanguageCenter.Application.Classes.Models;
 /// </summary>
 public sealed class CreateClassRequest
 {
-    [Required(ErrorMessage = "Mã lớp là bắt buộc.")]
-    [StringLength(30, MinimumLength = 1, ErrorMessage = "Mã lớp tối đa 30 ký tự.")]
-    public string MaLop { get; set; } = string.Empty;
+    /// <summary>
+    /// Mã lớp — ĐỂ TRỐNG thì hệ thống tự sinh theo định dạng
+    /// <c>{Ký hiệu cấp độ}-{STT:00}</c> (ví dụ <c>TEEN-2-01</c>).
+    /// </summary>
+    [StringLength(30, ErrorMessage = "Mã lớp tối đa 30 ký tự.")]
+    public string? MaLop { get; set; }
 
     [Required(ErrorMessage = "Tên lớp là bắt buộc.")]
     [StringLength(200, MinimumLength = 2, ErrorMessage = "Tên lớp phải từ 2 đến 200 ký tự.")]

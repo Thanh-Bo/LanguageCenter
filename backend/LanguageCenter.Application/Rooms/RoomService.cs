@@ -40,11 +40,12 @@ public sealed class RoomService : IRoomService
         CancellationToken cancellationToken)
     {
         // Mã phòng là mã nghiệp vụ, luôn lưu dạng chữ HOA để không lệch P101 / p101.
+        // Để trống → hệ thống TỰ SINH (P + số lớn nhất + 1).
         var maPhong = TextValue.Required(request.MaPhong)?.ToUpperInvariant();
 
         if (maPhong is null)
         {
-            return OperationResult<RoomListItemDto>.BadRequest("Mã phòng là bắt buộc.");
+            maPhong = await _roomStore.GenerateNextCodeAsync(cancellationToken);
         }
 
         if (maPhong.Length > 30)

@@ -13,7 +13,8 @@ public sealed class PhanCongGiangDayConfiguration : IEntityTypeConfiguration<Pha
         builder.HasKey(x => x.MaPhanCong);
         builder.Property(x => x.MaPhanCong).ValueGeneratedOnAdd();
 
-        builder.Property(x => x.MaGiaoVien).HasMaxLength(20).IsUnicode(false).IsRequired();
+        // NULL = "khung" phân công chưa gắn người (trạng thái "Chờ phân công").
+        builder.Property(x => x.MaGiaoVien).HasMaxLength(20).IsUnicode(false).IsRequired(false);
         builder.Property(x => x.VaiTroPhanCong).HasMaxLength(50).IsRequired();
 
         builder.Property(x => x.TrangThai)

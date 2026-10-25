@@ -11,6 +11,8 @@ partial class FormSuaPhanCong
     private ComboBox cboNhanSu = null!;
     private Label lblVT = null!;
     private ComboBox cboVaiTro = null!;
+    private Label lblTG = null!;
+    private ComboBox cboTroGiang = null!;
     private Label lblBD = null!;
     private DateTimePicker dtpBatDau = null!;
     private Label lblKT = null!;
@@ -40,6 +42,8 @@ partial class FormSuaPhanCong
         cboNhanSu = new ComboBox();
         lblVT = new Label();
         cboVaiTro = new ComboBox();
+        lblTG = new Label();
+        cboTroGiang = new ComboBox();
         lblBD = new Label();
         dtpBatDau = new DateTimePicker();
         lblKT = new Label();
@@ -52,8 +56,8 @@ partial class FormSuaPhanCong
         SuspendLayout();
 
         // FormSuaPhanCong
-        Text = "Phân công giảng dạy mới — HUIT LingoHub";
-        Size = new Size(500, 470);
+        Text = "Phân công giảng dạy — HUIT LingoHub";
+        Size = new Size(740, 460);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
@@ -72,37 +76,49 @@ partial class FormSuaPhanCong
         lblLop.Font = new Font("Segoe UI", 9.5f);
         lblLop.Location = new Point(24, 74);
         lblLop.AutoSize = true;
-        cboLopHoc.Location = new Point(160, 70);
-        cboLopHoc.Width = 280;
+        cboLopHoc.Location = new Point(230, 70);
+        cboLopHoc.Width = 450;
         cboLopHoc.Font = new Font("Segoe UI", 9.5f);
         cboLopHoc.DropDownStyle = ComboBoxStyle.DropDownList;
 
-        // lblNS & cboNhanSu
-        lblNS.Text = "Giảng viên / Trợ giảng:";
+        // lblNS & cboNhanSu — GIÁO VIÊN CHÍNH (được phép để trống)
+        lblNS.Text = "Giáo viên chính:";
         lblNS.Font = new Font("Segoe UI", 9.5f);
         lblNS.Location = new Point(24, 118);
         lblNS.AutoSize = true;
-        cboNhanSu.Location = new Point(160, 114);
-        cboNhanSu.Width = 280;
+        cboNhanSu.Location = new Point(230, 114);
+        cboNhanSu.Width = 450;
         cboNhanSu.Font = new Font("Segoe UI", 9.5f);
         cboNhanSu.DropDownStyle = ComboBoxStyle.DropDownList;
 
-        // lblVT & cboVaiTro
+        // lblTG & cboTroGiang — TRỢ GIẢNG (được phép để trống)
+        lblTG.Text = "Trợ giảng:";
+        lblTG.Font = new Font("Segoe UI", 9.5f);
+        lblTG.Location = new Point(24, 158);
+        lblTG.AutoSize = true;
+        cboTroGiang.Location = new Point(230, 154);
+        cboTroGiang.Width = 450;
+        cboTroGiang.Font = new Font("Segoe UI", 9.5f);
+        cboTroGiang.DropDownStyle = ComboBoxStyle.DropDownList;
+
+        // lblVT & cboVaiTro — KHÔNG dùng nữa (vai trò đã tách thành 2 ô chọn người)
         lblVT.Text = "Vai trò phân công:";
         lblVT.Font = new Font("Segoe UI", 9.5f);
-        lblVT.Location = new Point(24, 162);
+        lblVT.Location = new Point(24, 198);
         lblVT.AutoSize = true;
-        cboVaiTro.Location = new Point(160, 158);
-        cboVaiTro.Width = 280;
+        lblVT.Visible = false;
+        cboVaiTro.Location = new Point(180, 194);
+        cboVaiTro.Width = 330;
         cboVaiTro.Font = new Font("Segoe UI", 9.5f);
         cboVaiTro.DropDownStyle = ComboBoxStyle.DropDownList;
+        cboVaiTro.Visible = false;
 
-        // lblBD & dtpBatDau
-        lblBD.Text = "Ngày bắt đầu:";
+        // lblBD & dtpBatDau (ẩn — thời gian lấy theo lớp)
+        lblBD.Text = "Thời gian:";
         lblBD.Font = new Font("Segoe UI", 9.5f);
         lblBD.Location = new Point(24, 206);
         lblBD.AutoSize = true;
-        dtpBatDau.Location = new Point(160, 202);
+        dtpBatDau.Location = new Point(230, 202);
         dtpBatDau.Width = 150;
         dtpBatDau.Format = DateTimePickerFormat.Short;
         dtpBatDau.Font = new Font("Segoe UI", 9.5f);
@@ -110,9 +126,9 @@ partial class FormSuaPhanCong
         // lblKT & dtpKetThuc (tích vào ô vuông = có ngày kết thúc)
         lblKT.Text = "Ngày kết thúc:";
         lblKT.Font = new Font("Segoe UI", 9.5f);
-        lblKT.Location = new Point(24, 250);
+        lblKT.Location = new Point(24, 244);
         lblKT.AutoSize = true;
-        dtpKetThuc.Location = new Point(160, 246);
+        dtpKetThuc.Location = new Point(230, 240);
         dtpKetThuc.Width = 150;
         dtpKetThuc.Format = DateTimePickerFormat.Short;
         dtpKetThuc.Font = new Font("Segoe UI", 9.5f);
@@ -120,18 +136,18 @@ partial class FormSuaPhanCong
         dtpKetThuc.Checked = false;
 
         // lblGC & txtGhiChu
-        lblGC.Text = "Ghi chú nhiệm vụ:";
+        lblGC.Text = "Ghi chú:";
         lblGC.Font = new Font("Segoe UI", 9.5f);
-        lblGC.Location = new Point(24, 294);
+        lblGC.Location = new Point(24, 262);
         lblGC.AutoSize = true;
-        txtGhiChu.Location = new Point(160, 290);
-        txtGhiChu.Width = 280;
+        txtGhiChu.Location = new Point(230, 258);
+        txtGhiChu.Width = 450;
         txtGhiChu.Font = new Font("Segoe UI", 9.5f);
 
         // btnSave
         btnSave.Text = "Lưu phân công";
-        btnSave.Location = new Point(160, 344);
-        btnSave.Size = new Size(140, 36);
+        btnSave.Location = new Point(230, 312);
+        btnSave.Size = new Size(150, 38);
         btnSave.FlatStyle = FlatStyle.Flat;
         btnSave.BackColor = Color.FromArgb(30, 86, 240);
         btnSave.ForeColor = Color.White;
@@ -141,8 +157,8 @@ partial class FormSuaPhanCong
 
         // btnCancel
         btnCancel.Text = "Hủy bỏ";
-        btnCancel.Location = new Point(310, 344);
-        btnCancel.Size = new Size(100, 36);
+        btnCancel.Location = new Point(396, 312);
+        btnCancel.Size = new Size(120, 38);
         btnCancel.FlatStyle = FlatStyle.Flat;
         btnCancel.BackColor = Color.White;
         btnCancel.ForeColor = Color.FromArgb(15, 23, 42);
@@ -161,6 +177,8 @@ partial class FormSuaPhanCong
         Controls.Add(lblBD);
         Controls.Add(cboVaiTro);
         Controls.Add(lblVT);
+        Controls.Add(cboTroGiang);
+        Controls.Add(lblTG);
         Controls.Add(cboNhanSu);
         Controls.Add(lblNS);
         Controls.Add(cboLopHoc);

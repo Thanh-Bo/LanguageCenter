@@ -59,6 +59,15 @@ public sealed class TeacherService : ITeacherService
                 $"Email '{email}' đã được sử dụng bởi tài khoản khác.");
         }
 
+        var soDienThoai = TextValue.Optional(request.SoDienThoai);
+
+        if (soDienThoai is not null
+            && await _teacherStore.PhoneExistsAsync(soDienThoai, exceptMaGiaoVien: null, cancellationToken))
+        {
+            return OperationResult<CreateTeacherResponse>.Conflict(
+                $"Số điện thoại '{soDienThoai}' đã được dùng cho hồ sơ giáo viên / trợ giảng khác.");
+        }
+
         var temporaryPassword = _temporaryPasswordGenerator.Generate();
         var passwordHash = _passwordHasherService.HashPassword(temporaryPassword);
 

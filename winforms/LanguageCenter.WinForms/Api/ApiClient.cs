@@ -164,10 +164,15 @@ public sealed class ApiClient
     }
 
     /// <summary>
-    /// Đọc thông báo lỗi từ body JSON. Hỗ trợ cả hai khuôn dạng:
+    /// Đọc thông báo lỗi từ body JSON. Hỗ trợ cả ba khuôn dạng:
     /// (1) OperationResult của app: <c>{ message, errors: string[] }</c>.
     /// (2) ValidationProblem mặc định của [ApiController]: <c>{ title, errors: { field: string[] } }</c>.
     /// (3) 401 đơn giản: <c>{ message }</c>.
+    /// <para>
+    /// <b>Quan trọng:</b> <c>message</c> trả về đã bao gồm CHI TIẾT từng lỗi (mỗi dòng bắt đầu bằng
+    /// "• "), để màn hình nào chỉ hiển thị <see cref="ApiResult{T}.ErrorMessage"/> cũng thấy
+    /// ngay dữ liệu nào sai — không cần sửa từng chỗ gọi.
+    /// </para>
     /// </summary>
     private static (string Message, IReadOnlyList<string> Errors) ExtractError(string body, System.Net.HttpStatusCode statusCode)
     {
@@ -200,15 +205,23 @@ public sealed class ApiClient
                 }
                 else if (errorsElement.ValueKind == JsonValueKind.Object)
                 {
+                    // Model validation: { "MaLop": ["Mã lớp là bắt buộc."] } → "MaLop: Mã lớp là bắt buộc."
                     foreach (var field in errorsElement.EnumerateObject())
                     {
-                        if (field.Value.ValueKind == JsonValueKind.Array)
+                        if (field.Value.ValueKind != JsonValueKind.Array)
                         {
-                            foreach (var item in field.Value.EnumerateArray())
+                            continue;
+                        }
+
+                        foreach (var item in field.Value.EnumerateArray())
+                        {
+                            if (item.ValueKind == JsonValueKind.String)
                             {
-                                if (item.ValueKind == JsonValueKind.String)
+                                var noiDung = item.GetString();
+
+                                if (!string.IsNullOrWhiteSpace(noiDung))
                                 {
-                                    errors.Add(item.GetString() ?? string.Empty);
+                                    errors.Add($"{field.Name}: {noiDung}");
                                 }
                             }
                         }
@@ -216,7 +229,16 @@ public sealed class ApiClient
                 }
             }
 
-            return (message, errors);
+            var chiTiet = errors
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => "• " + x.Trim())
+                .ToList();
+
+            var messageDayDu = chiTiet.Count == 0
+                ? message
+                : message + Environment.NewLine + string.Join(Environment.NewLine, chiTiet);
+
+            return (messageDayDu, errors);
         }
         catch (JsonException)
         {

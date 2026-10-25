@@ -87,6 +87,33 @@ public sealed class RoomStore : IRoomStore
             .AnyAsync(x => x.MaPhong == code, cancellationToken);
     }
 
+    /// <summary>
+    /// Sinh mã phòng kế tiếp: lấy số lớn nhất trong các mã dạng <c>P&lt;số&gt;</c> rồi +1.
+    /// Ví dụ đang có P101, P202, P303 → <c>P304</c>. Chưa có phòng nào → <c>P101</c>.
+    /// </summary>
+    public async Task<string> GenerateNextCodeAsync(CancellationToken cancellationToken)
+    {
+        var codes = await _dbContext.PhongHocs
+            .AsNoTracking()
+            .Where(x => x.MaPhong.StartsWith("P"))
+            .Select(x => x.MaPhong)
+            .ToListAsync(cancellationToken);
+
+        var max = 100; // mặc định: phòng đầu tiên là P101
+
+        foreach (var code in codes)
+        {
+            var duoi = code[1..].Trim();
+
+            if (int.TryParse(duoi, out var so) && so > max)
+            {
+                max = so;
+            }
+        }
+
+        return $"P{max + 1:000}";
+    }
+
     public async Task<int?> CreateAsync(RoomCreateData data, CancellationToken cancellationToken)
     {
         var entity = new PhongHoc

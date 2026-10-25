@@ -11,6 +11,7 @@ public partial class UcPhanCongGiangDay : UserControl
     private IReadOnlyList<AssignmentListItemDto> _all = Array.Empty<AssignmentListItemDto>();
     private IReadOnlyList<ClassListItemDto> _classes = Array.Empty<ClassListItemDto>();
     private Button _btnKetThuc = null!;
+    private Button _btnGanNhanSu = null!;
     private bool _dangNap;
 
     public UcPhanCongGiangDay()
@@ -35,11 +36,24 @@ public partial class UcPhanCongGiangDay : UserControl
         pnlToolbar.Controls.Add(_btnKetThuc);
         _btnKetThuc.Location = new Point(btnDelete.Left - _btnKetThuc.Width - 8, 3);
 
+        // Nút "Gán nhân sự" — điền người vào khung "Chờ phân công"
+        _btnGanNhanSu = UI.UiHelpers.CreateSecondaryButton("Gán nhân sự", 130, 34);
+        _btnGanNhanSu.Click += BtnGanNhanSu_Click;
+        pnlToolbar.Controls.Add(_btnGanNhanSu);
+        _btnGanNhanSu.Location = new Point(_btnKetThuc.Left - _btnGanNhanSu.Width - 8, 3);
+        btnAdd.Location = new Point(_btnGanNhanSu.Left - btnAdd.Width - 8, 3);
+
+        dgvAssignments.CellDoubleClick += (_, e) =>
+        {
+            if (e.RowIndex >= 0) BtnGanNhanSu_Click(null, EventArgs.Empty);
+        };
+
         pnlToolbar.Resize += (_, _) =>
         {
             btnDelete.Location = new Point(pnlToolbar.Width - btnDelete.Width - 4, 3);
             _btnKetThuc.Location = new Point(btnDelete.Left - _btnKetThuc.Width - 8, 3);
-            btnAdd.Location = new Point(_btnKetThuc.Left - btnAdd.Width - 8, 3);
+            _btnGanNhanSu.Location = new Point(_btnKetThuc.Left - _btnGanNhanSu.Width - 8, 3);
+            btnAdd.Location = new Point(_btnGanNhanSu.Left - btnAdd.Width - 8, 3);
         };
 
         _dangNap = true;
@@ -48,7 +62,6 @@ public partial class UcPhanCongGiangDay : UserControl
         cboVaiTro.Items.AddRange(["Giáo viên chính", "Trợ giảng"]);
         cboVaiTro.SelectedIndex = 0;
         _dangNap = false;
-
         Load += async (_, _) => await ReloadAsync();
     }
 
@@ -110,15 +123,20 @@ public partial class UcPhanCongGiangDay : UserControl
 
     private void FillStats()
     {
-        var gvChinh = _all.Count(a => a.VaiTroPhanCong == "Giáo viên chính");
-        var troGiang = _all.Count(a => a.VaiTroPhanCong == "Trợ giảng");
-        var lopDaPhanCong = _all.Select(a => a.MaLopHoc).Distinct().Count();
+        var gvChinh = _all.Count(a => a.VaiTroPhanCong == "Giáo viên chính" && a.MaGiaoVien is not null);
+        var troGiang = _all.Count(a => a.VaiTroPhanCong == "Trợ giảng" && a.MaGiaoVien is not null);
+        var choPhanCong = _all.Count(a => a.MaGiaoVien is null);
+        var lopDaPhanCong = _all
+            .Where(a => a.MaGiaoVien is not null)
+            .Select(a => a.MaLopHoc)
+            .Distinct()
+            .Count();
         var tienDo = _classes.Count > 0
             ? Math.Round((decimal)lopDaPhanCong / _classes.Count * 100, 1)
             : 0m;
 
         tblStats.Controls.Clear();
-        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tổng lượt phân công", $"{_all.Count} Phân công", "Học vụ đào tạo đang chạy", Theme.Primary), 0, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tổng lượt phân công", $"{_all.Count} Phân công", $"{choPhanCong} khung chờ phân công", Theme.Primary), 0, 0);
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Giảng viên chính", $"{gvChinh} Giảng viên", "Đang trực tiếp đứng lớp", Theme.Success), 1, 0);
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Trợ giảng học vụ", $"{troGiang} Trợ giảng", "Hỗ trợ chấm bài & học thuật", Theme.Purple), 2, 0);
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tiến độ giảng dạy", $"{tienDo}%", $"{lopDaPhanCong}/{_classes.Count} lớp đã có nhân sự", Theme.Warning), 3, 0);
@@ -158,9 +176,10 @@ public partial class UcPhanCongGiangDay : UserControl
 
         if (!string.IsNullOrWhiteSpace(kw))
         {
-            query = query.Where(a => a.TenGiaoVien.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
-                                     a.MaGiaoVien.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
-                                     a.TenLop.Contains(kw, StringComparison.OrdinalIgnoreCase));
+            query = query.Where(a =>
+                (a.TenGiaoVien ?? string.Empty).Contains(kw, StringComparison.OrdinalIgnoreCase) ||
+                (a.MaGiaoVien ?? string.Empty).Contains(kw, StringComparison.OrdinalIgnoreCase) ||
+                a.TenLop.Contains(kw, StringComparison.OrdinalIgnoreCase));
         }
 
         var list = query.OrderBy(a => a.MaPhanCong).ToList();
@@ -171,18 +190,55 @@ public partial class UcPhanCongGiangDay : UserControl
             var rowIdx = dgvAssignments.Rows.Add(
                 a.MaPhanCong,
                 a.TenLop,
-                a.MaGiaoVien,
-                a.TenGiaoVien,
-                a.LoaiGiaoVien,
+                a.MaGiaoVien ?? "—",
+                a.TenGiaoVien ?? "(chưa phân công)",
+                a.LoaiGiaoVien ?? "—",
                 a.VaiTroPhanCong,
                 UiHelpers.FormatDate(a.NgayBatDau),
                 a.TrangThai,
                 a.NgayKetThuc.HasValue ? $"Đến {UiHelpers.FormatDate(a.NgayKetThuc)}" : "—"
             );
+
             dgvAssignments.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(a.TrangThai);
+            dgvAssignments.Rows[rowIdx].Tag = a;
+
+            if (a.MaGiaoVien is null)
+            {
+                dgvAssignments.Rows[rowIdx].Cells["TenGiaoVien"].Style.ForeColor = Theme.Warning;
+                dgvAssignments.Rows[rowIdx].Cells["TenGiaoVien"].ToolTipText =
+                    "Khung phân công chưa gắn người. Bấm 'Gán nhân sự' (hoặc nháy đúp dòng) để chọn giáo viên / trợ giảng.";
+            }
         }
 
         lblSummary.Text = $"Hiển thị {list.Count}/{_all.Count} lượt phân công nhân sự";
+    }
+
+    private async void BtnGanNhanSu_Click(object? sender, EventArgs e)
+    {
+        if (dgvAssignments.CurrentRow?.Tag is not AssignmentListItemDto dong)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một dòng phân công trong bảng.",
+                "Chưa chọn phân công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var lop = _classes.FirstOrDefault(c => c.MaLopHoc == dong.MaLopHoc);
+
+        if (lop is null)
+        {
+            MessageBox.Show(FindForm(), "Không tìm thấy thông tin lớp học của phân công này.",
+                "Thiếu dữ liệu lớp", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        var phanCongCuaLop = _all.Where(a => a.MaLopHoc == lop.MaLopHoc).ToList();
+
+        using var dlg = new FormSuaPhanCong(lop, phanCongCuaLop);
+
+        if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+        {
+            await ReloadAsync();
+        }
     }
 
     private async void BtnAdd_Click(object? sender, EventArgs e)

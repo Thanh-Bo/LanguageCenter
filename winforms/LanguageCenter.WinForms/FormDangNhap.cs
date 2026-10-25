@@ -4,9 +4,100 @@ namespace LanguageCenter.WinForms;
 
 public partial class FormDangNhap : Form
 {
+    /// <summary>Mật khẩu dùng cho các nút "đăng nhập nhanh" (đã đặt lại toàn bộ về 111111).</summary>
+    private const string MatKhauNhanh = "111111";
+
+    /// <summary>Tài khoản mẫu — chỉ gồm vai trò được phép vào phân hệ WinForms.</summary>
+    private static readonly string[] TaiKhoanNhanh =
+    {
+        "ADMIN001",
+        "GV001",
+        "GV002",
+        "GV003",
+        "TG001"
+    };
+
+    private readonly List<Button> _btnDangNhapNhanh = new();
+
     public FormDangNhap()
     {
         InitializeComponent();
+
+        DungDangNhapNhanh();
+    }
+
+    /// <summary>
+    /// Khối "đăng nhập nhanh" dưới nút Đăng nhập: mỗi tài khoản là một nút,
+    /// bấm là điền sẵn tên đăng nhập + mật khẩu và đăng nhập luôn.
+    /// </summary>
+    private void DungDangNhapNhanh()
+    {
+        var pnl = new Panel
+        {
+            Location = new Point(75, 528),
+            Size = new Size(425, 160),
+            BackColor = Color.White
+        };
+
+        pnl.Controls.Add(new Label
+        {
+            Text = $"ĐĂNG NHẬP NHANH — mật khẩu: {MatKhauNhanh}",
+            Font = new Font("Segoe UI", 8.5f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(100, 116, 139),
+            AutoSize = true,
+            Location = new Point(0, 0)
+        });
+
+        var flp = new FlowLayoutPanel
+        {
+            Location = new Point(0, 24),
+            Size = new Size(425, 74),
+            FlowDirection = FlowDirection.LeftToRight,
+            WrapContents = true,
+            BackColor = Color.White
+        };
+
+        foreach (var tenDangNhap in TaiKhoanNhanh)
+        {
+            var btn = UI.UiHelpers.CreateSecondaryButton(tenDangNhap, 84, 30);
+            btn.Font = new Font("Segoe UI", 9f);
+            btn.Margin = new Padding(0, 0, 8, 8);
+            btn.Click += (_, _) => DangNhapNhanh(tenDangNhap);
+
+            _btnDangNhapNhanh.Add(btn);
+            flp.Controls.Add(btn);
+        }
+
+        pnl.Controls.Add(flp);
+
+        pnl.Controls.Add(new Label
+        {
+            Text = "Chỉ tài khoản Quản trị viên / Giáo viên / Trợ giảng mới vào được phân hệ này "
+                   + "(tài khoản Học viên dùng bản Web).",
+            Font = new Font("Segoe UI", 8.2f),
+            ForeColor = Color.FromArgb(148, 163, 184),
+            AutoSize = false,
+            Size = new Size(425, 32),
+            Location = new Point(0, 100)
+        });
+
+        pnlForm.Controls.Add(pnl);
+        pnl.BringToFront();
+    }
+
+    /// <summary>Điền sẵn tài khoản + mật khẩu mặc định rồi đăng nhập ngay.</summary>
+    private void DangNhapNhanh(string tenDangNhap)
+    {
+        if (!btnLogin.Enabled)
+        {
+            return;
+        }
+
+        txtUsername.Text = tenDangNhap;
+        txtPassword.Text = MatKhauNhanh;
+        chkShowPassword.Checked = false;
+
+        BtnLogin_Click(null, EventArgs.Empty);
     }
 
     private void ChkShowPassword_CheckedChanged(object? sender, EventArgs e)
@@ -83,6 +174,11 @@ public partial class FormDangNhap : Form
         txtPassword.Enabled = !loading;
         btnLogin.Text = loading ? "ĐANG ĐĂNG NHẬP..." : "ĐĂNG NHẬP";
         UseWaitCursor = loading;
+
+        foreach (var btn in _btnDangNhapNhanh)
+        {
+            btn.Enabled = !loading;
+        }
     }
 
     private void LnkForgotPassword_LinkClicked(object? sender, LinkLabelLinkClickedEventArgs e)

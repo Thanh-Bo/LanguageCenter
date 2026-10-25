@@ -53,8 +53,6 @@ public sealed class ClassService : IClassService
         CreateClassRequest request,
         CancellationToken cancellationToken)
     {
-        var maLop = request.MaLop.Trim();
-
         var errors = Validate(
             request.SiSoToiDa,
             request.NgayBatDau,
@@ -71,6 +69,24 @@ public sealed class ClassService : IClassService
             return OperationResult<ClassDetailDto>.BadRequest(
                 "Khóa học không tồn tại.",
                 [$"Không tìm thấy khóa học có id = {request.MaKhoaHoc}."]);
+        }
+
+        var maLop = request.MaLop?.Trim() ?? string.Empty;
+
+        // MÃ LỚP DO HỆ THỐNG SINH — người dùng không nhập tay.
+        if (maLop.Length == 0)
+        {
+            var maTuSinh = await _classStore.GenerateNextCodeAsync(request.MaKhoaHoc, cancellationToken);
+
+            if (string.IsNullOrWhiteSpace(maTuSinh))
+            {
+                return OperationResult<ClassDetailDto>.BadRequest(
+                    "Không sinh được mã lớp.",
+                    ["Cấp độ của khóa học chưa có ký hiệu (KyHieuCapDo). Hãy cập nhật cấp độ trước."]);
+            }
+
+            maLop = maTuSinh;
+            request.MaLop = maTuSinh;
         }
 
         var maNhanVien = request.MaNhanVienHocVu.Trim();

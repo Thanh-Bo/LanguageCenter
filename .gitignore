@@ -55,6 +55,13 @@ logs/
 build-output.txt
 .build-output.txt
 tempCodeRunnerFile.*
+app_error.log
+
+# Log build tạm do task VS Code sinh ra (KHÔNG commit)
+/*.txt
+/*.log
+.vscode/*.txt
+.vscode/*.log
 
 # ============================================================
 # OS
@@ -63,14 +70,6 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 .DS_Store
-
-# Build output
-dist/
-build/
-
-# Build output
-dist/
-build/
 
 # Build output
 dist/

@@ -14,13 +14,17 @@ public sealed class FormDangKyHoc : Form
     private readonly IReadOnlyList<ClassListItemDto> _lopHocs;
 
     private readonly ComboBox _cboHocVien = UiHelpers.CreateComboBox(560);
+    private readonly ComboBox _cboChuongTrinh = UiHelpers.CreateComboBox(560);
     private readonly ComboBox _cboKhoaHoc = UiHelpers.CreateComboBox(560);
     private readonly ComboBox _cboLop = UiHelpers.CreateComboBox(560);
     private readonly TextBox _txtLichMongMuon = UiHelpers.CreateTextBox(560);
     private readonly TextBox _txtGhiChu = UiHelpers.CreateTextBox(560);
+    private readonly Label _lblHocPhi = new();
     private readonly Label _lblThongBao = new();
     private readonly Button _btnLuu = UiHelpers.CreatePrimaryButton("Tạo đăng ký", 150, 36);
     private readonly Button _btnHuy = UiHelpers.CreateSecondaryButton("Hủy bỏ", 110, 36);
+
+    private bool _dangNap;
 
     public bool DataChanged { get; private set; }
 
@@ -39,7 +43,7 @@ public sealed class FormDangKyHoc : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(620, 520);
+        ClientSize = new Size(620, 550);
         BackColor = Color.White;
         Font = Theme.FontRegular;
 
@@ -59,22 +63,41 @@ public sealed class FormDangKyHoc : Form
         });
 
         DatTruong("Học viên *", _cboHocVien, 56);
-        DatTruong("Khóa học *", _cboKhoaHoc, 116);
-        DatTruong("Lớp học (để trống nếu xếp lớp sau)", _cboLop, 176);
-        DatTruong("Lịch học mong muốn", _txtLichMongMuon, 236);
-        DatTruong("Ghi chú", _txtGhiChu, 296);
+        DatTruong("Chương trình *", _cboChuongTrinh, 116);
+        DatTruong("Khóa học *", _cboKhoaHoc, 176);
+        DatTruong("Lớp học (để trống nếu xếp lớp sau)", _cboLop, 236);
+        DatTruong("Lịch học mong muốn", _txtLichMongMuon, 296);
+        DatTruong("Ghi chú", _txtGhiChu, 356);
+
+        // Học phí hiện ngay cạnh ô khóa học (không nhồi vào tên khóa học cho dài dòng).
+        _cboKhoaHoc.Width = 430;
+        _lblHocPhi.AutoSize = false;
+        _lblHocPhi.Size = new Size(126, 24);
+        _lblHocPhi.Location = new Point(462, 198);
+        _lblHocPhi.Font = Theme.FontBold;
+        _lblHocPhi.ForeColor = Theme.Primary;
+        _lblHocPhi.TextAlign = ContentAlignment.MiddleRight;
+        Controls.Add(_lblHocPhi);
+
+        // Chọn chương trình → chỉ hiện các khóa học thuộc chương trình đó.
+        _cboChuongTrinh.SelectedIndexChanged += (_, _) =>
+        {
+            if (!_dangNap) DoVaoComboKhoaHoc();
+        };
+
+        _cboKhoaHoc.SelectedIndexChanged += (_, _) => NapLopTheoKhoaHoc();
 
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(570, 46);
-        _lblThongBao.Location = new Point(24, 356);
+        _lblThongBao.Location = new Point(24, 412);
         _lblThongBao.ForeColor = Theme.Danger;
         _lblThongBao.Font = Theme.FontSub;
         Controls.Add(_lblThongBao);
 
-        _btnLuu.Location = new Point(324, 462);
+        _btnLuu.Location = new Point(324, 478);
         _btnLuu.Click += async (_, _) => await LuuAsync();
 
-        _btnHuy.Location = new Point(482, 462);
+        _btnHuy.Location = new Point(482, 478);
         _btnHuy.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
         Controls.Add(_btnLuu);
@@ -109,14 +132,65 @@ public sealed class FormDangKyHoc : Form
         }
         if (_cboHocVien.Items.Count > 0) _cboHocVien.SelectedIndex = 0;
 
-        _cboKhoaHoc.Items.Clear();
-        foreach (var kh in _khoaHocs.OrderBy(k => k.TenKhoaHoc))
+        DoVaoComboChuongTrinh();
+    }
+
+    /// <summary>Đổ danh sách CHƯƠNG TRÌNH (lấy từ các khóa học đang có) rồi nạp khóa học theo chương trình.</summary>
+    private void DoVaoComboChuongTrinh()
+    {
+        _dangNap = true;
+
+        var tenCu = _cboChuongTrinh.SelectedItem?.ToString();
+
+        _cboChuongTrinh.Items.Clear();
+
+        foreach (var ten in _khoaHocs
+                     .Select(k => k.TenChuongTrinh)
+                     .Where(x => !string.IsNullOrWhiteSpace(x))
+                     .Distinct()
+                     .OrderBy(x => x))
         {
-            _cboKhoaHoc.Items.Add(new KhoaHocItem(kh.MaKhoaHoc,
-                $"{kh.TenKhoaHoc} · {kh.TenCapDo} · {kh.HocPhiCoBan:N0} đ"));
+            _cboChuongTrinh.Items.Add(ten);
         }
-        if (_cboKhoaHoc.Items.Count > 0) _cboKhoaHoc.SelectedIndex = 0;
-        _cboKhoaHoc.SelectedIndexChanged += (_, _) => NapLopTheoKhoaHoc();
+
+        if (_cboChuongTrinh.Items.Count > 0)
+        {
+            var viTri = tenCu is null ? -1 : _cboChuongTrinh.Items.IndexOf(tenCu);
+            _cboChuongTrinh.SelectedIndex = viTri >= 0 ? viTri : 0;
+        }
+
+        _dangNap = false;
+
+        DoVaoComboKhoaHoc();
+    }
+
+    /// <summary>Chỉ hiện KHÓA HỌC thuộc chương trình đang chọn — tên gọn, không kèm cấp độ/học phí.</summary>
+    private void DoVaoComboKhoaHoc()
+    {
+        var chuongTrinh = _cboChuongTrinh.SelectedItem?.ToString();
+
+        _dangNap = true;
+        _cboKhoaHoc.Items.Clear();
+
+        foreach (var kh in _khoaHocs
+                     .Where(k => chuongTrinh is null || k.TenChuongTrinh == chuongTrinh)
+                     .OrderBy(k => k.TenKhoaHoc))
+        {
+            _cboKhoaHoc.Items.Add(new KhoaHocItem(kh.MaKhoaHoc, kh.TenKhoaHoc, kh.HocPhiCoBan));
+        }
+
+        if (_cboKhoaHoc.Items.Count > 0)
+        {
+            _cboKhoaHoc.SelectedIndex = 0;
+        }
+        else
+        {
+            _lblThongBao.Text = _khoaHocs.Count == 0
+                ? "Hệ thống chưa có khóa học nào. Hãy tạo khóa học trước."
+                : $"Chương trình '{chuongTrinh}' chưa có khóa học nào.";
+        }
+
+        _dangNap = false;
 
         NapLopTheoKhoaHoc();
     }
@@ -128,11 +202,16 @@ public sealed class FormDangKyHoc : Form
 
         if (_cboKhoaHoc.SelectedItem is KhoaHocItem khoaHoc)
         {
+            _lblHocPhi.Text = $"{khoaHoc.HocPhiCoBan:N0} đ";
+
             foreach (var lop in _lopHocs.Where(l => l.MaKhoaHoc == khoaHoc.MaKhoaHoc).OrderBy(l => l.MaLop))
             {
-                _cboLop.Items.Add(new LopItem(lop.MaLopHoc,
-                    $"{lop.MaLop} — {lop.TenLop} ({lop.SiSoHienTai}/{lop.SiSoToiDa})"));
+                _cboLop.Items.Add(new LopItem(lop.MaLopHoc, $"{lop.TenLop} ({lop.SiSoHienTai}/{lop.SiSoToiDa})"));
             }
+        }
+        else
+        {
+            _lblHocPhi.Text = string.Empty;
         }
 
         _cboLop.SelectedIndex = 0;
@@ -189,7 +268,7 @@ public sealed class FormDangKyHoc : Form
         public override string ToString() => MoTa;
     }
 
-    private sealed record KhoaHocItem(int MaKhoaHoc, string MoTa)
+    private sealed record KhoaHocItem(int MaKhoaHoc, string MoTa, decimal HocPhiCoBan)
     {
         public override string ToString() => MoTa;
     }

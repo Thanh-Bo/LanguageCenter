@@ -17,6 +17,21 @@ public sealed class TeacherStore : ITeacherStore
         _dbContext = dbContext;
     }
 
+    public Task<bool> PhoneExistsAsync(
+        string soDienThoai,
+        string? exceptMaGiaoVien,
+        CancellationToken cancellationToken)
+    {
+        var phone = soDienThoai.Trim();
+
+        return _dbContext.GiaoViens
+            .AsNoTracking()
+            .AnyAsync(
+                x => x.SoDienThoai == phone
+                     && (exceptMaGiaoVien == null || x.MaGiaoVien != exceptMaGiaoVien),
+                cancellationToken);
+    }
+
     public async Task<TeacherDetailDto?> GetByCodeAsync(string maGiaoVien, CancellationToken cancellationToken)
     {
         var giaoVien = await _dbContext.GiaoViens

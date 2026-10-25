@@ -5,6 +5,9 @@ import { dungXacThuc, duongDanTheoVaiTro } from "../contexts/NguCanhXacThuc";
 
 const SANS = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif";
 
+/** Mật khẩu chung của các tài khoản mẫu (đã đặt lại toàn bộ về 111111). */
+const MAT_KHAU_MAU = "111111";
+
 export default function DangNhap() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -14,15 +17,14 @@ export default function DangNhap() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tenDangNhap, setTenDangNhap] = useState("ADMIN001");
-  const [password, setPassword] = useState("LanguageCenter@2026");
+  const [password, setPassword] = useState(MAT_KHAU_MAU);
 
-  const submit = async (event: FormEvent) => {
-    event.preventDefault();
+  const xuLyDangNhap = async (ten: string, matKhau: string) => {
     setLoading(true);
     setError(null);
 
     try {
-      const nguoiDung = await dangNhap(tenDangNhap.trim(), password);
+      const nguoiDung = await dangNhap(ten.trim(), matKhau);
       const from = (location.state as { from?: string } | null)?.from;
       navigate(from || duongDanTheoVaiTro(nguoiDung.vaiTro), { replace: true });
     } catch (err) {
@@ -30,6 +32,18 @@ export default function DangNhap() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const submit = async (event: FormEvent) => {
+    event.preventDefault();
+    await xuLyDangNhap(tenDangNhap, password);
+  };
+
+  /** Bấm vào tài khoản mẫu: điền sẵn và đăng nhập ngay, không cần nhập gì. */
+  const dangNhapNhanh = (ten: string) => {
+    setTenDangNhap(ten);
+    setPassword(MAT_KHAU_MAU);
+    void xuLyDangNhap(ten, MAT_KHAU_MAU);
   };
 
   return (
@@ -236,8 +250,8 @@ export default function DangNhap() {
           <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm">
             <div className="mb-3 flex items-center gap-1.5 font-bold text-slate-700">
               <Icon name="lock" className="size-3.5" /> Tài khoản mẫu (mật khẩu:{" "}
-              <code className="rounded bg-slate-200 px-1.5 py-0.5">LanguageCenter@2026</code>
-              )
+              <code className="rounded bg-slate-200 px-1.5 py-0.5">{MAT_KHAU_MAU}</code>
+              ) — bấm để đăng nhập ngay
             </div>
 
             {/* Quản trị viên */}
@@ -247,11 +261,9 @@ export default function DangNhap() {
               </div>
               <button
                 type="button"
-                onClick={() => {
-                  setTenDangNhap("ADMIN001");
-                  setPassword("LanguageCenter@2026");
-                }}
-                className="block w-full rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
+                disabled={loading}
+                onClick={() => dangNhapNhanh("ADMIN001")}
+                className="block w-full rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
               >
                 ADMIN001
               </button>
@@ -272,11 +284,9 @@ export default function DangNhap() {
                   <button
                     key={e}
                     type="button"
-                    onClick={() => {
-                      setTenDangNhap(e);
-                      setPassword("LanguageCenter@2026");
-                    }}
-                    className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
+                    disabled={loading}
+                    onClick={() => dangNhapNhanh(e)}
+                    className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
                   >
                     {e}
                   </button>
@@ -299,11 +309,9 @@ export default function DangNhap() {
                   <button
                     key={e}
                     type="button"
-                    onClick={() => {
-                      setTenDangNhap(e);
-                      setPassword("LanguageCenter@2026");
-                    }}
-                    className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700"
+                    disabled={loading}
+                    onClick={() => dangNhapNhanh(e)}
+                    className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
                   >
                     {e}
                   </button>

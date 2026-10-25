@@ -306,9 +306,38 @@ public sealed class EnrollmentService : IEnrollmentService
                 $"Không tìm thấy lớp có id = {request.MaLopHoc}.");
         }
 
-        if (outcome == AssignClassOutcome.ClassFull)
+        // Mô tả CHÍNH XÁC phần dữ liệu không khớp để admin biết sửa ở đâu.
+        var lop = await _classStore.GetDetailAsync(request.MaLopHoc, cancellationToken);
+        var tenLop = lop is null ? $"id = {request.MaLopHoc}" : $"'{lop.MaLop} — {lop.TenLop}'";
+
+        switch (outcome)
         {
-            return OperationResult<EnrollmentDetailDto>.Conflict(DescribeAssignFailure(outcome));
+            case AssignClassOutcome.WrongCourse:
+                return OperationResult<EnrollmentDetailDto>.BadRequest(
+                    "Không thể xếp lớp: khác khóa học.",
+                    [
+                        $"Lớp {tenLop} thuộc khóa '{lop?.TenKhoaHoc}', "
+                        + $"còn đăng ký của '{current.TenHocVien}' là khóa '{current.TenKhoaHoc}'.",
+                        "Hãy chọn lớp CÙNG khóa học với đăng ký (hoặc tạo lớp mới cho khóa này)."
+                    ]);
+
+            case AssignClassOutcome.ClassClosed:
+                return OperationResult<EnrollmentDetailDto>.BadRequest(
+                    "Không thể xếp lớp: lớp không nhận học viên.",
+                    [
+                        $"Lớp {tenLop} đang ở trạng thái '{lop?.TrangThai}'. "
+                        + $"Chỉ lớp ở trạng thái {string.Join(" / ", ClassStatuses.AcceptingStudents)} mới nhận học viên."
+                    ]);
+
+            case AssignClassOutcome.ClassFull:
+                return OperationResult<EnrollmentDetailDto>.Conflict(
+                    $"Không thể xếp lớp: {tenLop} đã đủ sĩ số "
+                    + $"({lop?.SiSoHienTai}/{lop?.SiSoToiDa} học viên).");
+
+            case AssignClassOutcome.AlreadyAssigned:
+                return OperationResult<EnrollmentDetailDto>.Conflict(
+                    $"Đăng ký này đã được xếp vào lớp '{current.MaLop}' trước đó. "
+                    + "Hãy dùng 'Rút khỏi lớp' nếu muốn xếp lại.");
         }
 
         return OperationResult<EnrollmentDetailDto>.BadRequest(

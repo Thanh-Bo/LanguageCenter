@@ -53,15 +53,18 @@ public sealed class FormPhongHoc : Form
             Location = new Point(24, 18)
         });
 
-        DatTruong("Mã phòng * (ví dụ: P105)", _txtMaPhong, 56);
-        _txtMaPhong.CharacterCasing = CharacterCasing.Upper;
-        _txtMaPhong.MaxLength = 30;
+        DatTruong("Mã phòng (tự động sinh)", _txtMaPhong, 56);
+        _txtMaPhong.ReadOnly = true;
+        _txtMaPhong.BackColor = Color.FromArgb(241, 245, 249);
+        _txtMaPhong.Text = "(tự động sinh khi lưu)";
 
-        DatTruong("Tên phòng * (ví dụ: Phòng 105)", _txtTenPhong, 116);
+        DatTruong("Tên phòng *", _txtTenPhong, 116);
         _txtTenPhong.MaxLength = 100;
+        _txtTenPhong.PlaceholderText = "Ví dụ: Phòng 105";
 
         DatTruong("Vị trí (tầng / toà nhà)", _txtViTri, 176);
         _txtViTri.MaxLength = 255;
+        _txtViTri.PlaceholderText = "Ví dụ: Tầng 1 — Toà A";
 
         DatTruong("Sức chứa *", _numSucChua, 236);
         _numSucChua.Font = Theme.FontRegular;
@@ -72,6 +75,7 @@ public sealed class FormPhongHoc : Form
 
         DatTruong("Thiết bị chuyên dụng", _txtThietBi, 296);
         _txtThietBi.MaxLength = 1000;
+        _txtThietBi.PlaceholderText = "Ví dụ: Máy chiếu, loa, máy lạnh";
 
         DatTruong("Trạng thái *", _cboTrangThai, 356);
         _cboTrangThai.Items.AddRange(TrangThaiPhong);
@@ -116,14 +120,6 @@ public sealed class FormPhongHoc : Form
     {
         _lblThongBao.Text = string.Empty;
 
-        var maPhong = _txtMaPhong.Text.Trim();
-        if (maPhong.Length == 0)
-        {
-            _lblThongBao.Text = "Vui lòng nhập mã phòng.";
-            _txtMaPhong.Focus();
-            return;
-        }
-
         var tenPhong = _txtTenPhong.Text.Trim();
         if (tenPhong.Length == 0)
         {
@@ -135,9 +131,9 @@ public sealed class FormPhongHoc : Form
         _btnLuu.Enabled = false;
         UseWaitCursor = true;
 
+        // Mã phòng do server tự sinh — KHÔNG gửi maPhong lên.
         var result = await AppSession.Api.PostAsync<RoomListItemDto>("admin/rooms", new
         {
-            maPhong,
             tenPhong,
             viTri = string.IsNullOrWhiteSpace(_txtViTri.Text) ? null : _txtViTri.Text.Trim(),
             sucChua = (int)_numSucChua.Value,
@@ -156,14 +152,18 @@ public sealed class FormPhongHoc : Form
                 return;
             }
 
-            var chiTiet = result.Errors.Count > 0 ? $" ({string.Join("; ", result.Errors)})" : string.Empty;
             _lblThongBao.Text = string.IsNullOrWhiteSpace(result.ErrorMessage)
-                ? "Không lưu được phòng học." + chiTiet
-                : result.ErrorMessage + chiTiet;
+                ? "Không lưu được phòng học."
+                : result.ErrorMessage;
             return;
         }
 
         PhongVuaTao = result.Data;
+
+        MessageBox.Show(this,
+            $"Đã thêm phòng học:\n\n• Mã phòng: {result.Data?.MaPhong}\n• Tên phòng: {result.Data?.TenPhong}",
+            "Thêm phòng thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
         DialogResult = DialogResult.OK;
         Close();
     }
