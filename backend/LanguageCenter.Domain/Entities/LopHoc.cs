@@ -19,6 +19,12 @@ public class LopHoc
 
     public DateOnly? NgayKetThucThucTe { get; set; }
 
+    /// <summary>Giờ bắt đầu buổi học mặc định của lớp (NULL = chưa xác định).</summary>
+    public TimeOnly? GioBatDau { get; set; }
+
+    /// <summary>Giờ kết thúc buổi học mặc định của lớp (NULL = chưa xác định).</summary>
+    public TimeOnly? GioKetThuc { get; set; }
+
     public int SiSoToiDa { get; set; }
 
     public string TrangThai { get; set; } = null!;

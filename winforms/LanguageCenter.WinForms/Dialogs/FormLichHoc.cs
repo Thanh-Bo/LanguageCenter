@@ -26,6 +26,12 @@ public sealed class FormLichHoc : Form
     private readonly Label _lblThongBao = new();
     private readonly Button _btnLuu = UiHelpers.CreatePrimaryButton("Lưu lịch học", 150, 36);
     private readonly Button _btnHuy = UiHelpers.CreateSecondaryButton("Hủy bỏ", 110, 36);
+    private readonly Label _lblGoiY = new();
+
+    private bool _chiXemThoiGian;
+
+    /// <summary>Mã các lớp ĐÃ có lịch học — không cho tạo thêm lịch thứ 2 cho cùng lớp.</summary>
+    private HashSet<int> _lopDaLich = new();
 
     public bool DataChanged { get; private set; }
 
@@ -50,6 +56,100 @@ public sealed class FormLichHoc : Form
 
         DungGiaoDien();
         NapDuLieu();
+        ApDungChiXemThoiGian();
+
+        // Tải danh sách lịch hiện có để ẩn những lớp đã được xếp lịch.
+        Shown += async (_, _) =>
+        {
+            if (_existing is null) await NapLopDaLichAsync();
+        };
+    }
+
+    /// <summary>
+    /// Tải toàn bộ lịch học hiện có, ghi nhớ lớp nào đã có lịch rồi dựng lại combo Lớp học.
+    /// <para>Mỗi lớp chỉ cần 1 lần xếp lịch (nhiều thứ thì thêm nhiều dòng lịch cho lớp đó,
+    /// nhưng KHÔNG tạo lại từ đầu cho lớp đã có).</para>
+    /// </summary>
+    private async Task NapLopDaLichAsync()
+    {
+        var result = await AppSession.Api.GetAsync<PagedResult<ScheduleListItemDto>>(
+            QueryStringBuilder.Build("admin/schedules", ("page", "1"), ("pageSize", "500")));
+
+        if (!result.Success || result.Data is null)
+        {
+            return; // giữ nguyên danh sách lớp ban đầu
+        }
+
+        _lopDaLich = result.Data.Items.Select(x => x.MaLopHoc).ToHashSet();
+
+        NapComboLop();
+
+        if (_cboLop.Items.Count == 0)
+        {
+            _lblThongBao.Text =
+                "Tất cả lớp học đều đã có lịch học. Hãy chọn dòng trong bảng để Sửa lịch "
+                + "thay vì tạo mới.";
+            _btnLuu.Enabled = false;
+            _lblGoiY.Text = string.Empty;
+        }
+    }
+
+    /// <summary>Dựng combo Lớp học: bỏ qua các lớp đã có lịch (trừ khi đang SỬA lịch của lớp đó).</summary>
+    private void NapComboLop()
+    {
+        var dangChon = (_cboLop.SelectedItem as LopItem)?.MaLopHoc;
+
+        IEnumerable<ClassListItemDto> nguon = _classes;
+
+        if (_existing is null)
+        {
+            nguon = nguon.Where(c => !_lopDaLich.Contains(c.MaLopHoc));
+        }
+
+        _cboLop.Items.Clear();
+
+        foreach (var c in nguon.OrderBy(c => c.MaLop))
+        {
+            _cboLop.Items.Add(new LopItem(c.MaLopHoc, $"{c.MaLop} — {c.TenLop}"));
+        }
+
+        if (_cboLop.Items.Count == 0)
+        {
+            return;
+        }
+
+        var viTri = 0;
+
+        if (dangChon is { } maLopHoc)
+        {
+            for (var i = 0; i < _cboLop.Items.Count; i++)
+            {
+                if (_cboLop.Items[i] is LopItem it && it.MaLopHoc == maLopHoc)
+                {
+                    viTri = i;
+                    break;
+                }
+            }
+        }
+
+        _cboLop.SelectedIndex = viTri;
+    }
+
+    /// <summary>
+    /// Giờ bắt đầu/kết thúc và khoảng ngày áp dụng là THUỘC TÍNH CỦA LỚP →
+    /// form này chỉ cho XEM, muốn đổi phải sửa ở màn Lớp học.
+    /// </summary>
+    private void ApDungChiXemThoiGian()
+    {
+        _chiXemThoiGian = true;
+
+        _dtpGioBatDau.Enabled = false;
+        _dtpGioKetThuc.Enabled = false;
+        _dtpTuNgay.Enabled = false;
+        _chkCoNgayKetThuc.Enabled = false;
+        _dtpDenNgay.Enabled = false;
+
+        _lblGoiY.Text = "Giờ học và khoảng ngày lấy theo LỚP (chỉ xem). Muốn đổi: Lớp học → Sửa lớp.";
     }
 
     private void DungGiaoDien()
@@ -98,7 +198,8 @@ public sealed class FormLichHoc : Form
         _chkCoNgayKetThuc.Text = "Có ngày kết thúc";
         _chkCoNgayKetThuc.AutoSize = true;
         _chkCoNgayKetThuc.Location = new Point(24, 372);
-        _chkCoNgayKetThuc.CheckedChanged += (_, _) => _dtpDenNgay.Enabled = _chkCoNgayKetThuc.Checked;
+        _chkCoNgayKetThuc.CheckedChanged += (_, _) =>
+            _dtpDenNgay.Enabled = !_chiXemThoiGian && _chkCoNgayKetThuc.Checked;
         Controls.Add(_chkCoNgayKetThuc);
 
         _dtpDenNgay.Format = DateTimePickerFormat.Short;
@@ -106,6 +207,14 @@ public sealed class FormLichHoc : Form
         _dtpDenNgay.Enabled = false;
         _dtpDenNgay.Location = new Point(24, 396);
         Controls.Add(_dtpDenNgay);
+
+        // Ghi chú: giờ & khoảng ngày lấy theo lớp → chỉ xem.
+        _lblGoiY.AutoSize = false;
+        _lblGoiY.Size = new Size(552, 20);
+        _lblGoiY.Location = new Point(24, 424);
+        _lblGoiY.Font = Theme.FontSub;
+        _lblGoiY.ForeColor = Color.FromArgb(100, 116, 139);
+        Controls.Add(_lblGoiY);
 
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(552, 34);
@@ -144,12 +253,7 @@ public sealed class FormLichHoc : Form
 
     private void NapDuLieu()
     {
-        _cboLop.Items.Clear();
-        foreach (var c in _classes.OrderBy(c => c.MaLop))
-        {
-            _cboLop.Items.Add(new LopItem(c.MaLopHoc, $"{c.MaLop} — {c.TenLop}"));
-        }
-        if (_cboLop.Items.Count > 0) _cboLop.SelectedIndex = 0;
+        NapComboLop();
 
         _cboPhong.Items.Clear();
         foreach (var r in _rooms.OrderBy(r => r.TenPhong))
@@ -158,7 +262,13 @@ public sealed class FormLichHoc : Form
         }
         if (_cboPhong.Items.Count > 0) _cboPhong.SelectedIndex = 0;
 
-        if (_existing is null) return;
+        if (_existing is null)
+        {
+            // Đổi lớp → tự điền giờ học & khoảng ngày theo khung giờ của lớp.
+            _cboLop.SelectedIndexChanged += (_, _) => DienGoiYGioHoc();
+            DienGoiYGioHoc();
+            return;
+        }
 
         for (var i = 0; i < _cboLop.Items.Count; i++)
         {
@@ -188,6 +298,59 @@ public sealed class FormLichHoc : Form
         {
             _chkCoNgayKetThuc.Checked = true;
             _dtpDenNgay.Value = _existing.NgayApDungDen.Value.ToDateTime(TimeOnly.MinValue);
+        }
+    }
+
+    /// <summary>
+    /// Gợi ý sẵn dữ liệu theo LỚP đang chọn: giờ bắt đầu/kết thúc lấy từ khung giờ của lớp,
+    /// ngày áp dụng lấy theo Ngày bắt đầu → Ngày kết thúc dự kiến của lớp.
+    /// (Chỉ áp dụng khi TẠO MỚI — chế độ sửa giữ nguyên dữ liệu đã lưu.)
+    /// </summary>
+    private void DienGoiYGioHoc()
+    {
+        if (_existing is not null)
+        {
+            return;
+        }
+
+        if (_cboLop.SelectedItem is not LopItem item)
+        {
+            return;
+        }
+
+        var lop = _classes.FirstOrDefault(c => c.MaLopHoc == item.MaLopHoc);
+
+        if (lop is null)
+        {
+            return;
+        }
+
+        if (lop.GioBatDau is { } gioBatDau)
+        {
+            _dtpGioBatDau.Value = DateTime.Today.Add(gioBatDau.ToTimeSpan());
+        }
+
+        if (lop.GioKetThuc is { } gioKetThuc)
+        {
+            _dtpGioKetThuc.Value = DateTime.Today.Add(gioKetThuc.ToTimeSpan());
+        }
+
+        if (lop.NgayBatDau != default)
+        {
+            _dtpTuNgay.Value = lop.NgayBatDau.ToDateTime(TimeOnly.MinValue);
+        }
+
+        if (lop.NgayKetThucDuKien != default)
+        {
+            _chkCoNgayKetThuc.Checked = true;
+            _dtpDenNgay.Value = lop.NgayKetThucDuKien.ToDateTime(TimeOnly.MinValue);
+        }
+
+        if (lop.GioBatDau is null || lop.GioKetThuc is null)
+        {
+            _lblThongBao.Text =
+                $"Lớp '{lop.MaLop}' chưa có khung giờ học. "
+                + "Vào Lớp học → Sửa lớp để đặt Giờ bắt đầu / Giờ kết thúc trước.";
         }
     }
 

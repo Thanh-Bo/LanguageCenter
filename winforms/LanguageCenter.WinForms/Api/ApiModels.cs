@@ -593,6 +593,10 @@ public sealed class ClassListItemDto
     public int SiSoToiDa { get; init; }
     public int SiSoHienTai { get; init; }
     public int SoCaHoc { get; init; }
+    /// <summary>Giờ bắt đầu buổi học mặc định của lớp (NULL = chưa xác định).</summary>
+    public TimeOnly? GioBatDau { get; init; }
+    /// <summary>Giờ kết thúc buổi học mặc định của lớp (NULL = chưa xác định).</summary>
+    public TimeOnly? GioKetThuc { get; init; }
     public string TrangThai { get; init; } = string.Empty;
 }
 

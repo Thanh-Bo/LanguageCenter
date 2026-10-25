@@ -59,6 +59,8 @@ public sealed class ClassService : IClassService
             request.NgayKetThucDuKien,
             ngayKetThucThucTe: null);
 
+        ValidateGioHoc(request.GioBatDau, request.GioKetThuc, errors);
+
         if (errors.Count > 0)
         {
             return OperationResult<ClassDetailDto>.BadRequest("Dữ liệu không hợp lệ.", errors);
@@ -139,6 +141,11 @@ public sealed class ClassService : IClassService
             request.NgayBatDau ?? current.NgayBatDau,
             request.NgayKetThucDuKien ?? current.NgayKetThucDuKien,
             request.NgayKetThucThucTe ?? current.NgayKetThucThucTe);
+
+        ValidateGioHoc(
+            request.GioBatDau ?? current.GioBatDau,
+            request.GioKetThuc ?? current.GioKetThuc,
+            errors);
 
         if (errors.Count > 0)
         {
@@ -287,5 +294,17 @@ public sealed class ClassService : IClassService
            && request.NgayBatDau is null
            && request.NgayKetThucDuKien is null
            && request.NgayKetThucThucTe is null
+           && request.GioBatDau is null
+           && request.GioKetThuc is null
            && request.SiSoToiDa is null;
+
+    /// <summary>Giờ kết thúc buổi học phải SAU giờ bắt đầu (nếu đã có đủ 2 giờ).</summary>
+    private static void ValidateGioHoc(TimeOnly? gioBatDau, TimeOnly? gioKetThuc, List<string> errors)
+    {
+        if (gioBatDau is { } batDau && gioKetThuc is { } ketThuc && ketThuc <= batDau)
+        {
+            errors.Add(
+                $"Giờ kết thúc ({ketThuc:HH\\:mm}) phải sau giờ bắt đầu ({batDau:HH\\:mm}).");
+        }
+    }
 }

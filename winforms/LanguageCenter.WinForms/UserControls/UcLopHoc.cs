@@ -154,6 +154,9 @@ public partial class UcLopHoc : UserControl
                 c.TenKhoaHoc,
                 string.IsNullOrWhiteSpace(c.TenNhanVienHocVu) ? "—" : c.TenNhanVienHocVu,
                 $"{c.SiSoHienTai}/{c.SiSoToiDa}",
+                c.GioBatDau is { } gioBD && c.GioKetThuc is { } gioKT
+                    ? $"{gioBD:HH\\:mm} – {gioKT:HH\\:mm}"
+                    : "—",
                 c.SoCaHoc > 0 ? $"{c.SoCaHoc} ca" : "Chưa sinh ca",
                 UiHelpers.FormatDate(c.NgayBatDau),
                 UiHelpers.FormatDate(c.NgayKetThucDuKien),

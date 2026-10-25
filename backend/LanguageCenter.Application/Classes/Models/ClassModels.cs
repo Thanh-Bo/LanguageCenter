@@ -40,6 +40,12 @@ public sealed class CreateClassRequest
     [Required(ErrorMessage = "Ngày kết thúc dự kiến là bắt buộc.")]
     public DateOnly NgayKetThucDuKien { get; set; }
 
+    /// <summary>Giờ bắt đầu buổi học của lớp, ví dụ 18:00. Để trống nếu chưa xác định.</summary>
+    public TimeOnly? GioBatDau { get; set; }
+
+    /// <summary>Giờ kết thúc buổi học của lớp, ví dụ 19:30. Phải sau <see cref="GioBatDau"/>.</summary>
+    public TimeOnly? GioKetThuc { get; set; }
+
     [Range(1, 500, ErrorMessage = "Sĩ số tối đa phải lớn hơn 0.")]
     public int SiSoToiDa { get; set; }
 }
@@ -64,6 +70,12 @@ public sealed class UpdateClassRequest
     public DateOnly? NgayKetThucDuKien { get; set; }
 
     public DateOnly? NgayKetThucThucTe { get; set; }
+
+    /// <summary>Giờ bắt đầu buổi học của lớp (để trống = không đổi).</summary>
+    public TimeOnly? GioBatDau { get; set; }
+
+    /// <summary>Giờ kết thúc buổi học của lớp (để trống = không đổi).</summary>
+    public TimeOnly? GioKetThuc { get; set; }
 
     [Range(1, 500, ErrorMessage = "Sĩ số tối đa phải lớn hơn 0.")]
     public int? SiSoToiDa { get; set; }
@@ -109,6 +121,12 @@ public sealed class ClassListItemDto
 
     public DateOnly? NgayKetThucThucTe { get; init; }
 
+    /// <summary>Giờ bắt đầu buổi học mặc định của lớp.</summary>
+    public TimeOnly? GioBatDau { get; init; }
+
+    /// <summary>Giờ kết thúc buổi học mặc định của lớp.</summary>
+    public TimeOnly? GioKetThuc { get; init; }
+
     public int SiSoToiDa { get; init; }
 
     /// <summary>Số học viên đang chiếm chỗ ("Đã xếp lớp" + "Hoàn thành").</summary>
@@ -150,6 +168,12 @@ public sealed class ClassDetailDto
     public DateOnly NgayKetThucDuKien { get; init; }
 
     public DateOnly? NgayKetThucThucTe { get; init; }
+
+    /// <summary>Giờ bắt đầu buổi học mặc định của lớp.</summary>
+    public TimeOnly? GioBatDau { get; init; }
+
+    /// <summary>Giờ kết thúc buổi học mặc định của lớp.</summary>
+    public TimeOnly? GioKetThuc { get; init; }
 
     public int SiSoToiDa { get; init; }
 

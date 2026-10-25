@@ -59,6 +59,8 @@ public sealed class ClassStore : IClassStore
                 NgayBatDau = x.NgayBatDau,
                 NgayKetThucDuKien = x.NgayKetThucDuKien,
                 NgayKetThucThucTe = x.NgayKetThucThucTe,
+                GioBatDau = x.GioBatDau,
+                GioKetThuc = x.GioKetThuc,
                 SiSoToiDa = x.SiSoToiDa,
                 SiSoHienTai = x.DangKyHocs.Count(
                     d => d.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
@@ -97,6 +99,8 @@ public sealed class ClassStore : IClassStore
                 NgayBatDau = x.NgayBatDau,
                 NgayKetThucDuKien = x.NgayKetThucDuKien,
                 NgayKetThucThucTe = x.NgayKetThucThucTe,
+                GioBatDau = x.GioBatDau,
+                GioKetThuc = x.GioKetThuc,
                 SiSoToiDa = x.SiSoToiDa,
                 SiSoHienTai = x.DangKyHocs.Count(
                     d => d.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
@@ -187,6 +191,8 @@ public sealed class ClassStore : IClassStore
             NgayBatDau = request.NgayBatDau,
             NgayKetThucDuKien = request.NgayKetThucDuKien,
             NgayKetThucThucTe = null,
+            GioBatDau = request.GioBatDau,
+            GioKetThuc = request.GioKetThuc,
             SiSoToiDa = request.SiSoToiDa,
             TrangThai = ClassStatuses.ChuanBiMo
         };
@@ -252,6 +258,16 @@ public sealed class ClassStore : IClassStore
         if (changes.NgayKetThucThucTe is not null)
         {
             entity.NgayKetThucThucTe = changes.NgayKetThucThucTe;
+        }
+
+        if (changes.GioBatDau is not null)
+        {
+            entity.GioBatDau = changes.GioBatDau;
+        }
+
+        if (changes.GioKetThuc is not null)
+        {
+            entity.GioKetThuc = changes.GioKetThuc;
         }
 
         if (changes.SiSoToiDa is not null)

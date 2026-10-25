@@ -134,6 +134,7 @@ partial class UcLopHoc
         dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenKhoaHoc", HeaderText = "Khóa học", FillWeight = 170 });
         dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenNhanVienHocVu", HeaderText = "Học vụ phụ trách", FillWeight = 150 });
         dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "SiSo", HeaderText = "Sĩ số", FillWeight = 75 });
+        dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "GioHoc", HeaderText = "Giờ học", FillWeight = 110 });
         dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "SoCaHoc", HeaderText = "Ca học", FillWeight = 80 });
         dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayBatDau", HeaderText = "Ngày bắt đầu", FillWeight = 95 });
         dgvClasses.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayKetThuc", HeaderText = "Kết thúc dự kiến", FillWeight = 105 });

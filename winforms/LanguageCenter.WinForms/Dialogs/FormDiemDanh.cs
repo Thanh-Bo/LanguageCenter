@@ -8,13 +8,21 @@ namespace LanguageCenter.WinForms.Dialogs;
 /// </summary>
 public sealed class FormDiemDanh : Form
 {
-    private static readonly string[] TrangThais =
+    /// <summary>
+    /// 4 trạng thái — PHẢI khớp CHECK constraint <c>CK_DiemDanh_TrangThai</c> của database
+    /// và <c>AttendanceStatuses.All</c> ở backend.
+    /// Mỗi trạng thái là MỘT CỘT tick, admin chỉ việc bấm vào ô tương ứng.
+    /// </summary>
+    private static readonly (string TrangThai, string Cot, string TieuDe, int Rong)[] CacTrangThai =
     [
-        "Có mặt",
-        "Đi trễ",
-        "Vắng có phép",
-        "Vắng không phép"
+        ("Có mặt",        "CoMat",      "Có mặt",       80),
+        ("Đi trễ",        "DiTre",      "Đi trễ",       75),
+        ("Vắng có phép", "VangCoPhep", "Vắng có phép", 100),
+        ("Vắng",          "Vang",       "Vắng",         65)
     ];
+
+    private static readonly string[] CotTrangThai =
+        CacTrangThai.Select(x => x.Cot).ToArray();
 
     private readonly int _maCaHoc;
 
@@ -25,6 +33,8 @@ public sealed class FormDiemDanh : Form
     private readonly Button _btnDong = UiHelpers.CreateSecondaryButton("Đóng", 100, 36);
 
     private AttendanceSheetDto? _sheet;
+
+    private bool _dangCapNhat;
 
     public bool DataChanged { get; private set; }
 
@@ -63,39 +73,58 @@ public sealed class FormDiemDanh : Form
         _grid.SelectionMode = DataGridViewSelectionMode.CellSelect;
         UiHelpers.StyleGrid(_grid);
 
+        // StyleGrid đặt ReadOnly = true → phải mở lại, nếu không sẽ KHÔNG bấm được
+        // vào ô Trạng thái để chọn (chỉ thấy giá trị mà không có danh sách xổ xuống).
+        _grid.ReadOnly = false;
+        _grid.EditMode = DataGridViewEditMode.EditOnEnter;
+
         _grid.Columns.Add(new DataGridViewTextBoxColumn
         {
             Name = "MaHocVien",
             HeaderText = "Mã HV",
             ReadOnly = true,
-            Width = 100
+            Width = 90
         });
         _grid.Columns.Add(new DataGridViewTextBoxColumn
         {
             Name = "HoTen",
             HeaderText = "Họ tên",
             ReadOnly = true,
-            AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+            AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
+            MinimumWidth = 150
         });
 
-        var cbo = new DataGridViewComboBoxColumn
+        // 4 CỘT TICK — mỗi học viên tick đúng 1 ô (nhanh hơn chọn dropdown).
+        foreach (var (_, cot, tieuDe, rong) in CacTrangThai)
         {
-            Name = "TrangThai",
-            HeaderText = "Trạng thái",
-            Width = 160,
-            FlatStyle = FlatStyle.Flat,
-            DisplayStyle = DataGridViewComboBoxDisplayStyle.DropDownButton
-        };
-        foreach (var t in TrangThais) cbo.Items.Add(t);
-        _grid.Columns.Add(cbo);
+            _grid.Columns.Add(new DataGridViewCheckBoxColumn
+            {
+                Name = cot,
+                HeaderText = tieuDe,
+                Width = rong,
+                FlatStyle = FlatStyle.Standard,
+                SortMode = DataGridViewColumnSortMode.NotSortable
+            });
+        }
 
         _grid.Columns.Add(new DataGridViewTextBoxColumn
         {
             Name = "GhiChu",
             HeaderText = "Ghi chú",
             AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill,
-            MinimumWidth = 160
+            MinimumWidth = 130
         });
+
+        // Tick xong phải ghi giá trị NGAY (mặc định phải rời ô mới ghi).
+        _grid.CurrentCellDirtyStateChanged += (_, _) =>
+        {
+            if (_grid.IsCurrentCellDirty)
+            {
+                _grid.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            }
+        };
+
+        _grid.CellValueChanged += Grid_CellValueChanged;
 
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(520, 36);
@@ -149,9 +178,27 @@ public sealed class FormDiemDanh : Form
         foreach (var hv in _sheet.HocViens)
         {
             var trangThai = string.IsNullOrWhiteSpace(hv.TrangThaiDiemDanh) ? "Có mặt" : hv.TrangThaiDiemDanh;
-            if (!TrangThais.Contains(trangThai)) trangThai = "Có mặt";
 
-            var idx = _grid.Rows.Add(hv.MaHocVien, hv.HoTen, trangThai, hv.GhiChu ?? string.Empty);
+            if (!CacTrangThai.Any(x => x.TrangThai == trangThai))
+            {
+                trangThai = "Có mặt";
+            }
+
+            var giaTri = new object[CacTrangThai.Length];
+
+            for (var i = 0; i < CacTrangThai.Length; i++)
+            {
+                giaTri[i] = CacTrangThai[i].TrangThai == trangThai;
+            }
+
+            var idx = _grid.Rows.Add(hv.MaHocVien, hv.HoTen);
+
+            for (var i = 0; i < CacTrangThai.Length; i++)
+            {
+                _grid.Rows[idx].Cells[CacTrangThai[i].Cot].Value = giaTri[i];
+            }
+
+            _grid.Rows[idx].Cells["GhiChu"].Value = hv.GhiChu ?? string.Empty;
             _grid.Rows[idx].Tag = hv.MaHocVien;
         }
 
@@ -168,7 +215,44 @@ public sealed class FormDiemDanh : Form
             _lblThongBao.ForeColor = Theme.Muted;
             _lblThongBao.Text = _grid.Rows.Count == 0
                 ? "Lớp chưa có học viên nào được xếp lớp."
-                : $"Tổng {_grid.Rows.Count} học viên. Chọn trạng thái rồi bấm Lưu điểm danh.";
+                : $"Tổng {_grid.Rows.Count} học viên. Tick vào cột trạng thái rồi bấm Lưu điểm danh.";
+        }
+    }
+
+    /// <summary>Mỗi học viên chỉ được 1 trạng thái: tick 1 ô thì 3 ô còn lại tự bỏ tick.</summary>
+    private void Grid_CellValueChanged(object? sender, DataGridViewCellEventArgs e)
+    {
+        if (_dangCapNhat || e.RowIndex < 0 || e.ColumnIndex < 0)
+        {
+            return;
+        }
+
+        var tenCot = _grid.Columns[e.ColumnIndex].Name;
+
+        if (!CotTrangThai.Contains(tenCot))
+        {
+            return;
+        }
+
+        var row = _grid.Rows[e.RowIndex];
+
+        if (row.Cells[tenCot].Value is not true)
+        {
+            return; // chỉ xử lý khi người dùng TICK
+        }
+
+        _dangCapNhat = true;
+
+        try
+        {
+            foreach (var khac in CotTrangThai.Where(x => x != tenCot))
+            {
+                row.Cells[khac].Value = false;
+            }
+        }
+        finally
+        {
+            _dangCapNhat = false;
         }
     }
 
@@ -183,8 +267,9 @@ public sealed class FormDiemDanh : Form
             var maHocVien = row.Cells["MaHocVien"].Value?.ToString();
             if (string.IsNullOrWhiteSpace(maHocVien)) continue;
 
-            var trangThai = row.Cells["TrangThai"].Value?.ToString();
-            if (string.IsNullOrWhiteSpace(trangThai)) trangThai = "Có mặt";
+            // Trạng thái = cột đang được TICK; không tick ô nào → mặc định "Có mặt".
+            var trangThai = CacTrangThai
+                .FirstOrDefault(x => row.Cells[x.Cot].Value is true).TrangThai ?? "Có mặt";
 
             var ghiChu = row.Cells["GhiChu"].Value?.ToString();
 

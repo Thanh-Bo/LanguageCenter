@@ -23,6 +23,8 @@ public sealed class FormLopHoc : Form
     private readonly DateTimePicker _dtpBatDau = new();
     private readonly DateTimePicker _dtpKetThuc = new();
     private readonly NumericUpDown _numSiSo = new();
+    private readonly DateTimePicker _dtpGioBatDau = new();
+    private readonly DateTimePicker _dtpGioKetThuc = new();
     private readonly Label _lblThongBao = new();
     private readonly Button _btnLuu = UiHelpers.CreatePrimaryButton("Lưu lớp học", 150, 36);
     private readonly Button _btnHuy = UiHelpers.CreateSecondaryButton("Hủy bỏ", 110, 36);
@@ -110,17 +112,52 @@ public sealed class FormLopHoc : Form
         _numSiSo.Width = 120;
         DatTruong("Sĩ số tối đa", _numSiSo, 448);
 
+        // KHUNG GIỜ HỌC của lớp — cùng hàng với sĩ số để không kéo dài hộp thoại.
+        Controls.Add(new Label
+        {
+            Text = "Giờ bắt đầu",
+            AutoSize = true,
+            ForeColor = Theme.TextMedium,
+            Font = Theme.FontSub,
+            Location = new Point(200, 448)
+        });
+
+        Controls.Add(new Label
+        {
+            Text = "Giờ kết thúc",
+            AutoSize = true,
+            ForeColor = Theme.TextMedium,
+            Font = Theme.FontSub,
+            Location = new Point(392, 448)
+        });
+
+        foreach (var dtp in new[] { _dtpGioBatDau, _dtpGioKetThuc })
+        {
+            dtp.Format = DateTimePickerFormat.Custom;
+            dtp.CustomFormat = "HH:mm";
+            dtp.ShowUpDown = true;
+            dtp.Width = 110;
+            dtp.Font = Theme.FontRegular;
+            Controls.Add(dtp);
+        }
+
+        _dtpGioBatDau.Location = new Point(200, 468);
+        _dtpGioBatDau.Value = DateTime.Today.AddHours(18);
+
+        _dtpGioKetThuc.Location = new Point(392, 468);
+        _dtpGioKetThuc.Value = DateTime.Today.AddHours(19).AddMinutes(30);
+
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(572, 40);
-        _lblThongBao.Location = new Point(24, 496);
+        _lblThongBao.Location = new Point(24, 500);
         _lblThongBao.ForeColor = Theme.Danger;
         _lblThongBao.Font = Theme.FontSub;
         Controls.Add(_lblThongBao);
 
-        _btnLuu.Location = new Point(320, 544);
+        _btnLuu.Location = new Point(320, 548);
         _btnLuu.Click += async (_, _) => await LuuAsync();
 
-        _btnHuy.Location = new Point(478, 544);
+        _btnHuy.Location = new Point(478, 548);
         _btnHuy.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
         Controls.Add(_btnLuu);
@@ -289,6 +326,17 @@ public sealed class FormLopHoc : Form
 
         _dtpBatDau.Value = _existing.NgayBatDau.ToDateTime(TimeOnly.MinValue);
         _dtpKetThuc.Value = _existing.NgayKetThucDuKien.ToDateTime(TimeOnly.MinValue);
+
+        if (_existing.GioBatDau is { } gioBD)
+        {
+            _dtpGioBatDau.Value = DateTime.Today.Add(gioBD.ToTimeSpan());
+        }
+
+        if (_existing.GioKetThuc is { } gioKT)
+        {
+            _dtpGioKetThuc.Value = DateTime.Today.Add(gioKT.ToTimeSpan());
+        }
+
         _numSiSo.Value = Math.Clamp(_existing.SiSoToiDa, (int)_numSiSo.Minimum, (int)_numSiSo.Maximum);
     }
 
@@ -326,6 +374,15 @@ public sealed class FormLopHoc : Form
             return;
         }
 
+        var gioBatDau = TimeOnly.FromDateTime(_dtpGioBatDau.Value);
+        var gioKetThuc = TimeOnly.FromDateTime(_dtpGioKetThuc.Value);
+
+        if (gioKetThuc <= gioBatDau)
+        {
+            _lblThongBao.Text = $"Giờ kết thúc ({gioKetThuc:HH\\:mm}) phải sau giờ bắt đầu ({gioBatDau:HH\\:mm}).";
+            return;
+        }
+
         _btnLuu.Enabled = false;
         UseWaitCursor = true;
 
@@ -340,6 +397,8 @@ public sealed class FormLopHoc : Form
                 maNhanVienHocVu = hocVu,
                 ngayBatDau = batDau.ToString("yyyy-MM-dd"),
                 ngayKetThucDuKien = ketThuc.ToString("yyyy-MM-dd"),
+                gioBatDau = gioBatDau.ToString("HH:mm:ss"),
+                gioKetThuc = gioKetThuc.ToString("HH:mm:ss"),
                 siSoToiDa = (int)_numSiSo.Value
             });
         }
@@ -351,6 +410,8 @@ public sealed class FormLopHoc : Form
                 maNhanVienHocVu = hocVu,
                 ngayBatDau = batDau.ToString("yyyy-MM-dd"),
                 ngayKetThucDuKien = ketThuc.ToString("yyyy-MM-dd"),
+                gioBatDau = gioBatDau.ToString("HH:mm:ss"),
+                gioKetThuc = gioKetThuc.ToString("HH:mm:ss"),
                 siSoToiDa = (int)_numSiSo.Value
             });
         }
