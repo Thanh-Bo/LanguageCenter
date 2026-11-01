@@ -114,8 +114,8 @@ partial class FormChinh
         btnNavLogout.BackColor = Color.FromArgb(15, 23, 42);
         btnNavLogout.ForeColor = Color.FromArgb(100, 116, 139);
         btnNavLogout.Font = new Font("Segoe UI", 9.5f);
-        btnNavLogout.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavLogout.Padding = new Padding(0);
+        btnNavLogout.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavLogout.Padding = new Padding(24, 0, 0, 4);
         btnNavLogout.Dock = DockStyle.Bottom;
         btnNavLogout.Height = 50;
         btnNavLogout.Cursor = Cursors.Hand;
@@ -136,8 +136,8 @@ partial class FormChinh
         btnNavDashboard.BackColor = Color.FromArgb(15, 23, 42);
         btnNavDashboard.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavDashboard.Font = new Font("Segoe UI", 9.5f);
-        btnNavDashboard.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavDashboard.Padding = new Padding(0);
+        btnNavDashboard.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavDashboard.Padding = new Padding(24, 0, 0, 4);
         btnNavDashboard.Cursor = Cursors.Hand;
         btnNavDashboard.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -150,8 +150,8 @@ partial class FormChinh
         btnNavCourses.BackColor = Color.FromArgb(15, 23, 42);
         btnNavCourses.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavCourses.Font = new Font("Segoe UI", 9.5f);
-        btnNavCourses.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavCourses.Padding = new Padding(0);
+        btnNavCourses.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavCourses.Padding = new Padding(24, 0, 0, 4);
         btnNavCourses.Cursor = Cursors.Hand;
         btnNavCourses.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -164,8 +164,8 @@ partial class FormChinh
         btnNavClasses.BackColor = Color.FromArgb(15, 23, 42);
         btnNavClasses.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavClasses.Font = new Font("Segoe UI", 9.5f);
-        btnNavClasses.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavClasses.Padding = new Padding(0);
+        btnNavClasses.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavClasses.Padding = new Padding(24, 0, 0, 4);
         btnNavClasses.Cursor = Cursors.Hand;
         btnNavClasses.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -178,8 +178,8 @@ partial class FormChinh
         btnNavAssignments.BackColor = Color.FromArgb(15, 23, 42);
         btnNavAssignments.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavAssignments.Font = new Font("Segoe UI", 9.5f);
-        btnNavAssignments.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavAssignments.Padding = new Padding(0);
+        btnNavAssignments.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavAssignments.Padding = new Padding(24, 0, 0, 4);
         btnNavAssignments.Cursor = Cursors.Hand;
         btnNavAssignments.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -192,8 +192,8 @@ partial class FormChinh
         btnNavEnrollment.BackColor = Color.FromArgb(15, 23, 42);
         btnNavEnrollment.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavEnrollment.Font = new Font("Segoe UI", 9.5f);
-        btnNavEnrollment.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavEnrollment.Padding = new Padding(0);
+        btnNavEnrollment.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavEnrollment.Padding = new Padding(24, 0, 0, 4);
         btnNavEnrollment.Cursor = Cursors.Hand;
         btnNavEnrollment.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -206,8 +206,8 @@ partial class FormChinh
         btnNavRoomsSchedules.BackColor = Color.FromArgb(15, 23, 42);
         btnNavRoomsSchedules.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavRoomsSchedules.Font = new Font("Segoe UI", 9.5f);
-        btnNavRoomsSchedules.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavRoomsSchedules.Padding = new Padding(0);
+        btnNavRoomsSchedules.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavRoomsSchedules.Padding = new Padding(24, 0, 0, 4);
         btnNavRoomsSchedules.Cursor = Cursors.Hand;
         btnNavRoomsSchedules.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -220,8 +220,8 @@ partial class FormChinh
         btnNavGrades.BackColor = Color.FromArgb(15, 23, 42);
         btnNavGrades.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavGrades.Font = new Font("Segoe UI", 9.5f);
-        btnNavGrades.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavGrades.Padding = new Padding(0);
+        btnNavGrades.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavGrades.Padding = new Padding(24, 0, 0, 4);
         btnNavGrades.Cursor = Cursors.Hand;
         btnNavGrades.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -234,8 +234,8 @@ partial class FormChinh
         btnNavTuition.BackColor = Color.FromArgb(15, 23, 42);
         btnNavTuition.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavTuition.Font = new Font("Segoe UI", 9.5f);
-        btnNavTuition.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavTuition.Padding = new Padding(0);
+        btnNavTuition.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavTuition.Padding = new Padding(24, 0, 0, 4);
         btnNavTuition.Cursor = Cursors.Hand;
         btnNavTuition.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -248,8 +248,8 @@ partial class FormChinh
         btnNavStudents.BackColor = Color.FromArgb(15, 23, 42);
         btnNavStudents.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavStudents.Font = new Font("Segoe UI", 9.5f);
-        btnNavStudents.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavStudents.Padding = new Padding(0);
+        btnNavStudents.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavStudents.Padding = new Padding(24, 0, 0, 4);
         btnNavStudents.Cursor = Cursors.Hand;
         btnNavStudents.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -262,8 +262,8 @@ partial class FormChinh
         btnNavTeachers.BackColor = Color.FromArgb(15, 23, 42);
         btnNavTeachers.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavTeachers.Font = new Font("Segoe UI", 9.5f);
-        btnNavTeachers.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavTeachers.Padding = new Padding(0);
+        btnNavTeachers.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavTeachers.Padding = new Padding(24, 0, 0, 4);
         btnNavTeachers.Cursor = Cursors.Hand;
         btnNavTeachers.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -276,8 +276,8 @@ partial class FormChinh
         btnNavAssistants.BackColor = Color.FromArgb(15, 23, 42);
         btnNavAssistants.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavAssistants.Font = new Font("Segoe UI", 9.5f);
-        btnNavAssistants.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavAssistants.Padding = new Padding(0);
+        btnNavAssistants.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavAssistants.Padding = new Padding(24, 0, 0, 4);
         btnNavAssistants.Cursor = Cursors.Hand;
         btnNavAssistants.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -290,8 +290,8 @@ partial class FormChinh
         btnNavNotifications.BackColor = Color.FromArgb(15, 23, 42);
         btnNavNotifications.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavNotifications.Font = new Font("Segoe UI", 9.5f);
-        btnNavNotifications.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavNotifications.Padding = new Padding(0);
+        btnNavNotifications.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavNotifications.Padding = new Padding(24, 0, 0, 4);
         btnNavNotifications.Cursor = Cursors.Hand;
         btnNavNotifications.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -305,8 +305,8 @@ partial class FormChinh
         btnNavReports.BackColor = Color.FromArgb(15, 23, 42);
         btnNavReports.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavReports.Font = new Font("Segoe UI", 9.5f);
-        btnNavReports.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavReports.Padding = new Padding(0);
+        btnNavReports.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavReports.Padding = new Padding(24, 0, 0, 4);
         btnNavReports.Cursor = Cursors.Hand;
         btnNavReports.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
@@ -319,8 +319,8 @@ partial class FormChinh
         btnNavAccounts.BackColor = Color.FromArgb(15, 23, 42);
         btnNavAccounts.ForeColor = Color.FromArgb(148, 163, 184);
         btnNavAccounts.Font = new Font("Segoe UI", 9.5f);
-        btnNavAccounts.TextAlign = ContentAlignment.MiddleCenter;
-        btnNavAccounts.Padding = new Padding(0);
+        btnNavAccounts.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavAccounts.Padding = new Padding(24, 0, 0, 4);
         btnNavAccounts.Cursor = Cursors.Hand;
         btnNavAccounts.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
