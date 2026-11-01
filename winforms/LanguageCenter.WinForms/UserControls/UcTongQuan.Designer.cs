@@ -439,8 +439,8 @@ partial class UcTongQuan
         btnGoTuition.BackColor = Color.FromArgb(248, 250, 252);
         btnGoTuition.ForeColor = Color.FromArgb(30, 86, 240);
         btnGoTuition.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-        btnGoTuition.TextAlign = ContentAlignment.MiddleLeft;
-        btnGoTuition.Padding = new Padding(12, 0, 0, 0);
+        btnGoTuition.TextAlign = ContentAlignment.MiddleCenter;
+        btnGoTuition.Padding = new Padding(0);
         btnGoTuition.Cursor = Cursors.Hand;
 
         btnGoStudents.Text = "Quản lý học viên";
@@ -451,8 +451,8 @@ partial class UcTongQuan
         btnGoStudents.BackColor = Color.FromArgb(248, 250, 252);
         btnGoStudents.ForeColor = Color.FromArgb(71, 85, 105);
         btnGoStudents.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-        btnGoStudents.TextAlign = ContentAlignment.MiddleLeft;
-        btnGoStudents.Padding = new Padding(12, 0, 0, 0);
+        btnGoStudents.TextAlign = ContentAlignment.MiddleCenter;
+        btnGoStudents.Padding = new Padding(0);
         btnGoStudents.Cursor = Cursors.Hand;
 
         btnGoTeachers.Text = "Quản lý giáo viên";
@@ -463,8 +463,8 @@ partial class UcTongQuan
         btnGoTeachers.BackColor = Color.FromArgb(248, 250, 252);
         btnGoTeachers.ForeColor = Color.FromArgb(71, 85, 105);
         btnGoTeachers.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-        btnGoTeachers.TextAlign = ContentAlignment.MiddleLeft;
-        btnGoTeachers.Padding = new Padding(12, 0, 0, 0);
+        btnGoTeachers.TextAlign = ContentAlignment.MiddleCenter;
+        btnGoTeachers.Padding = new Padding(0);
         btnGoTeachers.Cursor = Cursors.Hand;
 
         btnGoAccounts.Text = "Quản lý tài khoản";
@@ -475,8 +475,8 @@ partial class UcTongQuan
         btnGoAccounts.BackColor = Color.FromArgb(248, 250, 252);
         btnGoAccounts.ForeColor = Color.FromArgb(71, 85, 105);
         btnGoAccounts.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-        btnGoAccounts.TextAlign = ContentAlignment.MiddleLeft;
-        btnGoAccounts.Padding = new Padding(12, 0, 0, 0);
+        btnGoAccounts.TextAlign = ContentAlignment.MiddleCenter;
+        btnGoAccounts.Padding = new Padding(0);
         btnGoAccounts.Cursor = Cursors.Hand;
 
         tblQuickButtons.Controls.Add(btnGoTuition, 0, 0);

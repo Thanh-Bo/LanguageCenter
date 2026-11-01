@@ -132,8 +132,8 @@ partial class UcBaoCao
         btnMenuRevenue.FlatStyle = FlatStyle.Flat;
         btnMenuRevenue.FlatAppearance.BorderSize = 1;
         btnMenuRevenue.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
-        btnMenuRevenue.TextAlign = ContentAlignment.MiddleLeft;
-        btnMenuRevenue.Padding = new Padding(14, 0, 0, 0);
+        btnMenuRevenue.TextAlign = ContentAlignment.MiddleCenter;
+        btnMenuRevenue.Padding = new Padding(0);
         btnMenuRevenue.Cursor = Cursors.Hand;
         btnMenuRevenue.Font = new Font("Segoe UI", 9.5f);
 
@@ -144,8 +144,8 @@ partial class UcBaoCao
         btnMenuQuality.FlatStyle = FlatStyle.Flat;
         btnMenuQuality.FlatAppearance.BorderSize = 1;
         btnMenuQuality.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
-        btnMenuQuality.TextAlign = ContentAlignment.MiddleLeft;
-        btnMenuQuality.Padding = new Padding(14, 0, 0, 0);
+        btnMenuQuality.TextAlign = ContentAlignment.MiddleCenter;
+        btnMenuQuality.Padding = new Padding(0);
         btnMenuQuality.Cursor = Cursors.Hand;
         btnMenuQuality.Font = new Font("Segoe UI", 9.5f);
 
@@ -156,8 +156,8 @@ partial class UcBaoCao
         btnMenuFinancial.FlatStyle = FlatStyle.Flat;
         btnMenuFinancial.FlatAppearance.BorderSize = 1;
         btnMenuFinancial.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
-        btnMenuFinancial.TextAlign = ContentAlignment.MiddleLeft;
-        btnMenuFinancial.Padding = new Padding(14, 0, 0, 0);
+        btnMenuFinancial.TextAlign = ContentAlignment.MiddleCenter;
+        btnMenuFinancial.Padding = new Padding(0);
         btnMenuFinancial.Cursor = Cursors.Hand;
         btnMenuFinancial.Font = new Font("Segoe UI", 9.5f);
 
@@ -168,8 +168,8 @@ partial class UcBaoCao
         btnMenuClasses.FlatStyle = FlatStyle.Flat;
         btnMenuClasses.FlatAppearance.BorderSize = 1;
         btnMenuClasses.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
-        btnMenuClasses.TextAlign = ContentAlignment.MiddleLeft;
-        btnMenuClasses.Padding = new Padding(14, 0, 0, 0);
+        btnMenuClasses.TextAlign = ContentAlignment.MiddleCenter;
+        btnMenuClasses.Padding = new Padding(0);
         btnMenuClasses.Cursor = Cursors.Hand;
         btnMenuClasses.Font = new Font("Segoe UI", 9.5f);
 
