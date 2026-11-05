@@ -59,7 +59,7 @@ public partial class UcPhanCongGiangDay : UserControl
         _dangNap = true;
         cboVaiTro.Items.Clear();
         cboVaiTro.Items.Add(AllOption);
-        cboVaiTro.Items.AddRange(["Giáo viên chính", "Trợ giảng"]);
+        cboVaiTro.Items.AddRange(["Giáo viên chính", "Giáo viên nước ngoài", "Trợ giảng"]);
         cboVaiTro.SelectedIndex = 0;
         _dangNap = false;
         Load += async (_, _) => await ReloadAsync();
@@ -124,6 +124,7 @@ public partial class UcPhanCongGiangDay : UserControl
     private void FillStats()
     {
         var gvChinh = _all.Count(a => a.VaiTroPhanCong == "Giáo viên chính" && a.MaGiaoVien is not null);
+        var gvNuocNgoai = _all.Count(a => a.VaiTroPhanCong == "Giáo viên nước ngoài" && a.MaGiaoVien is not null);
         var troGiang = _all.Count(a => a.VaiTroPhanCong == "Trợ giảng" && a.MaGiaoVien is not null);
         var choPhanCong = _all.Count(a => a.MaGiaoVien is null);
         var lopDaPhanCong = _all
@@ -137,7 +138,7 @@ public partial class UcPhanCongGiangDay : UserControl
 
         tblStats.Controls.Clear();
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tổng lượt phân công", $"{_all.Count} Phân công", $"{choPhanCong} khung chờ phân công", Theme.Primary), 0, 0);
-        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Giảng viên chính", $"{gvChinh} Giảng viên", "Đang trực tiếp đứng lớp", Theme.Success), 1, 0);
+        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Giáo viên", $"{gvChinh} GV Việt · {gvNuocNgoai} GV NN", "Buổi đầu tuần do GV nước ngoài dạy", Theme.Success), 1, 0);
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Trợ giảng học vụ", $"{troGiang} Trợ giảng", "Hỗ trợ chấm bài & học thuật", Theme.Purple), 2, 0);
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tiến độ giảng dạy", $"{tienDo}%", $"{lopDaPhanCong}/{_classes.Count} lớp đã có nhân sự", Theme.Warning), 3, 0);
     }
@@ -206,7 +207,7 @@ public partial class UcPhanCongGiangDay : UserControl
             {
                 dgvAssignments.Rows[rowIdx].Cells["TenGiaoVien"].Style.ForeColor = Theme.Warning;
                 dgvAssignments.Rows[rowIdx].Cells["TenGiaoVien"].ToolTipText =
-                    "Khung phân công chưa gắn người. Bấm 'Gán nhân sự' (hoặc nháy đúp dòng) để chọn giáo viên / trợ giảng.";
+                    "Khung phân công chưa gắn người. Bấm 'Gán nhân sự' (hoặc nháy đúp dòng) để chọn giáo viên chính / giáo viên nước ngoài / trợ giảng.";
             }
         }
 

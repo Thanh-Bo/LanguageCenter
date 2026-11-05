@@ -31,17 +31,19 @@ function caCuaBuoiHoc(gioBatDau: string): KhoaCa {
   return 'toi'
 }
 
-function lopTheoTrangThai(trangThai: string): string {
-  if (trangThai === 'Đã hủy') return 'border-rose-200 bg-rose-50'
-  if (trangThai === 'Đã hoàn thành') return 'border-slate-200 bg-slate-100'
-  if (trangThai === 'Đang diễn ra') return 'border-emerald-300 bg-emerald-50'
+function lopTheoTrangThai(ca: SessionListItem): string {
+  if (ca.trangThai === 'Đã hủy') return 'border-rose-200 bg-rose-50'
+  if (ca.loaiBuoi === 'Buổi thi') return 'border-violet-300 bg-violet-50'
+  if (ca.trangThai === 'Đã hoàn thành') return 'border-slate-200 bg-slate-100'
+  if (ca.trangThai === 'Đang diễn ra') return 'border-emerald-300 bg-emerald-50'
   return 'border-blue-200 bg-blue-50'
 }
 
-function mauChuTheoTrangThai(trangThai: string): string {
-  if (trangThai === 'Đã hủy') return 'text-rose-700'
-  if (trangThai === 'Đã hoàn thành') return 'text-slate-600'
-  if (trangThai === 'Đang diễn ra') return 'text-emerald-700'
+function mauChuTheoTrangThai(ca: SessionListItem): string {
+  if (ca.trangThai === 'Đã hủy') return 'text-rose-700'
+  if (ca.loaiBuoi === 'Buổi thi') return 'text-violet-700'
+  if (ca.trangThai === 'Đã hoàn thành') return 'text-slate-600'
+  if (ca.trangThai === 'Đang diễn ra') return 'text-emerald-700'
   return 'text-blue-700'
 }
 
@@ -66,13 +68,20 @@ function TheCaHoc({
           : undefined
       }
       role={onChon ? 'button' : undefined}
-      className={`rounded-lg border p-2 ${lopTheoTrangThai(ca.trangThai)} ${
+      className={`rounded-lg border p-2 ${lopTheoTrangThai(ca)} ${
         onChon ? 'cursor-pointer transition hover:brightness-[0.97]' : ''
       }`}
-      title={`${ca.tenLop} · ${ca.trangThai}${ca.noiDungBaiHoc ? ` · ${ca.noiDungBaiHoc}` : ''}`}
+      title={`${ca.tenLop} · ${ca.trangThai}${ca.soBuoi ? ` · Buổi ${ca.soBuoi}` : ''}${
+        ca.loaiBuoi ? ` · ${ca.loaiBuoi}` : ''
+      }${ca.noiDungBaiHoc ? ` · ${ca.noiDungBaiHoc}` : ''}`}
     >
-      <p className={`text-xs font-bold ${mauChuTheoTrangThai(ca.trangThai)}`}>
+      <p className={`flex items-center gap-1 text-xs font-bold ${mauChuTheoTrangThai(ca)}`}>
         {dinhDangKhoangGio(ca.gioBatDau, ca.gioKetThuc)}
+        {ca.loaiBuoi === 'Buổi thi' && (
+          <span className="rounded bg-violet-600 px-1 py-0.5 text-[10px] font-bold text-white">
+            THI
+          </span>
+        )}
       </p>
       <p className="mt-0.5 truncate text-xs font-semibold text-slate-900">{ca.tenLop}</p>
       {dongPhu(ca)

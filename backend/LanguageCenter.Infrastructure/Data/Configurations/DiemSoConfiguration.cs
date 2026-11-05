@@ -17,6 +17,7 @@ public sealed class DiemSoConfiguration : IEntityTypeConfiguration<DiemSo>
         builder.Property(x => x.Diem).HasPrecision(6, 2);
         builder.Property(x => x.NhanXet).HasMaxLength(1000);
         builder.Property(x => x.TrangThaiKetQua).HasMaxLength(50);
+        builder.Property(x => x.LanKiemTra).HasDefaultValue(1);
         builder.Property(x => x.NgayCham).HasDefaultValueSql("SYSDATETIME()");
 
         builder.HasOne(x => x.DangKyHoc)
@@ -37,7 +38,15 @@ public sealed class DiemSoConfiguration : IEntityTypeConfiguration<DiemSo>
             .HasConstraintName("FK_DiemSo_GiaoVien")
             .OnDelete(DeleteBehavior.Restrict); // DB: NO ACTION
 
-        builder.HasIndex(x => new { x.MaDangKy, x.MaLoaiDiem })
+        // Buổi thi gắn với bài kiểm tra (NULL = chấm ngoài lịch).
+        builder.HasOne(x => x.CaHoc)
+            .WithMany()
+            .HasForeignKey(x => x.MaCaHoc)
+            .HasConstraintName("FK_DiemSo_CaHoc")
+            .OnDelete(DeleteBehavior.Restrict); // DB: NO ACTION
+
+        // Một đầu điểm có thể có nhiều lần kiểm tra → UNIQUE gồm cả LanKiemTra.
+        builder.HasIndex(x => new { x.MaDangKy, x.MaLoaiDiem, x.LanKiemTra })
             .IsUnique()
             .HasDatabaseName("UQ_DiemSo");
     }

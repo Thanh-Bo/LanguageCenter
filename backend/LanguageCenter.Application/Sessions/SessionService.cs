@@ -65,9 +65,21 @@ public sealed class SessionService : ISessionService
 
         ValidateTimes(request.GioBatDau, request.GioKetThuc, request.NgayHoc, errors);
 
+        if (!string.IsNullOrWhiteSpace(request.LoaiBuoi) && !SessionKinds.IsValid(request.LoaiBuoi.Trim()))
+        {
+            errors.Add($"Loại buổi không hợp lệ. Chỉ chấp nhận: {string.Join(", ", SessionKinds.All)}.");
+        }
+
         if (errors.Count > 0)
         {
             return OperationResult<SessionDetailDto>.BadRequest("Dữ liệu không hợp lệ.", errors);
+        }
+
+        if (await _lookupStore.GetHolidayNameAsync(request.NgayHoc, cancellationToken) is { } tenNgayLe)
+        {
+            return OperationResult<SessionDetailDto>.BadRequest(
+                "Ngày học trùng ngày lễ.",
+                [$"{request.NgayHoc:dd/MM/yyyy} là '{tenNgayLe}' — hãy chọn ngày khác."]);
         }
 
         if (await _lookupStore.GetClassInfoAsync(request.MaLopHoc, cancellationToken) is null)
@@ -151,9 +163,22 @@ public sealed class SessionService : ISessionService
         var errors = new List<string>();
         ValidateTimes(gioBatDau, gioKetThuc, ngayHoc, errors);
 
+        if (!string.IsNullOrWhiteSpace(request.LoaiBuoi) && !SessionKinds.IsValid(request.LoaiBuoi.Trim()))
+        {
+            errors.Add($"Loại buổi không hợp lệ. Chỉ chấp nhận: {string.Join(", ", SessionKinds.All)}.");
+        }
+
         if (errors.Count > 0)
         {
             return OperationResult<SessionDetailDto>.BadRequest("Dữ liệu không hợp lệ.", errors);
+        }
+
+        if (request.NgayHoc is not null
+            && await _lookupStore.GetHolidayNameAsync(ngayHoc, cancellationToken) is { } tenNgayLe)
+        {
+            return OperationResult<SessionDetailDto>.BadRequest(
+                "Ngày học trùng ngày lễ.",
+                [$"{ngayHoc:dd/MM/yyyy} là '{tenNgayLe}' — hãy chọn ngày khác."]);
         }
 
         if (request.MaPhongHoc is not null
@@ -378,6 +403,102 @@ public sealed class SessionService : ISessionService
             .ToList();
 
         return OperationResult<IReadOnlyList<TeacherClassStudentDto>>.Ok(result);
+    }
+
+    public async Task<OperationResult<ClassProgressDto>> GetClassProgressAsync(
+        int maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var progress = await _sessionStore.GetClassProgressAsync(maLopHoc, cancellationToken);
+
+        return progress is null
+            ? OperationResult<ClassProgressDto>.NotFound($"Không tìm thấy lớp học có id = {maLopHoc}.")
+            : OperationResult<ClassProgressDto>.Ok(progress);
+    }
+
+    public async Task<OperationResult<ClassProgressDto>> GetClassProgressForTeacherAsync(
+        string maGiaoVien,
+        int maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var code = TextValue.Required(maGiaoVien);
+
+        if (code is null)
+        {
+            return OperationResult<ClassProgressDto>.Forbidden(
+                "Không xác định được giáo viên từ token.");
+        }
+
+        if (!await _lookupStore.TeacherAssignedToClassAsync(maLopHoc, code, cancellationToken))
+        {
+            return OperationResult<ClassProgressDto>.Forbidden(
+                "Bạn không được phân công giảng dạy lớp này.");
+        }
+
+        var progress = await _sessionStore.GetClassProgressAsync(maLopHoc, cancellationToken);
+
+        return progress is null
+            ? OperationResult<ClassProgressDto>.NotFound($"Không tìm thấy lớp học có id = {maLopHoc}.")
+            : OperationResult<ClassProgressDto>.Ok(progress);
+    }
+
+    public async Task<OperationResult<ClassProgressDto>> GetClassProgressForStudentAsync(
+        string maHocVien,
+        int maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var code = TextValue.Required(maHocVien);
+
+        if (code is null)
+        {
+            return OperationResult<ClassProgressDto>.Forbidden(
+                "Không xác định được học viên từ token.");
+        }
+
+        if (!await _lookupStore.StudentInClassAsync(maLopHoc, code, cancellationToken))
+        {
+            return OperationResult<ClassProgressDto>.Forbidden("Bạn không theo học lớp này.");
+        }
+
+        var progress = await _sessionStore.GetClassProgressAsync(maLopHoc, cancellationToken);
+
+        return progress is null
+            ? OperationResult<ClassProgressDto>.NotFound($"Không tìm thấy lớp học có id = {maLopHoc}.")
+            : OperationResult<ClassProgressDto>.Ok(progress);
+    }
+
+    public async Task<OperationResult<SyncSessionTeachersResponse>> SyncTeachersAsync(
+        SyncSessionTeachersRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.MaLopHoc <= 0)
+        {
+            return OperationResult<SyncSessionTeachersResponse>.BadRequest(
+                "Dữ liệu không hợp lệ.",
+                ["Mã lớp học phải lớn hơn 0."]);
+        }
+
+        var outcome = await _sessionStore.SyncTeachersAsync(request.MaLopHoc, cancellationToken);
+
+        if (!outcome.ClassFound)
+        {
+            return OperationResult<SyncSessionTeachersResponse>.NotFound(
+                $"Không tìm thấy lớp học có id = {request.MaLopHoc}.");
+        }
+
+        var response = new SyncSessionTeachersResponse
+        {
+            MaLopHoc = request.MaLopHoc,
+            TongSoCa = outcome.TongSoCa,
+            SoCaCapNhat = outcome.SoCaCapNhat,
+            SoCaKhongDoi = outcome.SoCaKhongDoi,
+            SoCaBoQua = outcome.SoCaBoQua,
+            MaGiaoVienChinh = outcome.MaGiaoVienChinh,
+            MaGiaoVienNuocNgoai = outcome.MaGiaoVienNuocNgoai,
+            MaTroGiang = outcome.MaTroGiang
+        };
+
+        return OperationResult<SyncSessionTeachersResponse>.Ok(response);
     }
 
     // ========================================================================

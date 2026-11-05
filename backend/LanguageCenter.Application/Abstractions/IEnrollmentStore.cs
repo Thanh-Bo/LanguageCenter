@@ -48,7 +48,43 @@ public interface IEnrollmentStore
 
     /// <summary>Xóa cứng — chỉ dùng để hoàn tác khi xếp lớp thất bại ngay sau khi tạo.</summary>
     Task<WriteOutcome> DeleteAsync(int maDangKy, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Dữ liệu để kiểm tra quy tắc xếp lớp: tuổi học viên vs chương trình, các khung
+    /// lịch của lớp mới và của các lớp học viên đang học, số buổi đã diễn ra.
+    /// <c>null</c> nếu đăng ký hoặc lớp không tổn tại.
+    /// </summary>
+    Task<PlacementContext?> GetPlacementContextAsync(
+        int maDangKy,
+        int maLopHoc,
+        CancellationToken cancellationToken);
 }
+
+/// <summary>Một khung lịch của lớp: thứ + giờ + khoảng ngày áp dụng.</summary>
+public sealed record ClassScheduleSlot(
+    int MaLopHoc,
+    string MaLop,
+    int ThuTrongTuan,
+    TimeOnly GioBatDau,
+    TimeOnly GioKetThuc,
+    DateOnly NgayApDungTu,
+    DateOnly? NgayApDungDen);
+
+/// <summary>Dữ liệu thô để kiểm tra quy tắc xếp lớp.</summary>
+public sealed record PlacementContext(
+    int MaLopHoc,
+    string MaLop,
+    string TenLop,
+    DateOnly NgayBatDauLop,
+    DateOnly NgayKetThucDuKien,
+    string MaHocVien,
+    DateOnly NgaySinh,
+    int? DoTuoiTu,
+    int? DoTuoiDen,
+    int SoBuoiDaDienRa,
+    int TongSoBuoi,
+    IReadOnlyList<ClassScheduleSlot> LopMoiSlots,
+    IReadOnlyList<ClassScheduleSlot> LopDangHocSlots);
 
 /// <summary>Dữ liệu đã được tầng Application TÍNH SẴN (học phí, giảm giá, người tư vấn).</summary>
 public sealed record EnrollmentCreateData(

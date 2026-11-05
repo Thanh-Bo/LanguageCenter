@@ -7,6 +7,7 @@ public partial class FormSuaPhanCong : Form
 {
     private const string ChuaPhanCong = "— Chưa phân công —";
     private const string VaiTroGiaoVienChinh = "Giáo viên chính";
+    private const string VaiTroGiaoVienNuocNgoai = "Giáo viên nước ngoài";
     private const string VaiTroTroGiang = "Trợ giảng";
 
     private IReadOnlyList<ClassListItemDto> _classes = Array.Empty<ClassListItemDto>();
@@ -17,6 +18,10 @@ public partial class FormSuaPhanCong : Form
 
     private readonly ClassListItemDto? _lopChiDinh;
     private readonly Label _lblThoiGian = new();
+
+    // ==== v15: ô chọn GIÁO VIÊN NƯỚC NGOÀI (tạo runtime để không phải sửa Designer) ====
+    private readonly Label _lblNuocNgoai = new();
+    private readonly ComboBox _cboNuocNgoai = new();
 
     /// <summary>True khi đã ghi dữ liệu thành công — nơi gọi nên tải lại danh sách.</summary>
     public bool DataChanged { get; private set; }
@@ -62,11 +67,34 @@ public partial class FormSuaPhanCong : Form
 
         _lblThoiGian.AutoSize = false;
         _lblThoiGian.Size = new Size(450, 40);
-        _lblThoiGian.Location = new Point(230, 202);
+        _lblThoiGian.Location = new Point(230, 242);
         _lblThoiGian.Font = new Font("Segoe UI", 9.5f);
         _lblThoiGian.ForeColor = Color.FromArgb(71, 85, 105);
         _lblThoiGian.Text = "—";
         Controls.Add(_lblThoiGian);
+
+        // Dãn form xuống để có chỗ cho dòng "Giáo viên nước ngoài".
+        ClientSize = new Size(740, 500);
+        lblGC.Location = new Point(24, 302);
+        txtGhiChu.Location = new Point(230, 298);
+        btnSave.Location = new Point(230, 352);
+        btnCancel.Location = new Point(396, 352);
+        lblBD.Location = new Point(24, 246);
+
+        _lblNuocNgoai.Text = "Giáo viên nước ngoài:";
+        _lblNuocNgoai.Font = new Font("Segoe UI", 9.5f);
+        _lblNuocNgoai.Location = new Point(24, 198);
+        _lblNuocNgoai.AutoSize = true;
+
+        _cboNuocNgoai.Location = new Point(230, 194);
+        _cboNuocNgoai.Width = 450;
+        _cboNuocNgoai.Font = new Font("Segoe UI", 9.5f);
+        _cboNuocNgoai.DropDownStyle = ComboBoxStyle.DropDownList;
+
+        Controls.Add(_cboNuocNgoai);
+        Controls.Add(_lblNuocNgoai);
+        _cboNuocNgoai.BringToFront();
+        _lblNuocNgoai.BringToFront();
 
         cboLopHoc.SelectedIndexChanged += async (_, _) =>
         {
@@ -108,6 +136,7 @@ public partial class FormSuaPhanCong : Form
 
         if (cboNhanSu.Items.Count > 0) cboNhanSu.SelectedIndex = 0;
         if (cboTroGiang.Items.Count > 0) cboTroGiang.SelectedIndex = 0;
+        if (_cboNuocNgoai.Items.Count > 0) _cboNuocNgoai.SelectedIndex = 0;
 
         ChonSanNguoiHienCo();
     }
@@ -167,6 +196,7 @@ public partial class FormSuaPhanCong : Form
 
         // Chỉ được chọn đúng loại hồ sơ cho từng vai trò (backend cũng kiểm tra lại).
         DoVaoCombo(cboNhanSu, "Giáo viên");
+        DoVaoCombo(_cboNuocNgoai, "Giáo viên");
         DoVaoCombo(cboTroGiang, "Trợ giảng");
 
         if (_lopChiDinh is not null)
@@ -207,7 +237,12 @@ public partial class FormSuaPhanCong : Form
     {
         foreach (var a in _phanCongHienCo)
         {
-            var cbo = a.VaiTroPhanCong == VaiTroTroGiang ? cboTroGiang : cboNhanSu;
+            var cbo = a.VaiTroPhanCong switch
+            {
+                VaiTroTroGiang => cboTroGiang,
+                VaiTroGiaoVienNuocNgoai => _cboNuocNgoai,
+                _ => cboNhanSu
+            };
 
             for (var i = 1; i < cbo.Items.Count; i++)
             {
@@ -246,9 +281,10 @@ public partial class FormSuaPhanCong : Form
 
         var lop = _classes[cboLopHoc.SelectedIndex];
         var giaoVienChinh = NguoiDangChon(cboNhanSu);
+        var giaoVienNuocNgoai = NguoiDangChon(_cboNuocNgoai);
         var troGiang = NguoiDangChon(cboTroGiang);
 
-        if (giaoVienChinh is null && troGiang is null)
+        if (giaoVienChinh is null && giaoVienNuocNgoai is null && troGiang is null)
         {
             var daCoKhung = _phanCongHienCo.Any(a => a.MaLopHoc == lop.MaLopHoc);
 
@@ -277,6 +313,7 @@ public partial class FormSuaPhanCong : Form
         var loi = new List<string>();
 
         loi.AddRange(await LuuVaiTroAsync(lop, VaiTroGiaoVienChinh, giaoVienChinh, ghiChu));
+        loi.AddRange(await LuuVaiTroAsync(lop, VaiTroGiaoVienNuocNgoai, giaoVienNuocNgoai, ghiChu));
         loi.AddRange(await LuuVaiTroAsync(lop, VaiTroTroGiang, troGiang, ghiChu));
 
         UseWaitCursor = false;

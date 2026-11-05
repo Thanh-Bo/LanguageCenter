@@ -115,11 +115,12 @@
 
 ## 6. Lớp – Lịch – Ca học – Phân công (24)
 
-### 6.1 Lớp học (6)
+### 6.1 Lớp học (7)
 | Method | URL |
 |---|---|
 | GET / POST | `/api/admin/classes` |
 | GET / PATCH | `/api/admin/classes/{id}` |
+| GET | `/api/admin/classes/{id}/progress` — tiến độ từng buổi (buổi thứ mấy, ngày, loại buổi, buổi đã học, buổi hiện tại) |
 | PATCH | `/api/admin/classes/{id}/status` |
 | DELETE | `/api/admin/classes/{id}` |
 
@@ -139,6 +140,7 @@
 | PATCH | `/api/admin/sessions/{id}/status` |
 | DELETE | `/api/admin/sessions/{id}` |
 | POST | `/api/admin/sessions/generate` |
+| POST | `/api/admin/sessions/sync-teachers` — đồng bộ GV cho ca chưa diễn ra (buổi đầu tuần = GV nước ngoài) |
 
 ### 6.4 Phân công giảng dạy (5)
 | Method | URL |
@@ -270,6 +272,7 @@
 | GET | `/api/students/me/attendance` |
 | GET | `/api/students/me/grades` |
 | GET | `/api/students/me/schedule` |
+| GET | `/api/students/me/classes/{maLopHoc}/progress` | Tiến độ từng buổi của lớp mình học (403 nếu không thuộc lớp) |
 | GET | `/api/student/profile` |
 | PATCH | `/api/student/profile` |
 
@@ -284,6 +287,7 @@
 | GET | `/api/teachers/me/schedule` |
 | GET | `/api/teachers/me/classes` |
 | GET | `/api/teachers/me/classes/{maLopHoc}/students` |
+| GET | `/api/teachers/me/classes/{maLopHoc}/progress` | Tiến độ từng buổi của lớp mình dạy (403 nếu không được phân công) |
 | GET | `/api/teacher/profile` |
 | PATCH | `/api/teacher/profile` |
 

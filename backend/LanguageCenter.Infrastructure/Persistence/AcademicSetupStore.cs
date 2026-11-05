@@ -1,6 +1,7 @@
 using LanguageCenter.Application.Abstractions;
 using LanguageCenter.Application.AcademicSetup.Models;
 using LanguageCenter.Application.Common;
+using LanguageCenter.Domain.Constants;
 using LanguageCenter.Domain.Entities;
 using LanguageCenter.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -35,7 +36,8 @@ public sealed class AcademicSetupStore : IAcademicSetupStore
                 SoBuoi = x.SoBuoi,
                 TieuDe = x.TieuDe,
                 NoiDung = x.NoiDung,
-                MucTieu = x.MucTieu
+                MucTieu = x.MucTieu,
+                LoaiBuoi = x.LoaiBuoi
             })
             .ToListAsync(cancellationToken);
 
@@ -56,12 +58,14 @@ public sealed class AcademicSetupStore : IAcademicSetupStore
             var tieuDe = (item.TieuDe ?? string.Empty).Trim();
             var noiDung = TextValue.Required(item.NoiDung);
             var mucTieu = TextValue.Required(item.MucTieu);
+            var loaiBuoi = SessionKinds.IsValid(item.LoaiBuoi) ? item.LoaiBuoi! : SessionKinds.BuoiHoc;
 
             if (theoSoBuoi.TryGetValue(item.SoBuoi, out var entity))
             {
                 entity.TieuDe = tieuDe;
                 entity.NoiDung = noiDung;
                 entity.MucTieu = mucTieu;
+                entity.LoaiBuoi = loaiBuoi;
             }
             else
             {
@@ -71,7 +75,8 @@ public sealed class AcademicSetupStore : IAcademicSetupStore
                     SoBuoi = item.SoBuoi,
                     TieuDe = tieuDe,
                     NoiDung = noiDung,
-                    MucTieu = mucTieu
+                    MucTieu = mucTieu,
+                    LoaiBuoi = loaiBuoi
                 });
             }
 

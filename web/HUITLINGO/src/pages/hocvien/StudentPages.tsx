@@ -531,7 +531,7 @@ export function HVDiemSo() {
       <TrangTieuDe
         eyebrow="Học tập"
         title="Điểm số"
-        desc="Điểm tổng kết được tính theo trọng số từng thành phần do trung tâm quy định."
+        desc="Điểm tổng kết được tính theo trọng số từng thành phần do trung tâm quy định. Nếu một đầu điểm có nhiều lần kiểm tra, điểm hiển thị là lần mới nhất."
       />
 
       {ds.length === 0 ? (

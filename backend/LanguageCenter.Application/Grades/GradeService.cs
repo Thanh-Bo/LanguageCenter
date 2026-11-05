@@ -107,12 +107,40 @@ public sealed class GradeService : IGradeService
             return OperationResult<GradeDetailDto>.BadRequest("Dữ liệu không hợp lệ.", errors);
         }
 
+        // ---- Nếu gắn với buổi thi: buổi đó phải thuộc lớp của đăng ký và là "Buổi thi" ----
+        if (request.MaCaHoc is { } maCaHoc)
+        {
+            var session = await _lookupStore.GetSessionInfoAsync(maCaHoc, cancellationToken);
+
+            if (session is null)
+            {
+                return OperationResult<GradeDetailDto>.BadRequest(
+                    "Ca học không tồn tại.",
+                    [$"Không tìm thấy ca học có id = {maCaHoc}."]);
+            }
+
+            if (enrollment.MaLopHoc is null || session.MaLopHoc != enrollment.MaLopHoc.Value)
+            {
+                return OperationResult<GradeDetailDto>.BadRequest(
+                    "Buổi thi không thuộc lớp của đăng ký này.",
+                    [$"Ca học {maCaHoc} thuộc lớp '{session.MaLop}'."]);
+            }
+
+            if (!SessionKinds.IsExam(session.LoaiBuoi))
+            {
+                return OperationResult<GradeDetailDto>.BadRequest(
+                    "Ca học được chọn không phải buổi thi.",
+                    [$"Ca học {maCaHoc} đang là '{session.LoaiBuoi}' — hãy đổi sang 'Buổi thi' trước khi gắn điểm."]);
+            }
+        }
+
         if (await _gradeStore.DuplicateAsync(
-                request.MaDangKy, request.MaLoaiDiem, exceptId: null, cancellationToken))
+                request.MaDangKy, request.MaLoaiDiem, request.LanKiemTra,
+                exceptId: null, cancellationToken))
         {
             return OperationResult<GradeDetailDto>.Conflict(
-                $"Đăng ký {request.MaDangKy} đã có điểm cho đầu điểm '{gradeType.TenLoaiDiem}'. " +
-                "Hãy dùng PATCH để sửa.");
+                $"Đăng ký {request.MaDangKy} đã có điểm lần {request.LanKiemTra} " +
+                $"cho đầu điểm '{gradeType.TenLoaiDiem}'. Hãy dùng PATCH để sửa hoặc tăng lần kiểm tra.");
         }
 
         // -------- XÁC ĐỊNH GIÁO VIÊN NHẬP ĐIỂM --------

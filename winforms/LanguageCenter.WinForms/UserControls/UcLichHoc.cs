@@ -20,6 +20,7 @@ public partial class UcLichHoc : UserControl
     private Button _btnDiemDanh = null!;
     private Button _btnTrangThai = null!;
     private Button _btnSinhCa = null!;
+    private Button _btnDongBoGiaoVien = null!;
     private Button _btnNgayLe = null!;
     private Button _btnSuaLich = null!;
     private Button _btnXoaLich = null!;
@@ -62,6 +63,12 @@ public partial class UcLichHoc : UserControl
         _btnSinhCa.Click += BtnSinhCa_Click;
         _btnSinhCa.Visible = false;
         pnlToolbar.Controls.Add(_btnSinhCa);
+
+        // Đồng bộ giáo viên cho ca đã sinh: buổi đầu tuần = GV nước ngoài (v15).
+        _btnDongBoGiaoVien = UiHelpers.CreateSecondaryButton("Đồng bộ giáo viên", 160, 34);
+        _btnDongBoGiaoVien.Click += BtnDongBoGiaoVien_Click;
+        _btnDongBoGiaoVien.Visible = false;
+        pnlToolbar.Controls.Add(_btnDongBoGiaoVien);
 
         // Khai báo / sửa ngày lễ — buổi trùng ngày lễ sẽ được dời sang tuần sau.
         _btnNgayLe = UiHelpers.CreateSecondaryButton("Ngày lễ", 120, 34);
@@ -127,6 +134,7 @@ public partial class UcLichHoc : UserControl
             ("TroGiang", "Trợ giảng", 110),
             ("GioHoc", "Thời gian", 110),
             ("NoiDung", "Nội dung bài học", 200),
+            ("Buoi", "Buổi / Loại buổi", 115),
             ("TrangThai", "Trạng thái", 95));
     }
 
@@ -174,6 +182,7 @@ public partial class UcLichHoc : UserControl
         // Thứ tự Add = thứ tự từ PHẢI sang TRÁI.
         flpHanhDong.Controls.Add(btnAdd);
         flpHanhDong.Controls.Add(_btnSinhCa);
+        flpHanhDong.Controls.Add(_btnDongBoGiaoVien);
         flpHanhDong.Controls.Add(_btnNgayLe);
         flpHanhDong.Controls.Add(_btnSuaLich);
         flpHanhDong.Controls.Add(_btnXoaLich);
@@ -244,8 +253,7 @@ public partial class UcLichHoc : UserControl
     }
 
     private void SwitchTab(int tabIndex)
-    {
-        _currentTab = tabIndex;
+    {        _currentTab = tabIndex;
 
         btnTabRooms.BackColor = _currentTab == 0 ? Theme.Primary : Color.White;
         btnTabRooms.ForeColor = _currentTab == 0 ? Color.White : Theme.TextDark;
@@ -267,6 +275,7 @@ public partial class UcLichHoc : UserControl
         if (_btnTrangThai is not null) _btnTrangThai.Visible = _currentTab != 0;
         if (_btnTrangThai is not null) _btnTrangThai.Text = _currentTab == 2 ? "Trạng thái ca" : "Trạng thái lịch";
         if (_btnSinhCa is not null) _btnSinhCa.Visible = _currentTab == 1;
+        if (_btnDongBoGiaoVien is not null) _btnDongBoGiaoVien.Visible = _currentTab == 2;
         if (_btnNgayLe is not null) _btnNgayLe.Visible = _currentTab == 1;
         if (_btnSuaLich is not null) _btnSuaLich.Visible = _currentTab == 1;
         if (_btnXoaLich is not null) _btnXoaLich.Visible = _currentTab == 1;
@@ -409,6 +418,8 @@ public partial class UcLichHoc : UserControl
                     s.TenTroGiangThucTe ?? "—",
                     $"{s.GioBatDau:HH\\:mm} - {s.GioKetThuc:HH\\:mm}",
                     s.NoiDungBaiHoc ?? "—",
+                    (s.SoBuoi is { } soBuoi ? $"Buổi {soBuoi}" : "—")
+                        + (s.LoaiBuoi == "Buổi thi" ? " · THI" : string.Empty),
                     s.TrangThai
                 );
                 dgvShifts.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(s.TrangThai);
@@ -439,6 +450,57 @@ public partial class UcLichHoc : UserControl
     /// và cập nhật lại Ngày kết thúc dự kiến của lớp.
     /// </para>
     /// </summary>
+    /// <summary>
+    /// Đồng bộ lại giáo viên cho các ca CHƯA diễn ra của lớp đang chọn:
+    /// buổi đầu tuần → giáo viên nước ngoài, buổi còn lại → giáo viên chính.
+    /// </summary>
+    private async void BtnDongBoGiaoVien_Click(object? sender, EventArgs e)
+    {
+        if (dgvShifts.CurrentRow?.Tag is not SessionListItemDto ca)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một ca học thuộc lớp cần đồng bộ.",
+                "Chưa chọn ca học", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var xacNhan = MessageBox.Show(FindForm(),
+            $"Đồng bộ lại giáo viên cho các ca CHƯA diễn ra của lớp {ca.TenLop}?" + Environment.NewLine
+            + "Quy ước: buổi đầu tuần do giáo viên nước ngoài dạy, buổi còn lại do giáo viên chính.",
+            "Đồng bộ giáo viên", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+            MessageBoxDefaultButton.Button2);
+
+        if (xacNhan != DialogResult.Yes)
+        {
+            return;
+        }
+
+        UseWaitCursor = true;
+
+        var ketQua = await AppSession.Api.PostAsync<SyncTeachersResponseDto>(
+            "admin/sessions/sync-teachers",
+            new { maLopHoc = ca.MaLopHoc });
+
+        UseWaitCursor = false;
+
+        if (!ketQua.Success || ketQua.Data is null)
+        {
+            MessageBox.Show(FindForm(),
+                string.IsNullOrWhiteSpace(ketQua.ErrorMessage) ? "Không đồng bộ được giáo viên." : ketQua.ErrorMessage,
+                "Đồng bộ thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        MessageBox.Show(FindForm(),
+            $"Đã đồng bộ {ketQua.Data.SoCaCapNhat}/{ketQua.Data.TongSoCa} ca học."
+            + Environment.NewLine
+            + $"Không đổi: {ketQua.Data.SoCaKhongDoi} · Bỏ qua: {ketQua.Data.SoCaBoQua}"
+            + Environment.NewLine
+            + $"GV chính: {ketQua.Data.MaGiaoVienChinh ?? "—"} · GV nước ngoài: {ketQua.Data.MaGiaoVienNuocNgoai ?? "—"}",
+            "Đồng bộ giáo viên", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        await ReloadAsync();
+    }
+
     private async void BtnSinhCa_Click(object? sender, EventArgs e)
     {
         if (dgvSchedules.CurrentRow?.Tag is not LichTuanItem nhom)

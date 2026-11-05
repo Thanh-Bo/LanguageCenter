@@ -19,6 +19,12 @@ public sealed class NoiDungBaiHocConfiguration : IEntityTypeConfiguration<NoiDun
         builder.Property(x => x.NoiDung).HasMaxLength(1000);
         builder.Property(x => x.MucTieu).HasMaxLength(500);
 
+        // LoaiBuoi: "Buổi học" / "Buổi thi" — khớp CK_NoiDungBaiHoc_LoaiBuoi.
+        builder.Property(x => x.LoaiBuoi)
+            .HasMaxLength(30)
+            .IsRequired()
+            .HasDefaultValue("Buổi học");
+
         builder.HasIndex(x => new { x.MaKhoaHoc, x.SoBuoi })
             .IsUnique()
             .HasDatabaseName("UQ_NoiDungBaiHoc_KhoaHoc_SoBuoi");

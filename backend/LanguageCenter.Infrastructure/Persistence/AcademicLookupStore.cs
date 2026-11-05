@@ -156,5 +156,25 @@ public sealed class AcademicLookupStore : IAcademicLookupStore
                               && p.TrangThai == AssignmentStatuses.DangPhanCong),
                 cancellationToken);
     }
+
+    public Task<SessionInfo?> GetSessionInfoAsync(int maCaHoc, CancellationToken cancellationToken)
+        => _dbContext.CaHocs
+            .AsNoTracking()
+            .Where(x => x.MaCaHoc == maCaHoc)
+            .Select(x => new SessionInfo(
+                x.MaCaHoc,
+                x.MaLopHoc,
+                x.LopHoc.MaLop,
+                x.NgayHoc,
+                x.LoaiBuoi,
+                x.TrangThai))
+            .FirstOrDefaultAsync(cancellationToken);
+
+    public Task<string?> GetHolidayNameAsync(DateOnly ngay, CancellationToken cancellationToken)
+        => _dbContext.NgayLes
+            .AsNoTracking()
+            .Where(x => x.Ngay == ngay)
+            .Select(x => (string?)x.TenNgayLe)
+            .FirstOrDefaultAsync(cancellationToken);
 }
 

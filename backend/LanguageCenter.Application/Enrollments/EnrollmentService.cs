@@ -153,6 +153,15 @@ public sealed class EnrollmentService : IEnrollmentService
         // ---- (7) Nếu client chỉ định lớp thì xếp lớp luôn ----
         if (request.MaLopHoc is { } maLopHoc)
         {
+            var ruleErrors = await CheckPlacementRulesAsync(created.Id, maLopHoc, cancellationToken);
+
+            if (ruleErrors.Count > 0)
+            {
+                await _enrollmentStore.DeleteAsync(created.Id, cancellationToken);
+
+                return OperationResult<EnrollmentDetailDto>.BadRequest("Không thể xếp lớp.", ruleErrors);
+            }
+
             var assignOutcome = await _enrollmentStore.AssignClassAsync(created.Id, maLopHoc, cancellationToken);
 
             if (assignOutcome != AssignClassOutcome.Success)
@@ -286,9 +295,14 @@ public sealed class EnrollmentService : IEnrollmentService
             return OperationResult<EnrollmentDetailDto>.Conflict(
                 $"Không thể xếp lớp cho đăng ký ở trạng thái '{current.TrangThaiDangKy}'.");
         }
+        // QUY TẮC XẾP LỚP: độ tuổi, trùng thời gian với lớp khác, lớp đã gần kết thúc.
+        var ruleErrors = await CheckPlacementRulesAsync(maDangKy, request.MaLopHoc, cancellationToken);
 
+        if (ruleErrors.Count > 0)
+        {
+            return OperationResult<EnrollmentDetailDto>.BadRequest("Không thể xếp lớp.", ruleErrors);
+        }
         var outcome = await _enrollmentStore.AssignClassAsync(maDangKy, request.MaLopHoc, cancellationToken);
-
         if (outcome == AssignClassOutcome.Success)
         {
             var detail = await _enrollmentStore.GetDetailAsync(maDangKy, cancellationToken);
@@ -462,5 +476,111 @@ public sealed class EnrollmentService : IEnrollmentService
         AssignClassOutcome.ClassNotFound => "Lớp không tồn tại.",
         AssignClassOutcome.EnrollmentNotFound => "Đăng ký không tồn tại.",
         _ => "Ràng buộc dữ liệu không cho phép xếp lớp."
+    };
+
+    /// <summary>
+    /// Kiểm tra 3 quy tắc xếp lớp:
+    /// <list type="number">
+    ///   <item>Độ tuổi học viên phải nằm trong khoảng tuổi của chương trình.</item>
+    ///   <item>Không trùng thứ/giờ với lớp khác mà học viên đang học.</item>
+    ///   <item>Lớp chưa đi quá số buổi cho phép (tránh vào lớp khi gần kết thúc).</item>
+    /// </list>
+    /// </summary>
+    private async Task<IReadOnlyList<string>> CheckPlacementRulesAsync(
+        int maDangKy,
+        int maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var context = await _enrollmentStore.GetPlacementContextAsync(maDangKy, maLopHoc, cancellationToken);
+
+        if (context is null)
+        {
+            // Không đủ dữ liệu (đăng ký/lớp/học viên không tồn tại) → để store báo lỗi chính xác.
+            return [];
+        }
+
+        var errors = new List<string>();
+
+        // ---- (1) Độ tuổi tại ngày khai giảng của lớp ----
+        var tuoi = TinhTuoi(context.NgaySinh, context.NgayBatDauLop);
+
+        if (context.DoTuoiTu is { } tuoiTu && tuoi < tuoiTu)
+        {
+            errors.Add(
+                $"Học viên {tuoi} tuổi (sinh {context.NgaySinh:dd/MM/yyyy}) nhỏ hơn độ tuổi tối thiểu " +
+                $"{tuoiTu} của chương trình — không thể xếp vào lớp '{context.MaLop}'.");
+        }
+
+        if (context.DoTuoiDen is { } tuoiDen && tuoi > tuoiDen)
+        {
+            errors.Add(
+                $"Học viên {tuoi} tuổi (sinh {context.NgaySinh:dd/MM/yyyy}) lớn hơn độ tuổi tối đa " +
+                $"{tuoiDen} của chương trình — không thể xếp vào lớp '{context.MaLop}'.");
+        }
+
+        // ---- (2) Trùng thời gian với lớp khác ----
+        foreach (var slot in context.LopMoiSlots)
+        {
+            foreach (var other in context.LopDangHocSlots)
+            {
+                if (other.MaLopHoc == slot.MaLopHoc || other.ThuTrongTuan != slot.ThuTrongTuan)
+                {
+                    continue;
+                }
+
+                // Giờ phải chồng lấn (biên bằng nhau không tính là trùng).
+                if (slot.GioBatDau >= other.GioKetThuc || other.GioBatDau >= slot.GioKetThuc)
+                {
+                    continue;
+                }
+
+                // Khoảng ngày áp dụng phải chồng lấn.
+                var ketThucMoi = slot.NgayApDungDen ?? context.NgayKetThucDuKien;
+                var ketThucCu = other.NgayApDungDen ?? context.NgayKetThucDuKien;
+
+                if (slot.NgayApDungTu > ketThucCu || other.NgayApDungTu > ketThucMoi)
+                {
+                    continue;
+                }
+
+                errors.Add(
+                    $"Trùng lịch với lớp '{other.MaLop}': {TenThu(slot.ThuTrongTuan)} " +
+                    $"{slot.GioBatDau:HH\\:mm}–{slot.GioKetThuc:HH\\:mm}.");
+            }
+        }
+
+        // ---- (3) Lớp đã gần kết thúc ----
+        if (context.SoBuoiDaDienRa > EnrollmentRules.SoBuoiDaDienRaToiDa)
+        {
+            errors.Add(
+                $"Lớp '{context.MaLop}' đã diễn ra {context.SoBuoiDaDienRa}/{context.TongSoBuoi} buổi " +
+                $"(quá {EnrollmentRules.SoBuoiDaDienRaToiDa} buổi) — không nhận thêm học viên.");
+        }
+
+        return errors.Distinct().ToList();
+    }
+
+    private static int TinhTuoi(DateOnly ngaySinh, DateOnly moc)
+    {
+        var tuoi = moc.Year - ngaySinh.Year;
+
+        if (moc < ngaySinh.AddYears(tuoi))
+        {
+            tuoi--;
+        }
+
+        return tuoi;
+    }
+
+    private static string TenThu(int thu) => thu switch
+    {
+        1 => "Thứ Hai",
+        2 => "Thứ Ba",
+        3 => "Thứ Tư",
+        4 => "Thứ Năm",
+        5 => "Thứ Sáu",
+        6 => "Thứ Bảy",
+        7 => "Chủ Nhật",
+        _ => $"Thứ {thu}"
     };
 }

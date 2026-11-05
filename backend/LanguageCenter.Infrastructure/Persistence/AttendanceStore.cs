@@ -37,6 +37,8 @@ public sealed class AttendanceStore : IAttendanceStore
                 x.NgayHoc,
                 x.GioBatDau,
                 x.GioKetThuc,
+                x.SoBuoi,
+                x.LoaiBuoi,
                 x.TrangThai
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -109,6 +111,8 @@ public sealed class AttendanceStore : IAttendanceStore
             NgayHoc = header.NgayHoc,
             GioBatDau = header.GioBatDau,
             GioKetThuc = header.GioKetThuc,
+            SoBuoi = header.SoBuoi,
+            LoaiBuoi = header.LoaiBuoi,
             TrangThaiCaHoc = header.TrangThai,
             CoTheDiemDanh = SessionStatuses.CanTakeAttendance(header.TrangThai),
             HocViens = rows

@@ -29,9 +29,11 @@ import {
   TRANG_THAI_HOC_PHI,
   TRANG_THAI_HOC_TAP,
   TRANG_THAI_LOP,
+  tenThu,
 } from '../../lib/constants'
-import { dinhDangNgay, dinhDangSo, dinhDangTien } from '../../lib/format'
+import { dinhDangGio, dinhDangNgay, dinhDangSo, dinhDangTien } from '../../lib/format'
 import { dungDuLieu, thongDiepLoi } from '../../lib/useApi'
+import { LopHocChiTiet } from './LopHocChiTiet'
 
 const PAGE_SIZE = 20
 
@@ -308,6 +310,7 @@ export function AdminLopHoc() {
   const [ketQua, setKetQua] = useState<PagedResult<ClassListItem> | null>(null)
   const [dangTai, setDangTai] = useState(true)
   const [loi, setLoi] = useState<string | null>(null)
+  const [dangXem, setDangXem] = useState<ClassListItem | null>(null)
 
   const [tuKhoaNhap, setTuKhoaNhap] = useState('')
   const [tuKhoa, setTuKhoa] = useState('')
@@ -357,6 +360,23 @@ export function AdminLopHoc() {
       khoa: 'siSoHienTai',
       render: (r) => `${r.siSoHienTai}/${r.siSoToiDa}`,
     },
+    {
+      tieuDe: 'Thời khóa biểu',
+      khoa: 'thuBuoi1',
+      render: (r) => (
+        <span className="whitespace-nowrap text-xs text-slate-600">
+          {r.thuBuoi1 ? `${tenThu(r.thuBuoi1)} ${dinhDangGio(r.gioBatDau)}` : '—'}
+          {r.thuBuoi2 ? ` · ${tenThu(r.thuBuoi2)} ${dinhDangGio(r.gioBatDau)}` : ''}
+        </span>
+      ),
+    },
+    {
+      tieuDe: 'Buổi đã sinh',
+      khoa: 'soCaHoc',
+      render: (r) => (
+        <span className="font-semibold text-slate-700">{r.soCaHoc ?? 0}/20</span>
+      ),
+    },
     { tieuDe: 'Bắt đầu', khoa: 'ngayBatDau', render: (r) => dinhDangNgay(r.ngayBatDau) },
     {
       tieuDe: 'Kết thúc dự kiến',
@@ -365,6 +385,20 @@ export function AdminLopHoc() {
     },
     { tieuDe: 'Học vụ', khoa: 'tenNhanVienHocVu', render: (r) => r.tenNhanVienHocVu },
     { tieuDe: 'Trạng thái', khoa: 'trangThai', render: (r) => <Nhan>{r.trangThai}</Nhan> },
+    {
+      tieuDe: '',
+      khoa: 'chiTiet',
+      canPhai: true,
+      render: (r) => (
+        <button
+          type="button"
+          onClick={() => setDangXem(r)}
+          className="whitespace-nowrap rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:text-blue-700"
+        >
+          Chi tiết
+        </button>
+      ),
+    },
   ]
 
   return (
@@ -430,6 +464,18 @@ export function AdminLopHoc() {
             />
           )}
         </>
+      )}
+
+      {dangXem && (
+        <LopHocChiTiet
+          maLopHoc={dangXem.maLopHoc}
+          tenLop={`${dangXem.maLop} — ${dangXem.tenLop}`}
+          mo={!!dangXem}
+          onDong={() => {
+            setDangXem(null)
+            void tai()
+          }}
+        />
       )}
     </div>
   )

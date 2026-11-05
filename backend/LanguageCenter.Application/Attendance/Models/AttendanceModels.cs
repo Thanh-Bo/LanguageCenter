@@ -87,6 +87,12 @@ public sealed class SessionAttendanceSheetDto
 
     public TimeOnly GioKetThuc { get; init; }
 
+    /// <summary>Buổi thứ mấy trong khóa (NULL với ca phát sinh).</summary>
+    public int? SoBuoi { get; init; }
+
+    /// <summary>"Buổi học" hoặc "Buổi thi".</summary>
+    public string LoaiBuoi { get; init; } = string.Empty;
+
     public string TrangThaiCaHoc { get; init; } = string.Empty;
 
     /// <summary>Có được phép điểm danh ca này hay không (kết hợp trạng thái ca và quyền của người gọi).</summary>

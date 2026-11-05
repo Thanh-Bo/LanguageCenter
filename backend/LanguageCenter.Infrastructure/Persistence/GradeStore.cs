@@ -82,6 +82,8 @@ public sealed class GradeStore : IGradeStore
                 Diem = x.Diem,
                 NhanXet = x.NhanXet,
                 TrangThaiKetQua = x.TrangThaiKetQua,
+                LanKiemTra = x.LanKiemTra,
+                MaCaHoc = x.MaCaHoc,
                 MaGiaoVien = x.MaGiaoVien,
                 TenGiaoVien = x.GiaoVien.HoTen,
                 NgayCham = x.NgayCham,
@@ -117,6 +119,9 @@ public sealed class GradeStore : IGradeStore
                 Diem = x.Diem,
                 NhanXet = x.NhanXet,
                 TrangThaiKetQua = x.TrangThaiKetQua,
+                LanKiemTra = x.LanKiemTra,
+                MaCaHoc = x.MaCaHoc,
+                NgayThi = x.CaHoc != null ? x.CaHoc.NgayHoc : (DateOnly?)null,
                 MaGiaoVien = x.MaGiaoVien,
                 TenGiaoVien = x.GiaoVien.HoTen,
                 NgayCham = x.NgayCham,
@@ -132,6 +137,7 @@ public sealed class GradeStore : IGradeStore
     public Task<bool> DuplicateAsync(
         int maDangKy,
         int maLoaiDiem,
+        int lanKiemTra,
         int? exceptId,
         CancellationToken cancellationToken)
         => _dbContext.DiemSos
@@ -139,6 +145,7 @@ public sealed class GradeStore : IGradeStore
             .AnyAsync(
                 x => x.MaDangKy == maDangKy
                      && x.MaLoaiDiem == maLoaiDiem
+                     && x.LanKiemTra == lanKiemTra
                      && (exceptId == null || x.MaDiemSo != exceptId),
                 cancellationToken);
 
@@ -155,6 +162,8 @@ public sealed class GradeStore : IGradeStore
             Diem = request.Diem,
             NhanXet = TextValue.Required(request.NhanXet),
             TrangThaiKetQua = TextValue.Required(request.TrangThaiKetQua),
+            LanKiemTra = request.LanKiemTra < 1 ? 1 : request.LanKiemTra,
+            MaCaHoc = request.MaCaHoc,
             NgayCham = DateTime.Now,
             NgayCapNhat = null
         };
@@ -404,15 +413,18 @@ public sealed class GradeStore : IGradeStore
         var rows = await _dbContext.DiemSos
             .AsNoTracking()
             .Where(x => maDangKys.Contains(x.MaDangKy))
-            .Select(x => new { x.MaDangKy, x.MaLoaiDiem, x.Diem })
+            .Select(x => new { x.MaDangKy, x.MaLoaiDiem, x.LanKiemTra, x.Diem })
             .ToListAsync(cancellationToken);
 
+        // Nhiều lần kiểm tra cho cùng đầu điểm → lấy ĐIỂM CAO NHẤT của lần gần nhất.
         return rows
             .GroupBy(x => x.MaDangKy)
             .ToDictionary(
                 g => g.Key,
-                g => (IReadOnlyDictionary<int, decimal>)g.ToDictionary(
-                    x => x.MaLoaiDiem,
-                    x => x.Diem));
+                g => (IReadOnlyDictionary<int, decimal>)g
+                    .GroupBy(x => x.MaLoaiDiem)
+                    .ToDictionary(
+                        x => x.Key,
+                        x => x.OrderByDescending(y => y.LanKiemTra).First().Diem));
     }
 }

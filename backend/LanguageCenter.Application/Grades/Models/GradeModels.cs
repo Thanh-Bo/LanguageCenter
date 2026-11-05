@@ -38,6 +38,17 @@ public sealed class CreateGradeRequest
     [Range(typeof(decimal), "0", "1000000", ErrorMessage = "Điểm phải lớn hơn hoặc bằng 0.")]
     public decimal Diem { get; set; }
 
+    /// <summary>
+    /// Lần kiểm tra của cùng một đầu điểm (1, 2, 3...). Mặc định 1.
+    /// Dùng khi một đầu điểm có nhiều bài kiểm tra.
+    /// </summary>
+    [Range(1, 99, ErrorMessage = "Lần kiểm tra phải từ 1 đến 99.")]
+    public int LanKiemTra { get; set; } = 1;
+
+    /// <summary>Buổi thi mà bài kiểm tra này thuộc về (tuỳ chọn).</summary>
+    [Range(1, int.MaxValue, ErrorMessage = "Ca học không hợp lệ.")]
+    public int? MaCaHoc { get; set; }
+
     [StringLength(500, ErrorMessage = "Nhận xét tối đa 500 ký tự.")]
     public string? NhanXet { get; set; }
 
@@ -109,6 +120,12 @@ public sealed class GradeListItemDto
 
     public string? TrangThaiKetQua { get; init; }
 
+    /// <summary>Lần kiểm tra của đầu điểm (1, 2, 3...).</summary>
+    public int LanKiemTra { get; init; }
+
+    /// <summary>Buổi thi gắn với bài kiểm tra (NULL nếu chấm ngoài lịch).</summary>
+    public int? MaCaHoc { get; init; }
+
     public string MaGiaoVien { get; init; } = string.Empty;
 
     public string TenGiaoVien { get; init; } = string.Empty;
@@ -146,6 +163,15 @@ public sealed class GradeDetailDto
     public string? NhanXet { get; init; }
 
     public string? TrangThaiKetQua { get; init; }
+
+    /// <summary>Lần kiểm tra của đầu điểm (1, 2, 3...).</summary>
+    public int LanKiemTra { get; init; }
+
+    /// <summary>Buổi thi gắn với bài kiểm tra (NULL nếu chấm ngoài lịch).</summary>
+    public int? MaCaHoc { get; init; }
+
+    /// <summary>Ngày của buổi thi (nếu có gắn).</summary>
+    public DateOnly? NgayThi { get; init; }
 
     public string MaGiaoVien { get; init; } = string.Empty;
 

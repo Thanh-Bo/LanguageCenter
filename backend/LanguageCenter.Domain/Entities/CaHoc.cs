@@ -24,6 +24,12 @@ public class CaHoc
 
     public string? NoiDungBaiHoc { get; set; }
 
+    /// <summary>Buổi thứ mấy trong khóa (1..N); NULL với ca phát sinh ngoài khung.</summary>
+    public int? SoBuoi { get; set; }
+
+    /// <summary>"Buổi học" hoặc "Buổi thi" — xem <c>SessionKinds</c>.</summary>
+    public string LoaiBuoi { get; set; } = "Buổi học";
+
     public string TrangThai { get; set; } = null!;
 
     public string? LyDoThayDoi { get; set; }

@@ -22,6 +22,8 @@ public sealed class FormCaHoc : Form
     private readonly DateTimePicker _dtpKetThuc = new();
     private readonly TextBox _txtNoiDung = new();
     private readonly TextBox _txtLyDo = UiHelpers.CreateTextBox(320);
+    private readonly ComboBox _cboLoaiBuoi = UiHelpers.CreateComboBox(212);
+    private readonly Label _lblBuoi = new();
     private readonly Label _lblThongBao = new();
     private readonly Button _btnLuu = UiHelpers.CreatePrimaryButton("Lưu ca học", 150, 36);
     private readonly Button _btnHuy = UiHelpers.CreateSecondaryButton("Hủy bỏ", 110, 36);
@@ -121,6 +123,29 @@ public sealed class FormCaHoc : Form
             Location = new Point(24, 474)
         });
         Controls.Add(_txtNoiDung);
+
+        // Loại buổi — "Buổi học" / "Buổi thi" (tô tím buổi thi ở các màn danh sách).
+        _cboLoaiBuoi.DropDownStyle = ComboBoxStyle.DropDownList;
+        _cboLoaiBuoi.Items.Clear();
+        _cboLoaiBuoi.Items.AddRange(["Buổi học", "Buổi thi"]);
+        _cboLoaiBuoi.SelectedIndex = 0;
+        _cboLoaiBuoi.Location = new Point(360, 434);
+        Controls.Add(new Label
+        {
+            Text = "Loại buổi",
+            AutoSize = true,
+            ForeColor = Theme.TextMedium,
+            Font = Theme.FontSub,
+            Location = new Point(360, 414)
+        });
+        Controls.Add(_cboLoaiBuoi);
+
+        // Số thứ tự buổi do backend đánh — chỉ hiển thị.
+        _lblBuoi.AutoSize = true;
+        _lblBuoi.ForeColor = Theme.Primary;
+        _lblBuoi.Font = Theme.FontSub;
+        _lblBuoi.Location = new Point(440, 24);
+        Controls.Add(_lblBuoi);
 
         DatTruong("Lý do thay đổi (nếu có)", _txtLyDo, 590);
 
@@ -256,6 +281,11 @@ public sealed class FormCaHoc : Form
         _dtpBatDau.Value = DateTime.Today.Add(_existing.GioBatDau.ToTimeSpan());
         _dtpKetThuc.Value = DateTime.Today.Add(_existing.GioKetThuc.ToTimeSpan());
         _txtNoiDung.Text = _existing.NoiDungBaiHoc ?? string.Empty;
+
+        var viTriLoai = _cboLoaiBuoi.Items.IndexOf(_existing.LoaiBuoi);
+        _cboLoaiBuoi.SelectedIndex = viTriLoai >= 0 ? viTriLoai : 0;
+
+        _lblBuoi.Text = _existing.SoBuoi is { } soBuoi ? $"Buổi {soBuoi}" : string.Empty;
     }
 
     private static void ChonGiaoVien(ComboBox cbo, string? tenGiaoVien)
@@ -304,6 +334,7 @@ public sealed class FormCaHoc : Form
         var maTroGiang = (_cboTroGiang.SelectedItem as GiaoVienItem)?.MaGiaoVien;
         var noiDung = string.IsNullOrWhiteSpace(_txtNoiDung.Text) ? null : _txtNoiDung.Text.Trim();
         var lyDo = string.IsNullOrWhiteSpace(_txtLyDo.Text) ? null : _txtLyDo.Text.Trim();
+        var loaiBuoi = _cboLoaiBuoi.SelectedItem?.ToString() ?? "Buổi học";
 
         _btnLuu.Enabled = false;
         UseWaitCursor = true;
@@ -325,6 +356,7 @@ public sealed class FormCaHoc : Form
                 gioBatDau = gioBatDau.ToString("HH:mm:ss"),
                 gioKetThuc = gioKetThuc.ToString("HH:mm:ss"),
                 noiDungBaiHoc = noiDung,
+                loaiBuoi,
                 lyDoThayDoi = lyDo
             });
         }
@@ -339,6 +371,7 @@ public sealed class FormCaHoc : Form
                 gioBatDau = gioBatDau.ToString("HH:mm:ss"),
                 gioKetThuc = gioKetThuc.ToString("HH:mm:ss"),
                 noiDungBaiHoc = noiDung,
+                loaiBuoi,
                 lyDoThayDoi = lyDo
             });
         }

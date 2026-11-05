@@ -1,10 +1,13 @@
 import { http, qs } from './http'
 import type {
   AcademicReport,
+  AssignmentItem,
   AttendanceReport,
   AttendanceSheet,
   ClassListItem,
+  ClassProgress,
   CurrentUser,
+  EnrollmentItem,
   FinanceReport,
   GradeItem,
   HoSoCaNhan,
@@ -15,6 +18,7 @@ import type {
   PagedResult,
   Payment,
   ReportOverview,
+  ScheduleListItem,
   SessionListItem,
   StudentAttendanceHistory,
   StudentCourseGrade,
@@ -24,8 +28,10 @@ import type {
   SurveyReport,
   SurveyResponse,
   SurveyStatistics,
+  SyncSessionTeachersResult,
   TeacherClass,
   TeacherClassStudent,
+  TeacherOption,
   TuitionItem,
 } from './types'
 
@@ -59,6 +65,46 @@ export const hocVienApi = {
 export const lopHocApi = {
   danhSach: (q: Query) => http.get<PagedResult<ClassListItem>>(`/admin/classes${qs(q)}`),
   chiTiet: (maLopHoc: number) => http.get<ClassListItem>(`/admin/classes/${maLopHoc}`),
+  /** Tiến độ từng buổi của lớp (Admin / Nhân viên học vụ). */
+  tienDo: (maLopHoc: number) =>
+    http.get<ClassProgress>(`/admin/classes/${maLopHoc}/progress`),
+  /** Lịch học định kỳ (2 thứ/tuần) của lớp. */
+  lichHoc: (maLopHoc: number) =>
+    http.get<PagedResult<ScheduleListItem>>(
+      `/admin/schedules${qs({ maLopHoc, page: 1, pageSize: 20 })}`,
+    ),
+  phanCong: (maLopHoc: number) =>
+    http.get<PagedResult<AssignmentItem>>(
+      `/admin/teaching-assignments${qs({ maLopHoc, page: 1, pageSize: 50 })}`,
+    ),
+  dangKy: (maLopHoc: number) =>
+    http.get<PagedResult<EnrollmentItem>>(
+      `/admin/enrollments${qs({ maLopHoc, page: 1, pageSize: 200 })}`,
+    ),
+}
+
+// ===== CA HỌC (quản trị) =====
+export const caHocApi = {
+  danhSach: (q: Query) => http.get<PagedResult<SessionListItem>>(`/admin/sessions${qs(q)}`),
+  sinhBuoi: (maLichHoc: number) =>
+    http.post<unknown>('/admin/sessions/generate', { maLichHoc }),
+  /** Đồng bộ GV cho các ca CHƯA diễn ra: buổi đầu tuần = GV nước ngoài. */
+  dongBoGiaoVien: (maLopHoc: number) =>
+    http.post<SyncSessionTeachersResult>('/admin/sessions/sync-teachers', { maLopHoc }),
+  capNhat: (
+    maCaHoc: number,
+    body: {
+      loaiBuoi?: string | null
+      maGiaoVienThucTe?: string | null
+      maTroGiangThucTe?: string | null
+      ngayHoc?: string | null
+      gioBatDau?: string | null
+      noiDungBaiHoc?: string | null
+      lyDoThayDoi?: string | null
+    },
+  ) => http.patch<SessionListItem>(`/admin/sessions/${maCaHoc}`, body),
+  doiTrangThai: (maCaHoc: number, trangThai: string) =>
+    http.patch<SessionListItem>(`/admin/sessions/${maCaHoc}/status`, { trangThai }),
 }
 
 // ===== HỌC PHÍ / THANH TOÁN =====
@@ -130,6 +176,9 @@ export const giaoVienApi = {
   lopCuaToi: () => http.get<TeacherClass[]>('/teachers/me/classes'),
   hocVienCuaLop: (maLopHoc: number) =>
     http.get<TeacherClassStudent[]>(`/teachers/me/classes/${maLopHoc}/students`),
+  /** Tiến độ từng buổi của lớp mình dạy. */
+  tienDoLop: (maLopHoc: number) =>
+    http.get<ClassProgress>(`/teachers/me/classes/${maLopHoc}/progress`),
   // Điểm danh dùng endpoint Phase 5 (đã cho phép Giáo viên/Trợ giảng)
   bangDiemDanh: (maCaHoc: number) =>
     http.get<AttendanceSheet>(`/admin/sessions/${maCaHoc}/attendance`),
@@ -156,10 +205,22 @@ export const giaoVienApi = {
     maLoaiDiem: number
     diem: number
     nhanXet?: string | null
+    /** Lần kiểm tra của đầu điểm (mặc định 1). */
+    lanKiemTra?: number
+    /** Gắn bài kiểm tra với buổi thi (tuỳ chọn). */
+    maCaHoc?: number | null
   }) => http.post<GradeItem>('/admin/grades', body),
   suaDiem: (maDiemSo: number, body: { diem: number; nhanXet?: string | null }) =>
     http.patch<GradeItem>(`/admin/grades/${maDiemSo}`, body),
   xoaDiem: (maDiemSo: number) => http.delete<void>(`/admin/grades/${maDiemSo}`),
+}
+
+// ===== DANH MỤC GIÁO VIÊN (dropdown chọn người dạy) =====
+export const giaoVienAdminApi = {
+  danhSach: (q: Query = {}) =>
+    http.get<PagedResult<TeacherOption>>(
+      `/admin/teachers${qs({ page: 1, pageSize: 200, ...q })}`,
+    ),
 }
 
 // ===== HỒ SƠ CÁ NHÂN (chỉ để lấy họ tên hiển thị trên sidebar) =====
@@ -172,6 +233,9 @@ export const hoSoApi = {
 export const hocVienSelfApi = {
   diem: () => http.get<StudentCourseGrade[]>('/students/me/grades'),
   lichHoc: (q: Query = {}) => http.get<SessionListItem[]>(`/students/me/schedule${qs(q)}`),
+  /** Tiến độ từng buổi của một lớp mình đang học. */
+  tienDoLop: (maLopHoc: number) =>
+    http.get<ClassProgress>(`/students/me/classes/${maLopHoc}/progress`),
   diemDanh: (q: Query = {}) =>
     http.get<StudentAttendanceHistory>(`/students/me/attendance${qs(q)}`),
   hocPhi: (q: Query = {}) =>

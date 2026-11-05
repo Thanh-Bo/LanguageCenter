@@ -15,6 +15,7 @@ public partial class UcLopHoc : UserControl
     private Button _btnSua = null!;
     private Button _btnTrangThai = null!;
     private Button _btnXoa = null!;
+    private Button _btnTienDo = null!;
 
     public UcLopHoc()
     {
@@ -39,9 +40,13 @@ public partial class UcLopHoc : UserControl
         _btnXoa = UiHelpers.CreateDangerButton("Xoá lớp", 100, 34);
         _btnXoa.Click += BtnXoa_Click;
 
+        _btnTienDo = UiHelpers.CreateSecondaryButton("Tiến độ lớp", 120, 34);
+        _btnTienDo.Click += BtnTienDo_Click;
+
         pnlToolbar.Controls.Add(_btnSua);
         pnlToolbar.Controls.Add(_btnTrangThai);
         pnlToolbar.Controls.Add(_btnXoa);
+        pnlToolbar.Controls.Add(_btnTienDo);
 
         btnAdd.Visible = true;
         pnlToolbar.Resize += (_, _) => SapXepThanhCongCu();
@@ -187,7 +192,7 @@ public partial class UcLopHoc : UserControl
     {
         var right = pnlToolbar.Width - 4;
 
-        foreach (var button in new[] { _btnXoa, _btnTrangThai, _btnSua, btnAdd })
+        foreach (var button in new[] { _btnXoa, _btnTrangThai, _btnTienDo, _btnSua, btnAdd })
         {
             if (button is null || !button.Visible) continue;
 
@@ -198,7 +203,6 @@ public partial class UcLopHoc : UserControl
     }
 
     private ClassListItemDto? LopDangChon => dgvClasses.CurrentRow?.Tag as ClassListItemDto;
-
     /// <summary>1 → "Thứ 2" … 7 → "Chủ nhật"; null nếu chưa khai báo.</summary>
     private static string? TenThu(byte? thu) => thu switch
     {
@@ -226,6 +230,21 @@ public partial class UcLopHoc : UserControl
         {
             await ReloadAsync();
         }
+    }
+
+    private void BtnTienDo_Click(object? sender, EventArgs e)
+    {
+        var lop = LopDangChon;
+
+        if (lop is null)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một lớp học trong bảng.",
+                "Chưa chọn lớp", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dlg = new Dialogs.FormTienDoLop(lop.MaLopHoc, $"{lop.MaLop} — {lop.TenLop}");
+        dlg.ShowDialog(FindForm());
     }
 
     private async void BtnSua_Click(object? sender, EventArgs e)

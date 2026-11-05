@@ -79,6 +79,23 @@ public interface ISessionStore
     Task<IReadOnlyList<TeacherClassDto>> ListTeacherClassesAsync(
         string maGiaoVien,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Tiến độ từng buổi của lớp (buổi thứ mấy, ngày, loại buổi, đã học chưa,
+    /// buổi hiện tại) — null nếu lớp không tồn tại.
+    /// </summary>
+    Task<ClassProgressDto?> GetClassProgressAsync(
+        int maLopHoc,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Đồng bộ lại giáo viên cho các ca CHƯA diễn ra của lớp theo quy ước
+    /// "buổi đầu tuần = GV nước ngoài, buổi còn lại = GV chính".
+    /// Dùng cho các lớp đã sinh buổi TRƯỚC khi có phân công GV nước ngoài.
+    /// </summary>
+    Task<SyncTeachersOutcome> SyncTeachersAsync(
+        int maLopHoc,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>Kết quả tạo ca học hàng loạt từ lịch định kỳ.</summary>
@@ -100,3 +117,14 @@ public sealed record GenerateOutcome(
 
 /// <summary>Một ngày không tạo được ca học và lý do.</summary>
 public sealed record GenerateConflict(DateOnly NgayHoc, string LyDo);
+
+/// <summary>Kết quả đồng bộ giáo viên cho ca học đã sinh.</summary>
+public sealed record SyncTeachersOutcome(
+    bool ClassFound,
+    int TongSoCa,
+    int SoCaCapNhat,
+    int SoCaKhongDoi,
+    int SoCaBoQua,
+    string? MaGiaoVienChinh,
+    string? MaGiaoVienNuocNgoai,
+    string? MaTroGiang);

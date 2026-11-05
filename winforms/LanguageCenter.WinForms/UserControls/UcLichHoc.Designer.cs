@@ -210,6 +210,7 @@ partial class UcLichHoc
         dgvShifts.Columns.Add(new DataGridViewTextBoxColumn { Name = "TroGiang", HeaderText = "Trợ giảng", FillWeight = 110 });
         dgvShifts.Columns.Add(new DataGridViewTextBoxColumn { Name = "GioHoc", HeaderText = "Thời gian", FillWeight = 110 });
         dgvShifts.Columns.Add(new DataGridViewTextBoxColumn { Name = "NoiDung", HeaderText = "Nội dung bài học", FillWeight = 200 });
+        dgvShifts.Columns.Add(new DataGridViewTextBoxColumn { Name = "Buoi", HeaderText = "Buổi / Loại buổi", FillWeight = 115 });
         dgvShifts.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrangThai", HeaderText = "Trạng thái", FillWeight = 95 });
 
         pnlGridContainer.Controls.Add(dgvShifts);

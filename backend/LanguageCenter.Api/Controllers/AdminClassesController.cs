@@ -2,6 +2,8 @@ using LanguageCenter.Api.Extensions;
 using LanguageCenter.Application.Classes;
 using LanguageCenter.Application.Classes.Models;
 using LanguageCenter.Application.Common;
+using LanguageCenter.Application.Sessions;
+using LanguageCenter.Application.Sessions.Models;
 using LanguageCenter.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,10 +19,12 @@ namespace LanguageCenter.Api.Controllers;
 public sealed class AdminClassesController : ControllerBase
 {
     private readonly IClassService _classService;
+    private readonly ISessionService _sessionService;
 
-    public AdminClassesController(IClassService classService)
+    public AdminClassesController(IClassService classService, ISessionService sessionService)
     {
         _classService = classService;
+        _sessionService = sessionService;
     }
 
     /// <summary>Danh sách lớp — lọc theo khóa học/trạng thái, tìm theo mã hoặc tên lớp.</summary>
@@ -37,6 +41,16 @@ public sealed class AdminClassesController : ControllerBase
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetDetailAsync(int id, CancellationToken cancellationToken)
         => (await _classService.GetDetailAsync(id, cancellationToken)).ToActionResult();
+
+    /// <summary>
+    /// Tiến độ học của lớp theo từng buổi: buổi thứ mấy, ngày học, loại buổi (học/thi),
+    /// buổi đã học, buổi hiện tại. Dùng để tô màu thanh tiến độ trên giao diện.
+    /// </summary>
+    [HttpGet("{id:int}/progress")]
+    [ProducesResponseType(typeof(ClassProgressDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetProgressAsync(int id, CancellationToken cancellationToken)
+        => (await _sessionService.GetClassProgressAsync(id, cancellationToken)).ToActionResult();
 
     /// <summary>
     /// Tạo lớp. Mã lớp phải không trùng, khóa học và nhân viên học vụ phải tồn tại.

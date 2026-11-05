@@ -49,9 +49,10 @@ export function HVTienDoKhoaHoc() {
     const lop = diem.find((d) => d.maLopHoc === maLop)
     if (!lop) return null
 
-    const [buoi, diemDanh] = await Promise.all([
+    const [buoi, diemDanh, tienDo] = await Promise.all([
       hocVienSelfApi.lichHoc({ tuNgay: lop.ngayBatDau, denNgay: lop.ngayKetThucDuKien }),
       hocVienSelfApi.diemDanh({ tuNgay: lop.ngayBatDau, denNgay: lop.ngayKetThucDuKien }),
+      hocVienSelfApi.tienDoLop(maLop),
     ])
 
     return {
@@ -61,6 +62,7 @@ export function HVTienDoKhoaHoc() {
         .sort((a, b) => `${a.ngayHoc}${a.gioBatDau}`.localeCompare(`${b.ngayHoc}${b.gioBatDau}`)),
       diemDanh: diemDanh.items.filter((i) => i.maLop === lop.maLop),
       hocPhi: hocPhi.items.find((h) => h.maDangKy === lop.maDangKy) ?? null,
+      tienDo,
     }
   })
 
@@ -80,14 +82,17 @@ export function HVTienDoKhoaHoc() {
     )
   }
 
-  const { lop, buoi, diemDanh, hocPhi } = duLieu
+  const { lop, buoi, diemDanh, hocPhi, tienDo } = duLieu
   const homNay = homNayIso()
 
   const trangThaiTheoCa = new Map(diemDanh.map((d) => [d.maCaHoc, d.trangThaiDiemDanh]))
 
-  const soBuoiDaHoc = buoi.filter((b) => laBuoiDaHoc(b, homNay)).length
-  const tongBuoi = buoi.length
-  const phanTramBuoi = tongBuoi > 0 ? Math.round((soBuoiDaHoc / tongBuoi) * 100) : 0
+  const soBuoiDaHoc = tienDo?.soBuoiDaHoc ?? buoi.filter((b) => laBuoiDaHoc(b, homNay)).length
+  const tongBuoi = tienDo?.tongSoBuoi || buoi.length
+  const phanTramBuoi =
+    tongBuoi > 0
+      ? Math.round(Number(tienDo?.tienDoPhanTram ?? (soBuoiDaHoc / tongBuoi) * 100))
+      : 0
 
   const buoiTiepTheo = buoi.find((b) => b.ngayHoc >= homNay && b.trangThai !== 'Đã hủy')
 
@@ -198,21 +203,30 @@ export function HVTienDoKhoaHoc() {
               {buoi.map((b, i) => {
                 const diemDanhCuaBuoi = trangThaiTheoCa.get(b.maCaHoc)
                 const dangChon = caDangChon === b.maCaHoc
+                const laBuoiThi = b.loaiBuoi === 'Buổi thi'
+                const laHienTai = tienDo?.maCaHocHienTai === b.maCaHoc
+                const soBuoiCua = b.soBuoi ?? i + 1
 
                 return (
                   <button
                     key={b.maCaHoc}
                     type="button"
                     onClick={() => setCaDangChon(dangChon ? null : b.maCaHoc)}
-                    title={`Buổi ${i + 1} · ${dinhDangNgay(b.ngayHoc)} · ${
+                    title={`Buổi ${soBuoiCua} · ${dinhDangNgay(b.ngayHoc)} · ${b.loaiBuoi} · ${
                       diemDanhCuaBuoi ?? b.trangThai
                     }`}
                     className={`rounded-lg border px-1 py-2 text-center text-xs font-bold transition hover:brightness-95 ${
                       dangChon ? 'ring-2 ring-blue-500 ring-offset-1' : ''
-                    } ${lopOBuoi(b, diemDanhCuaBuoi, homNay)}`}
+                    } ${laHienTai ? 'ring-2 ring-blue-400' : ''} ${
+                      laBuoiThi
+                        ? 'border-violet-300 bg-violet-50 text-violet-700'
+                        : lopOBuoi(b, diemDanhCuaBuoi, homNay)
+                    }`}
                   >
-                    <span className="block text-[11px] leading-none opacity-70">Buổi</span>
-                    <span className="text-sm">{i + 1}</span>
+                    <span className="block text-[11px] leading-none opacity-70">
+                      {laBuoiThi ? 'Thi' : 'Buổi'}
+                    </span>
+                    <span className="text-sm">{soBuoiCua}</span>
                   </button>
                 )
               })}
@@ -234,6 +248,9 @@ export function HVTienDoKhoaHoc() {
               <span className="flex items-center gap-1.5">
                 <span className="size-3 rounded border border-slate-200 bg-slate-100" /> Đã hủy
               </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-3 rounded border border-violet-300 bg-violet-50" /> Buổi thi
+              </span>
             </div>
           </>
         )}
@@ -243,7 +260,7 @@ export function HVTienDoKhoaHoc() {
           (() => {
             const b = buoi.find((x) => x.maCaHoc === caDangChon)
             if (!b) return null
-            const viTri = buoi.findIndex((x) => x.maCaHoc === caDangChon) + 1
+            const viTri = b.soBuoi ?? buoi.findIndex((x) => x.maCaHoc === caDangChon) + 1
             const dd = trangThaiTheoCa.get(b.maCaHoc)
 
             return (
@@ -252,7 +269,12 @@ export function HVTienDoKhoaHoc() {
                   <p className="font-bold text-slate-900">
                     Buổi {viTri} · {thuTrongTuan(b.ngayHoc)}, {dinhDangNgay(b.ngayHoc)}
                   </p>
-                  <Nhan tone={dd ? 'blue' : 'slate'}>{dd ?? b.trangThai}</Nhan>
+                  <div className="flex items-center gap-2">
+                    {b.loaiBuoi === 'Buổi thi' && (
+                      <Nhan tone="blue">Buổi thi</Nhan>
+                    )}
+                    <Nhan tone={dd ? 'blue' : 'slate'}>{dd ?? b.trangThai}</Nhan>
+                  </div>
                 </div>
                 <p className="mt-1 text-sm text-slate-600">
                   {dinhDangKhoangGio(b.gioBatDau, b.gioKetThuc)} · {b.tenPhong}

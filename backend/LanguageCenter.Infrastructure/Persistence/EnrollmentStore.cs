@@ -374,6 +374,178 @@ public sealed class EnrollmentStore : IEnrollmentStore
         return WriteOutcome.Success;
     }
 
+    public async Task<PlacementContext?> GetPlacementContextAsync(
+        int maDangKy,
+        int maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var enrollment = await _dbContext.DangKyHocs
+            .AsNoTracking()
+            .Where(x => x.MaDangKy == maDangKy)
+            .Select(x => new { x.MaHocVien })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (enrollment is null)
+        {
+            return null;
+        }
+
+        var lop = await _dbContext.LopHocs
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == maLopHoc)
+            .Select(x => new
+            {
+                x.MaLopHoc,
+                x.MaLop,
+                x.TenLop,
+                x.NgayBatDau,
+                x.NgayKetThucDuKien,
+                SoBuoi = x.KhoaHoc.SoBuoi,
+                DoTuoiTu = x.KhoaHoc.CapDo.ChuongTrinh.DoTuoiTu,
+                DoTuoiDen = x.KhoaHoc.CapDo.ChuongTrinh.DoTuoiDen
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lop is null)
+        {
+            return null;
+        }
+
+        var ngaySinh = await _dbContext.HocViens
+            .AsNoTracking()
+            .Where(x => x.MaHocVien == enrollment.MaHocVien)
+            .Select(x => (DateOnly?)x.NgaySinh)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (ngaySinh is null)
+        {
+            return null;
+        }
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        var soBuoiDaDienRa = await _dbContext.CaHocs
+            .AsNoTracking()
+            .CountAsync(
+                x => x.MaLopHoc == maLopHoc
+                     && x.TrangThai != SessionStatuses.DaHuy
+                     && x.NgayHoc <= today,
+                cancellationToken);
+
+        // Các lớp khác mà học viên đang theo học (để kiểm tra trùng giờ).
+        var lopKhacIds = await _dbContext.DangKyHocs
+            .AsNoTracking()
+            .Where(x => x.MaHocVien == enrollment.MaHocVien
+                        && x.MaLopHoc != null
+                        && x.MaLopHoc != maLopHoc
+                        && (x.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
+                            || x.TrangThaiDangKy == EnrollmentStatuses.HoanThanh))
+            .Select(x => x.MaLopHoc!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var classIds = new List<int> { maLopHoc };
+        classIds.AddRange(lopKhacIds);
+
+        var lops = await _dbContext.LopHocs
+            .AsNoTracking()
+            .Where(x => classIds.Contains(x.MaLopHoc))
+            .Select(x => new
+            {
+                x.MaLopHoc,
+                x.MaLop,
+                x.ThuBuoi1,
+                x.ThuBuoi2,
+                x.GioBatDau,
+                x.GioKetThuc,
+                x.NgayBatDau,
+                NgayDen = x.NgayKetThucDuKien
+            })
+            .ToListAsync(cancellationToken);
+
+        var lichRows = await _dbContext.LichHocs
+            .AsNoTracking()
+            .Where(x => classIds.Contains(x.MaLopHoc)
+                        && x.TrangThai != ScheduleStatuses.NgungApDung)
+            .Select(x => new
+            {
+                x.MaLopHoc,
+                x.ThuTrongTuan,
+                x.GioBatDau,
+                x.GioKetThuc,
+                x.NgayApDungTu,
+                x.NgayApDungDen
+            })
+            .ToListAsync(cancellationToken);
+
+        var slotsTheoLop = new Dictionary<int, List<ClassScheduleSlot>>();
+
+        foreach (var item in lops)
+        {
+            var slots = new List<ClassScheduleSlot>();
+
+            var lichCuaLop = lichRows.Where(x => x.MaLopHoc == item.MaLopHoc).ToList();
+
+            if (lichCuaLop.Count > 0)
+            {
+                slots.AddRange(lichCuaLop.Select(x => new ClassScheduleSlot(
+                    item.MaLopHoc,
+                    item.MaLop,
+                    x.ThuTrongTuan,
+                    x.GioBatDau,
+                    x.GioKetThuc,
+                    x.NgayApDungTu,
+                    x.NgayApDungDen)));
+            }
+            else if (item.GioBatDau is { } gioBatDau && item.GioKetThuc is { } gioKetThuc)
+            {
+                // Lớp khai 2 thứ trực tiếp trên LopHoc (không có dòng LichHoc).
+                if (item.ThuBuoi1 is { } thu1)
+                {
+                    slots.Add(new ClassScheduleSlot(
+                        item.MaLopHoc, item.MaLop, thu1, gioBatDau, gioKetThuc, item.NgayBatDau, item.NgayDen));
+                }
+
+                if (item.ThuBuoi2 is { } thu2)
+                {
+                    slots.Add(new ClassScheduleSlot(
+                        item.MaLopHoc, item.MaLop, thu2, gioBatDau, gioKetThuc, item.NgayBatDau, item.NgayDen));
+                }
+            }
+
+            slotsTheoLop[item.MaLopHoc] = slots;
+        }
+
+        var slotsMoi = slotsTheoLop.TryGetValue(maLopHoc, out var sm)
+            ? sm
+            : new List<ClassScheduleSlot>();
+
+        var slotsCu = new List<ClassScheduleSlot>();
+
+        foreach (var id in lopKhacIds)
+        {
+            if (slotsTheoLop.TryGetValue(id, out var sc))
+            {
+                slotsCu.AddRange(sc);
+            }
+        }
+
+        return new PlacementContext(
+            lop.MaLopHoc,
+            lop.MaLop,
+            lop.TenLop,
+            lop.NgayBatDau,
+            lop.NgayKetThucDuKien,
+            enrollment.MaHocVien,
+            ngaySinh.Value,
+            lop.DoTuoiTu,
+            lop.DoTuoiDen,
+            soBuoiDaDienRa,
+            lop.SoBuoi,
+            slotsMoi,
+            slotsCu);
+    }
+
     public async Task<WriteOutcome> DeleteAsync(int maDangKy, CancellationToken cancellationToken)
     {
         var entity = await _dbContext.DangKyHocs

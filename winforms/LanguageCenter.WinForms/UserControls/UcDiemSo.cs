@@ -167,7 +167,7 @@ public partial class UcDiemSo : UserControl
 
         if (diemDaCo.Success && diemDaCo.Data is not null)
         {
-            foreach (var g in diemDaCo.Data.Items.Where(x => x.MaDangKy == hocVien.MaDangKy))
+            foreach (var g in diemDaCo.Data.Items.Where(x => x.MaDangKy == hocVien.MaDangKy && x.LanKiemTra == 1))
             {
                 map[g.MaLoaiDiem] = g.MaDiemSo;
             }
@@ -192,7 +192,19 @@ public partial class UcDiemSo : UserControl
                         ?? phanCong.Data.Items.FirstOrDefault(a => a.MaGiaoVien is not null)?.MaGiaoVien;
         }
 
-        using var dlg = new FormNhapDiem(hocVien, _report.ThanhPhan, map, _teachers, gvMacDinh);
+        // Danh sách buổi thi của lớp — để gắn điểm với buổi thi.
+        var dsCa = await AppSession.Api.GetAsync<PagedResult<SessionListItemDto>>(
+            QueryStringBuilder.Build(
+                "admin/sessions",
+                ("maLopHoc", _report.MaLopHoc.ToString()),
+                ("page", "1"),
+                ("pageSize", "500")));
+
+        var buoiThi = (dsCa.Data?.Items ?? Array.Empty<SessionListItemDto>())
+            .Where(s => s.LoaiBuoi == "Buổi thi")
+            .ToList();
+
+        using var dlg = new FormNhapDiem(hocVien, _report.ThanhPhan, map, _teachers, gvMacDinh, buoiThi);
 
         if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
         {

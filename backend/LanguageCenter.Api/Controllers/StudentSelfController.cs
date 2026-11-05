@@ -97,4 +97,26 @@ public sealed class StudentSelfController : ControllerBase
                 maHocVien, tuNgay, denNgay, cancellationToken))
             .ToActionResult();
     }
+
+    /// <summary>Tiến độ từng buổi của lớp mình đang học (403 nếu không thuộc lớp).</summary>
+    [HttpGet("classes/{maLopHoc:int}/progress")]
+    [ProducesResponseType(typeof(ClassProgressDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetMyClassProgressAsync(
+        int maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var maHocVien = User.GetTenDangNhap();
+
+        if (string.IsNullOrWhiteSpace(maHocVien))
+        {
+            return Unauthorized();
+        }
+
+        return (await _sessionService.GetClassProgressForStudentAsync(
+                maHocVien, maLopHoc, cancellationToken))
+            .ToActionResult();
+    }
 }

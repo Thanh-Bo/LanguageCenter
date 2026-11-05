@@ -89,8 +89,13 @@ export type ClassListItem = {
   ngayBatDau: string
   ngayKetThucDuKien: string
   ngayKetThucThucTe?: string | null
+  gioBatDau?: string | null
+  gioKetThuc?: string | null
+  thuBuoi1?: number | null
+  thuBuoi2?: number | null
   siSoToiDa: number
   siSoHienTai: number
+  soCaHoc?: number
   trangThai: string
 }
 
@@ -114,6 +119,8 @@ export type SessionListItem = {
   gioBatDau: string
   gioKetThuc: string
   noiDungBaiHoc?: string | null
+  soBuoi?: number | null
+  loaiBuoi: string
   trangThai: string
   lyDoThayDoi?: string | null
   soDiemDanh: number
@@ -142,6 +149,8 @@ export type AttendanceSheet = {
   ngayHoc: string
   gioBatDau: string
   gioKetThuc: string
+  soBuoi?: number | null
+  loaiBuoi: string
   trangThaiCaHoc: string
   coTheDiemDanh: boolean
   lyDoKhongTheDiemDanh?: string | null
@@ -247,6 +256,9 @@ export type GradeItem = {
   diem: number
   nhanXet?: string | null
   trangThaiKetQua?: string | null
+  lanKiemTra: number
+  maCaHoc?: number | null
+  ngayThi?: string | null
   maGiaoVien: string
   tenGiaoVien: string
   ngayCham: string
@@ -554,4 +566,120 @@ export type SurveyReport = {
     diemTrungBinh?: number | null
     tiLePhanHoi?: number | null
   }>
+}
+
+// ===== TIẾN ĐỘ BUỔI HỌC (v15) =====
+
+/** Một buổi trong tiến độ lớp — dùng để tô màu. */
+export type SessionProgressItem = {
+  maCaHoc: number
+  soBuoi?: number | null
+  ngayHoc: string
+  gioBatDau: string
+  gioKetThuc: string
+  loaiBuoi: string
+  laBuoiThi: boolean
+  trangThai: string
+  noiDungBaiHoc?: string | null
+  maGiaoVienThucTe?: string | null
+  tenGiaoVienThucTe?: string | null
+  maTroGiangThucTe?: string | null
+  tenTroGiangThucTe?: string | null
+  soDiemDanh: number
+  daHoc: boolean
+  laBuoiHienTai: boolean
+}
+
+export type ClassProgress = {
+  maLopHoc: number
+  maLop: string
+  tenLop: string
+  maKhoaHoc: number
+  tenKhoaHoc: string
+  tongSoBuoi: number
+  soBuoiDaSinh: number
+  soBuoiDaHoc: number
+  soBuoiConLai: number
+  tienDoPhanTram: number
+  maCaHocHienTai?: number | null
+  soBuoiHienTai?: number | null
+  ngayHocHienTai?: string | null
+  loaiBuoiHienTai?: string | null
+  buois: SessionProgressItem[]
+}
+
+/** Kết quả đồng bộ giáo viên cho ca học đã sinh. */
+export type SyncSessionTeachersResult = {
+  maLopHoc: number
+  tongSoCa: number
+  soCaCapNhat: number
+  soCaKhongDoi: number
+  soCaBoQua: number
+  maGiaoVienChinh?: string | null
+  maGiaoVienNuocNgoai?: string | null
+  maTroGiang?: string | null
+}
+
+/** Giáo viên / trợ giảng — dùng cho dropdown chọn người dạy. */
+export type TeacherOption = {
+  maGiaoVien: string
+  hoTen: string
+  loaiGiaoVien: string
+  trangThai: string
+}
+
+/** Lịch học định kỳ của lớp. */
+export type ScheduleListItem = {
+  maLichHoc: number
+  maLopHoc: number
+  maLop: string
+  tenLop: string
+  maPhongHoc: number
+  maPhong: string
+  tenPhong: string
+  thuTrongTuan: number
+  gioBatDau: string
+  gioKetThuc: string
+  ngayApDungTu: string
+  ngayApDungDen?: string | null
+  trangThai: string
+  soCaHoc: number
+}
+
+/** Phân công giảng dạy của lớp. */
+export type AssignmentItem = {
+  maPhanCong: number
+  maLopHoc: number
+  maLop: string
+  tenLop: string
+  maKhoaHoc: number
+  tenKhoaHoc: string
+  maGiaoVien?: string | null
+  tenGiaoVien?: string | null
+  loaiGiaoVien?: string | null
+  vaiTroPhanCong: string
+  ngayBatDau: string
+  ngayKetThuc?: string | null
+  trangThai: string
+}
+
+/** Đăng ký học đang thuộc lớp. */
+export type EnrollmentItem = {
+  maDangKy: number
+  maHocVien: string
+  tenHocVien: string
+  ngaySinh: string
+  gioiTinh?: string | null
+  soDienThoai?: string | null
+  email?: string | null
+  maKhoaHoc: number
+  tenKhoaHoc: string
+  maLopHoc?: number | null
+  maLop?: string | null
+  ngayDangKy: string
+  hocPhiGoc: number
+  soTienGiam: number
+  hocPhiSauGiam: number
+  trangThaiDangKy: string
+  ngayXepLop?: string | null
 }

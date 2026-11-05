@@ -61,6 +61,14 @@ public interface IAcademicLookupStore
         int maDangKy,
         string maGiaoVien,
         CancellationToken cancellationToken);
+
+    /// <summary>Thông tin tối thiểu của ca học; <c>null</c> nếu không tồn tại.</summary>
+    Task<SessionInfo?> GetSessionInfoAsync(
+        int maCaHoc,
+        CancellationToken cancellationToken);
+
+    /// <summary>Tên ngày lễ nếu ngày đó là ngày nghỉ của trung tâm; <c>null</c> nếu không.</summary>
+    Task<string?> GetHolidayNameAsync(DateOnly ngay, CancellationToken cancellationToken);
 }
 
 /// <summary>Thông tin tối thiểu của lớp học.</summary>
@@ -85,3 +93,12 @@ public sealed record EnrollmentInfo(
     int MaKhoaHoc,
     int? MaLopHoc,
     string TrangThaiDangKy);
+
+/// <summary>Thông tin tối thiểu của một ca học.</summary>
+public sealed record SessionInfo(
+    int MaCaHoc,
+    int MaLopHoc,
+    string MaLop,
+    DateOnly NgayHoc,
+    string LoaiBuoi,
+    string TrangThai);

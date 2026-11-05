@@ -244,6 +244,15 @@ public sealed class AttendanceService : IAttendanceService
             return $"Không tìm thấy ca học có id = {maCaHoc}.";
         }
 
+        // Không cho điểm danh TRƯỚC ngày học: cả 20 buổi vừa sinh đều ở trạng thái
+        // "Chưa diễn ra" nên chỉ dựa vào trạng thái là chưa đủ.
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        if (session.NgayHoc > today)
+        {
+            return $"Chưa tới ngày học ({session.NgayHoc:dd/MM/yyyy}) nên chưa thể điểm danh.";
+        }
+
         if (!SessionStatuses.CanTakeAttendance(session.TrangThai))
         {
             return $"Ca học đang ở trạng thái '{session.TrangThai}', không thể điểm danh.";

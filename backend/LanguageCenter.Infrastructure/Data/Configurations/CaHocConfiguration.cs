@@ -23,6 +23,14 @@ public sealed class CaHocConfiguration : IEntityTypeConfiguration<CaHoc>
 
         builder.Property(x => x.LyDoThayDoi).HasMaxLength(500);
 
+        // LoaiBuoi: "Buổi học" / "Buổi thi" — khớp CK_CaHoc_LoaiBuoi.
+        builder.Property(x => x.LoaiBuoi)
+            .HasMaxLength(30)
+            .IsRequired()
+            .HasDefaultValue("Buổi học");
+
+        builder.Property(x => x.SoBuoi);
+
         builder.HasOne(x => x.LopHoc)
             .WithMany(x => x.CaHocs)
             .HasForeignKey(x => x.MaLopHoc)

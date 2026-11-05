@@ -58,4 +58,29 @@ public interface ISessionService
         string maGiaoVien,
         int maLopHoc,
         CancellationToken cancellationToken);
+
+    /// <summary>Tiến độ từng buổi của lớp — dùng để tô màu buổi đã học / buổi thi / buổi hiện tại.</summary>
+    Task<OperationResult<ClassProgressDto>> GetClassProgressAsync(
+        int maLopHoc,
+        CancellationToken cancellationToken);
+
+    /// <summary>Tiến độ lớp cho giáo viên — chỉ khi được phân công lớp đó.</summary>
+    Task<OperationResult<ClassProgressDto>> GetClassProgressForTeacherAsync(
+        string maGiaoVien,
+        int maLopHoc,
+        CancellationToken cancellationToken);
+
+    /// <summary>Tiến độ lớp cho học viên — chỉ khi đang học lớp đó.</summary>
+    Task<OperationResult<ClassProgressDto>> GetClassProgressForStudentAsync(
+        string maHocVien,
+        int maLopHoc,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Đồng bộ giáo viên cho các ca CHƯA diễn ra của lớp theo quy ước
+    /// \"buổi đầu tuần = GV nước ngoài, buổi còn lại = GV chính\".
+    /// </summary>
+    Task<OperationResult<SyncSessionTeachersResponse>> SyncTeachersAsync(
+        SyncSessionTeachersRequest request,
+        CancellationToken cancellationToken);
 }

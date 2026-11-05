@@ -30,6 +30,9 @@ public sealed class FormNhapDiem : Form
     private readonly Label _lblTongKet = new();
     private readonly DataGridView _grid = new();
     private readonly ComboBox _cboNguoiCham = UiHelpers.CreateComboBox(260);
+    private readonly NumericUpDown _numLanKiemTra = new();
+    private readonly ComboBox _cboBuoiThi = UiHelpers.CreateComboBox(260);
+    private readonly IReadOnlyList<SessionListItemDto> _buoiThis;
     private readonly Button _btnLuu = UiHelpers.CreatePrimaryButton("Lưu điểm", 130, 36);
     private readonly Button _btnDong = UiHelpers.CreateSecondaryButton("Đóng", 100, 36);
 
@@ -40,20 +43,22 @@ public sealed class FormNhapDiem : Form
         IReadOnlyList<GradeComponentDto> thanhPhan,
         IReadOnlyDictionary<int, int> maDiemSoTheoLoaiDiem,
         IReadOnlyList<TeacherListItemDto> giaoViens,
-        string? maGiaoVienMacDinh = null)
+        string? maGiaoVienMacDinh = null,
+        IReadOnlyList<SessionListItemDto>? buoiThis = null)
     {
         _hocVien = hocVien;
         _thanhPhan = thanhPhan;
         _maDiemSoTheoLoaiDiem = maDiemSoTheoLoaiDiem;
         _giaoViens = giaoViens;
         _maGiaoVienMacDinh = maGiaoVienMacDinh;
+        _buoiThis = buoiThis ?? Array.Empty<SessionListItemDto>();
 
         Text = $"Nhập điểm — {hocVien.HoTen}";
         StartPosition = FormStartPosition.CenterParent;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(820, 520);
-        MinimumSize = new Size(700, 440);
+        ClientSize = new Size(820, 570);
+        MinimumSize = new Size(700, 490);
         BackColor = Color.White;
         Font = Theme.FontRegular;
 
@@ -130,12 +135,44 @@ public sealed class FormNhapDiem : Form
             AutoSize = true,
             ForeColor = Theme.TextMedium,
             Font = Theme.FontSub,
-            Location = new Point(20, 404),
+            Location = new Point(20, 444),
             Anchor = AnchorStyles.Bottom | AnchorStyles.Left
         };
 
-        _cboNguoiCham.Location = new Point(170, 398);
+        _cboNguoiCham.Location = new Point(170, 438);
         _cboNguoiCham.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+
+        // ==== v15: Lần kiểm tra + Buổi thi ====
+        var lblLan = new Label
+        {
+            Text = "Lần kiểm tra:",
+            AutoSize = true,
+            ForeColor = Theme.TextMedium,
+            Font = Theme.FontSub,
+            Location = new Point(20, 406),
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+        };
+
+        _numLanKiemTra.Minimum = 1;
+        _numLanKiemTra.Maximum = 99;
+        _numLanKiemTra.Value = 1;
+        _numLanKiemTra.Width = 70;
+        _numLanKiemTra.Location = new Point(170, 402);
+        _numLanKiemTra.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+
+        var lblBuoiThi = new Label
+        {
+            Text = "Buổi thi (tuỳ chọn):",
+            AutoSize = true,
+            ForeColor = Theme.TextMedium,
+            Font = Theme.FontSub,
+            Location = new Point(270, 406),
+            Anchor = AnchorStyles.Bottom | AnchorStyles.Left
+        };
+
+        _cboBuoiThi.DropDownStyle = ComboBoxStyle.DropDownList;
+        _cboBuoiThi.Location = new Point(410, 402);
+        _cboBuoiThi.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
 
         _lblTongKet.Text = "Tổng kết hiện tại: "
                            + (_hocVien.DiemTongKet.HasValue
@@ -144,21 +181,21 @@ public sealed class FormNhapDiem : Form
         _lblTongKet.AutoSize = true;
         _lblTongKet.Font = Theme.FontSub;
         _lblTongKet.ForeColor = Theme.TextMedium;
-        _lblTongKet.Location = new Point(450, 404);
+        _lblTongKet.Location = new Point(450, 444);
         _lblTongKet.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
 
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(540, 34);
-        _lblThongBao.Location = new Point(20, 430);
+        _lblThongBao.Location = new Point(20, 474);
         _lblThongBao.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
         _lblThongBao.ForeColor = Theme.Muted;
         _lblThongBao.Font = Theme.FontSub;
 
-        _btnLuu.Location = new Point(580, 468);
+        _btnLuu.Location = new Point(580, 518);
         _btnLuu.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         _btnLuu.Click += async (_, _) => await LuuAsync();
 
-        _btnDong.Location = new Point(720, 468);
+        _btnDong.Location = new Point(720, 518);
         _btnDong.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
         _btnDong.Click += (_, _) => Close();
 
@@ -166,6 +203,10 @@ public sealed class FormNhapDiem : Form
         Controls.Add(_grid);
         Controls.Add(lblNguoiCham);
         Controls.Add(_cboNguoiCham);
+        Controls.Add(lblLan);
+        Controls.Add(_numLanKiemTra);
+        Controls.Add(lblBuoiThi);
+        Controls.Add(_cboBuoiThi);
         Controls.Add(_lblTongKet);
         Controls.Add(_lblThongBao);
         Controls.Add(_btnLuu);
@@ -215,9 +256,21 @@ public sealed class FormNhapDiem : Form
 
         if (_cboNguoiCham.Items.Count > 0) _cboNguoiCham.SelectedIndex = 0;
 
+        // Buổi thi của lớp — chỉ gắn được khi lớp đã sinh ca và ca được đánh dấu "Buổi thi".
+        _cboBuoiThi.Items.Clear();
+        _cboBuoiThi.Items.Add(new BuoiThiItem(null, "— Không gắn buổi thi —"));
+
+        foreach (var ca in _buoiThis.OrderBy(x => x.NgayHoc))
+        {
+            var nhan = ca.SoBuoi is { } so ? $"Buổi {so} · {ca.NgayHoc:dd/MM/yyyy}" : $"{ca.NgayHoc:dd/MM/yyyy}";
+            _cboBuoiThi.Items.Add(new BuoiThiItem(ca.MaCaHoc, nhan));
+        }
+
+        _cboBuoiThi.SelectedIndex = 0;
+
         _lblThongBao.Text = _thanhPhan.Count == 0
             ? "Khóa học của lớp này chưa cấu hình đầu điểm."
-            : "Quản trị viên nhập điểm được — chỉ cần chọn 'Người chấm'. "
+            : "Mỗi đầu điểm có thể nhập nhiều lần bằng ô 'Lần kiểm tra'. "
               + "Để trống điểm và tích 'Xoá' nếu muốn huỷ một đầu điểm.";
     }
 
@@ -232,6 +285,9 @@ public sealed class FormNhapDiem : Form
             return;
         }
 
+        var lanKiemTra = (int)_numLanKiemTra.Value;
+        var maCaHoc = (_cboBuoiThi.SelectedItem as BuoiThiItem)?.MaCaHoc;
+
         var thaoTac = new List<(DongDiem Dong, string? Kieu, decimal? Diem, string? NhanXet)>();
 
         foreach (DataGridViewRow row in _grid.Rows)
@@ -242,16 +298,20 @@ public sealed class FormNhapDiem : Form
             var diemText = row.Cells["Diem"].Value?.ToString()?.Trim();
             var nhanXet = row.Cells["NhanXet"].Value?.ToString()?.Trim();
 
+            // Bản ghi đã có chỉ tương ứng với LẦN 1 (map theo đầu điểm).
+            // Chọn lần khác → luôn tạo bản ghi mới.
+            var maDiemSoHienTai = lanKiemTra == 1 ? dong.MaDiemSo : null;
+
             if (xoa)
             {
-                if (dong.MaDiemSo.HasValue) thaoTac.Add((dong, "DELETE", null, null));
+                if (maDiemSoHienTai.HasValue) thaoTac.Add((dong, "DELETE", null, null));
                 continue;
             }
 
             if (string.IsNullOrWhiteSpace(diemText))
             {
                 // Xoá trắng điểm đã có → coi như xoá bản ghi
-                if (dong.MaDiemSo.HasValue) thaoTac.Add((dong, "DELETE", null, null));
+                if (maDiemSoHienTai.HasValue) thaoTac.Add((dong, "DELETE", null, null));
                 continue;
             }
 
@@ -268,12 +328,14 @@ public sealed class FormNhapDiem : Form
                 return;
             }
 
-            var khongDoi = dong.DiemCu.HasValue && Math.Abs(dong.DiemCu.Value - diem) < 0.001m
+            var khongDoi = lanKiemTra == 1
+                           && dong.DiemCu.HasValue
+                           && Math.Abs(dong.DiemCu.Value - diem) < 0.001m
                            && string.IsNullOrWhiteSpace(nhanXet);
 
             if (khongDoi) continue;
 
-            thaoTac.Add((dong, dong.MaDiemSo.HasValue ? "PATCH" : "POST", diem,
+            thaoTac.Add((dong, maDiemSoHienTai.HasValue ? "PATCH" : "POST", diem,
                 string.IsNullOrWhiteSpace(nhanXet) ? null : nhanXet));
         }
 
@@ -302,7 +364,9 @@ public sealed class FormNhapDiem : Form
                     maLoaiDiem = dong.ThanhPhan.MaLoaiDiem,
                     maGiaoVien,
                     diem = diem!.Value,
-                    nhanXet
+                    nhanXet,
+                    lanKiemTra,
+                    maCaHoc
                 }),
                 "PATCH" => await AppSession.Api.PatchAsync<GradeRowDto>($"admin/grades/{dong.MaDiemSo}", new
                 {
@@ -336,6 +400,11 @@ public sealed class FormNhapDiem : Form
     }
 
     private sealed record GiaoVienItem(string MaGiaoVien, string MoTa)
+    {
+        public override string ToString() => MoTa;
+    }
+
+    private sealed record BuoiThiItem(int? MaCaHoc, string MoTa)
     {
         public override string ToString() => MoTa;
     }

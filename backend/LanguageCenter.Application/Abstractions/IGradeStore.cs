@@ -15,10 +15,14 @@ public interface IGradeStore
 
     Task<bool> ExistsAsync(int maDiemSo, CancellationToken cancellationToken);
 
-    /// <summary>Đã có điểm cho cặp (đăng ký, đầu điểm) chưa — UNIQUE (MaDangKy, MaLoaiDiem).</summary>
+    /// <summary>
+    /// Đã có điểm cho bộ (đăng ký, đầu điểm, lần kiểm tra) chưa —
+    /// UNIQUE (MaDangKy, MaLoaiDiem, LanKiemTra).
+    /// </summary>
     Task<bool> DuplicateAsync(
         int maDangKy,
         int maLoaiDiem,
+        int lanKiemTra,
         int? exceptId,
         CancellationToken cancellationToken);
 

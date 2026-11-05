@@ -20,6 +20,7 @@ import { giaoVienApi, thongBaoApi } from '../../lib/api/endpoints'
 import type {
   AcademicReport,
   AttendanceSheet,
+  ClassProgress,
   GradeComponent,
   NotificationItem,
   PagedResult,
@@ -126,19 +127,35 @@ export function GVTongQuanCu() {
 // LỚP CỦA TÔI
 // ============================================================
 export function GVLopCuaToi() {
-  const { duLieu, dangTai, loi, taiLai } = dungDuLieu(() => giaoVienApi.lopCuaToi())
+  const { duLieu, dangTai, loi, taiLai } = dungDuLieu(async () => {
+    const lop = await giaoVienApi.lopCuaToi()
+    const tienDo: Record<number, ClassProgress> = {}
+
+    await Promise.all(
+      lop.map(async (l) => {
+        try {
+          tienDo[l.maLopHoc] = await giaoVienApi.tienDoLop(l.maLopHoc)
+        } catch {
+          // Lớp chưa sinh buổi / không có quyền → bỏ qua thanh tiến độ.
+        }
+      }),
+    )
+
+    return { lop, tienDo }
+  })
 
   if (dangTai) return <DangTai />
   if (loi) return <LoiTrang message={loi} onThuLai={taiLai} />
 
-  const ds: TeacherClass[] = duLieu ?? []
+  const ds: TeacherClass[] = duLieu?.lop ?? []
+  const tienDo = duLieu?.tienDo ?? {}
 
   return (
     <div className="space-y-6">
       <TrangTieuDe
         eyebrow="Giảng dạy"
         title="Lớp của tôi"
-        desc="Danh sách lớp được phân công giảng dạy hoặc trợ giảng."
+        desc="Danh sách lớp được phân công giảng dạy hoặc trợ giảng, kèm tiến độ buổi học."
       />
 
       {ds.length === 0 ? (
@@ -147,36 +164,70 @@ export function GVLopCuaToi() {
         </p>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {ds.map((l) => (
-            <article
-              key={l.maLopHoc}
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <p className="font-mono text-xs text-slate-500">{l.maLop}</p>
-                <span className="shrink-0">
-                  <Nhan>{l.trangThai}</Nhan>
-                </span>
-              </div>
+          {ds.map((l) => {
+            const td = tienDo[l.maLopHoc]
+            const phanTram = Math.max(0, Math.min(100, Number(td?.tienDoPhanTram) || 0))
 
-              {/* Tên lớp chiếm TOÀN BỘ chiều rộng card → hiện đủ chữ, không bị "..." */}
-              <h3 className="mt-1 text-lg font-bold text-slate-900">{l.tenLop}</h3>
-              <p className="text-sm text-slate-500">{l.tenKhoaHoc}</p>
+            return (
+              <article
+                key={l.maLopHoc}
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <p className="font-mono text-xs text-slate-500">{l.maLop}</p>
+                  <span className="shrink-0">
+                    <Nhan>{l.trangThai}</Nhan>
+                  </span>
+                </div>
 
-              <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                <dt className="text-slate-500">Sĩ số</dt>
-                <dd className="text-right font-semibold">
-                  {l.siSo}/{l.siSoToiDa}
-                </dd>
-                <dt className="text-slate-500">Bắt đầu</dt>
-                <dd className="text-right font-semibold">{dinhDangNgay(l.ngayBatDau)}</dd>
-                <dt className="text-slate-500">Kết thúc dự kiến</dt>
-                <dd className="text-right font-semibold">{dinhDangNgay(l.ngayKetThucDuKien)}</dd>
-                <dt className="text-slate-500">Vai trò</dt>
-                <dd className="text-right font-semibold">{l.vaiTroPhanCong}</dd>
-              </dl>
-            </article>
-          ))}
+                {/* Tên lớp chiếm TOÀN BỘ chiều rộng card → hiện đủ chữ, không bị "..." */}
+                <h3 className="mt-1 text-lg font-bold text-slate-900">{l.tenLop}</h3>
+                <p className="text-sm text-slate-500">{l.tenKhoaHoc}</p>
+
+                <div className="mt-3">
+                  <div className="mb-1 flex items-center justify-between text-xs">
+                    <span className="font-semibold text-slate-500">Tiến độ</span>
+                    <span className="font-bold text-slate-700">
+                      {td ? `${td.soBuoiDaHoc}/${td.tongSoBuoi} buổi` : 'Chưa sinh buổi'}
+                    </span>
+                  </div>
+                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div
+                      className="h-full rounded-full bg-blue-600"
+                      style={{ width: `${phanTram}%` }}
+                    />
+                  </div>
+                  {td?.soBuoiHienTai && (
+                    <p className="mt-1 text-[11px] text-slate-500">
+                      Buổi hiện tại: Buổi {td.soBuoiHienTai}
+                      {td.loaiBuoiHienTai ? ` · ${td.loaiBuoiHienTai}` : ''}
+                    </p>
+                  )}
+                </div>
+
+                <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                  <dt className="text-slate-500">Sĩ số</dt>
+                  <dd className="text-right font-semibold">
+                    {l.siSo}/{l.siSoToiDa}
+                  </dd>
+                  <dt className="text-slate-500">Bắt đầu</dt>
+                  <dd className="text-right font-semibold">{dinhDangNgay(l.ngayBatDau)}</dd>
+                  <dt className="text-slate-500">Kết thúc dự kiến</dt>
+                  <dd className="text-right font-semibold">{dinhDangNgay(l.ngayKetThucDuKien)}</dd>
+                  <dt className="text-slate-500">Vai trò</dt>
+                  <dd className="text-right font-semibold">
+                    {l.vaiTroPhanCong === 'Giáo viên nước ngoài' ? (
+                      <span className="rounded-full bg-blue-50 px-2 py-0.5 text-blue-700">
+                        {l.vaiTroPhanCong}
+                      </span>
+                    ) : (
+                      l.vaiTroPhanCong
+                    )}
+                  </dd>
+                </dl>
+              </article>
+            )
+          })}
         </div>
       )}
     </div>
@@ -206,7 +257,11 @@ export function GVLichDay() {
         dangTai={lich.dangTai}
         loi={lich.loi}
         onThuLai={lich.taiLai}
-        dongPhu={(ca) => [ca.tenPhong, ca.tenKhoaHoc]}
+        dongPhu={(ca) => [
+          ca.tenPhong,
+          ca.soBuoi ? `Buổi ${ca.soBuoi}` : null,
+          ca.tenKhoaHoc,
+        ]}
         moTaRong="Tuần này bạn không có ca dạy nào."
         nhanDem="ca dạy"
         onChonCaHoc={(ca) =>
@@ -592,6 +647,16 @@ export function GVDiemDanh() {
                     {sheet.maLop} · {sheet.tenLop}
                   </p>
                   <Nhan>{sheet.trangThaiCaHoc}</Nhan>
+                  {sheet.soBuoi ? (
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600">
+                      Buổi {sheet.soBuoi}
+                    </span>
+                  ) : null}
+                  {sheet.loaiBuoi === 'Buổi thi' && (
+                    <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-700">
+                      Buổi thi
+                    </span>
+                  )}
                   <p className="text-xs text-slate-500">
                     {thuTrongTuan(sheet.ngayHoc)}, {dinhDangNgay(sheet.ngayHoc)} ·{' '}
                     {dinhDangKhoangGio(sheet.gioBatDau, sheet.gioKetThuc)} · {sheet.tenPhong}
@@ -906,7 +971,16 @@ function LuoiNhapDiem({
 }) {
   const { hien } = dungToast()
 
-  const khoaO = (maDangKy: number, maLoaiDiem: number) => `${maDangKy}:${maLoaiDiem}`
+  /** Lần kiểm tra đang nhập (mỗi đầu điểm có thể có nhiều lần). */
+  const [lan, setLan] = useState(1)
+  /** Buổi thi gắn với bài kiểm tra (tuỳ chọn). */
+  const [maCaHocThi, setMaCaHocThi] = useState('')
+
+  const khoaO = (maDangKy: number, maLoaiDiem: number) => `${maDangKy}:${maLoaiDiem}:${lan}`
+
+  // Tiến độ lớp → danh sách buổi thi để gắn điểm
+  const tienDo = dungDuLieu(() => giaoVienApi.tienDoLop(maLopHoc))
+  const buoiThi = (tienDo.duLieu?.buois ?? []).filter((b) => b.laBuoiThi)
 
   // Điểm đã lưu của lớp (để biết ô nào PATCH, ô nào POST, ô nào DELETE)
   const daCo = dungDuLieu(() => giaoVienApi.diemCuaLop(maLopHoc))
@@ -924,9 +998,9 @@ function LuoiNhapDiem({
 
   const hopRef = useRef<HTMLDivElement>(null)
 
-  // Đổ điểm đã lưu vào lưới
+  // Đổ điểm đã lưu vào lưới (chỉ lấy đúng lần kiểm tra đang chọn)
   useEffect(() => {
-    const ds = daCo.duLieu?.items ?? []
+    const ds = (daCo.duLieu?.items ?? []).filter((g) => (g.lanKiemTra ?? 1) === lan)
 
     const so: Record<string, number> = {}
     const raw: Record<string, string> = {}
@@ -941,7 +1015,7 @@ function LuoiNhapDiem({
     setGoc(raw)
     setGiaTri(raw)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [daCo.duLieu])
+  }, [daCo.duLieu, lan])
 
   const tongTrongSo = baoCao.thanhPhan.reduce((s, tp) => s + tp.trongSo, 0)
 
@@ -1057,6 +1131,8 @@ function LuoiNhapDiem({
             maDangKy: t.maDangKy,
             maLoaiDiem: t.maLoaiDiem,
             diem: so,
+            lanKiemTra: lan,
+            maCaHoc: maCaHocThi ? Number(maCaHocThi) : null,
           })
         }
       }
@@ -1084,6 +1160,39 @@ function LuoiNhapDiem({
             Đã nhập {soDaNhap}/{tongSoO} ô
             {soThayDoi > 0 ? ` · ${soThayDoi} thay đổi chưa lưu` : ' · chưa có thay đổi'}
           </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <label className="flex items-center gap-1.5 font-semibold text-slate-600">
+            Lần kiểm tra
+            <select
+              value={lan}
+              onChange={(e) => setLan(Number(e.target.value))}
+              className="h-8 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold"
+            >
+              {[1, 2, 3, 4, 5].map((n) => (
+                <option key={n} value={n}>
+                  Lần {n}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <label className="flex items-center gap-1.5 font-semibold text-slate-600">
+            Buổi thi
+            <select
+              value={maCaHocThi}
+              onChange={(e) => setMaCaHocThi(e.target.value)}
+              className="h-8 max-w-56 rounded-lg border border-slate-200 bg-white px-2 text-xs font-semibold"
+            >
+              <option value="">— Không gắn —</option>
+              {buoiThi.map((b) => (
+                <option key={b.maCaHoc} value={b.maCaHoc}>
+                  Buổi {b.soBuoi ?? '—'} · {dinhDangNgay(b.ngayHoc)}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         <div className="ml-auto flex items-center gap-2">

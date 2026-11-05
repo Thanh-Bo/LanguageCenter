@@ -644,6 +644,10 @@ public sealed class SessionListItemDto
     public string TrangThai { get; init; } = string.Empty;
     public string? LyDoThayDoi { get; init; }
     public int SoDiemDanh { get; init; }
+    /// <summary>Buổi thứ mấy trong khóa (NULL với ca phát sinh).</summary>
+    public int? SoBuoi { get; init; }
+    /// <summary>"Buổi học" hoặc "Buổi thi".</summary>
+    public string LoaiBuoi { get; init; } = "Buổi học";
 }
 
 public sealed class RoomListItemDto
@@ -703,6 +707,8 @@ public sealed class LessonContentDto
     public string TieuDe { get; init; } = string.Empty;
     public string? NoiDung { get; init; }
     public string? MucTieu { get; init; }
+    /// <summary>"Buổi học" hoặc "Buổi thi" — ca sinh ra sẽ kế thừa.</summary>
+    public string LoaiBuoi { get; init; } = "Buổi học";
 }
 
 public sealed class HolidayDto
@@ -1064,6 +1070,11 @@ public sealed class GradeRowDto
     public decimal Diem { get; init; }
     public string? NhanXet { get; init; }
     public string? TrangThaiKetQua { get; init; }
+    /// <summary>Lần kiểm tra của đầu điểm (1, 2, 3...).</summary>
+    public int LanKiemTra { get; init; } = 1;
+    /// <summary>Buổi thi gắn với bài kiểm tra (NULL nếu chấm ngoài lịch).</summary>
+    public int? MaCaHoc { get; init; }
+    public DateOnly? NgayThi { get; init; }
     public string MaGiaoVien { get; init; } = string.Empty;
     public string TenGiaoVien { get; init; } = string.Empty;
 }
@@ -1095,10 +1106,66 @@ public sealed class AttendanceSheetDto
     public DateOnly NgayHoc { get; init; }
     public TimeOnly GioBatDau { get; init; }
     public TimeOnly GioKetThuc { get; init; }
+    /// <summary>Buổi thứ mấy trong khóa (NULL với ca phát sinh).</summary>
+    public int? SoBuoi { get; init; }
+    /// <summary>"Buổi học" hoặc "Buổi thi".</summary>
+    public string LoaiBuoi { get; init; } = "Buổi học";
     public string TrangThaiCaHoc { get; init; } = string.Empty;
     public bool CoTheDiemDanh { get; set; }
     public string? LyDoKhongTheDiemDanh { get; set; }
     public IReadOnlyList<AttendanceRowDto> HocViens { get; set; } = Array.Empty<AttendanceRowDto>();
+}
+
+/// <summary>Một buổi trong tiến độ lớp.</summary>
+public sealed class SessionProgressItemDto
+{
+    public int MaCaHoc { get; init; }
+    public int? SoBuoi { get; init; }
+    public DateOnly NgayHoc { get; init; }
+    public TimeOnly GioBatDau { get; init; }
+    public TimeOnly GioKetThuc { get; init; }
+    public string LoaiBuoi { get; init; } = string.Empty;
+    public bool LaBuoiThi { get; init; }
+    public string TrangThai { get; init; } = string.Empty;
+    public string? NoiDungBaiHoc { get; init; }
+    public string? TenGiaoVienThucTe { get; init; }
+    public string? TenTroGiangThucTe { get; init; }
+    public int SoDiemDanh { get; init; }
+    public bool DaHoc { get; init; }
+    public bool LaBuoiHienTai { get; init; }
+}
+
+/// <summary>Tiến độ học của một lớp.</summary>
+public sealed class ClassProgressDto
+{
+    public int MaLopHoc { get; init; }
+    public string MaLop { get; init; } = string.Empty;
+    public string TenLop { get; init; } = string.Empty;
+    public int MaKhoaHoc { get; init; }
+    public string TenKhoaHoc { get; init; } = string.Empty;
+    public int TongSoBuoi { get; init; }
+    public int SoBuoiDaSinh { get; init; }
+    public int SoBuoiDaHoc { get; init; }
+    public int SoBuoiConLai { get; init; }
+    public decimal TienDoPhanTram { get; init; }
+    public int? MaCaHocHienTai { get; init; }
+    public int? SoBuoiHienTai { get; init; }
+    public DateOnly? NgayHocHienTai { get; init; }
+    public string? LoaiBuoiHienTai { get; init; }
+    public IReadOnlyList<SessionProgressItemDto> Buois { get; init; } = Array.Empty<SessionProgressItemDto>();
+}
+
+/// <summary>Kết quả <c>POST /api/admin/sessions/sync-teachers</c>.</summary>
+public sealed class SyncTeachersResponseDto
+{
+    public int MaLopHoc { get; init; }
+    public int TongSoCa { get; init; }
+    public int SoCaCapNhat { get; init; }
+    public int SoCaKhongDoi { get; init; }
+    public int SoCaBoQua { get; init; }
+    public string? MaGiaoVienChinh { get; init; }
+    public string? MaGiaoVienNuocNgoai { get; init; }
+    public string? MaTroGiang { get; init; }
 }
 
 #endregion

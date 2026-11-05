@@ -14,6 +14,7 @@ import {
   AdminTongQuan,
 } from './pages/admin/AdminPages'
 import { AdminBaoCao, AdminKhaoSat, AdminThongBao } from './pages/admin/AdminContent'
+import { AdminLichHoc } from './pages/admin/AdminLichHoc'
 import {
   GVBangDiem,
   GVDiemDanh,
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
           { index: true, Component: AdminTongQuan },
           { path: 'hoc-vien', Component: AdminHocVien },
           { path: 'lop-hoc', Component: AdminLopHoc },
+          { path: 'lich-hoc', Component: AdminLichHoc },
           { path: 'hoc-phi', Component: AdminHocPhi },
           { path: 'thong-bao', Component: AdminThongBao },
           { path: 'khao-sat', Component: AdminKhaoSat },

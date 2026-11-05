@@ -1,6 +1,7 @@
 using LanguageCenter.Application.Abstractions;
 using LanguageCenter.Application.AcademicSetup.Models;
 using LanguageCenter.Application.Common;
+using LanguageCenter.Domain.Constants;
 
 namespace LanguageCenter.Application.AcademicSetup;
 
@@ -96,6 +97,19 @@ public sealed class AcademicSetupService : IAcademicSetupService
         if (thieuTieuDe.Count > 0)
         {
             errors.Add($"Buổi {string.Join(", ", thieuTieuDe)} chưa có tiêu đề.");
+        }
+
+        var loaiBuoiSai = items
+            .Where(x => x.LoaiBuoi is not null && !SessionKinds.IsValid(x.LoaiBuoi.Trim()))
+            .Select(x => x.SoBuoi)
+            .OrderBy(x => x)
+            .ToList();
+
+        if (loaiBuoiSai.Count > 0)
+        {
+            errors.Add(
+                $"Loại buổi không hợp lệ ở buổi {string.Join(", ", loaiBuoiSai)}. " +
+                $"Chỉ chấp nhận: {string.Join(", ", SessionKinds.All)}.");
         }
 
         if (errors.Count > 0)

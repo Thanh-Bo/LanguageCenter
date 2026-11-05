@@ -160,6 +160,12 @@ public partial class UcXepLop : UserControl
 
             lblClassDetails.Text = $"Khóa học: {_currentClass.TenKhoaHoc}    •    Học vụ: {_currentClass.TenNhanVienHocVu}    •    Khai giảng: {UiHelpers.FormatDate(_currentClass.NgayBatDau)}    •    Kết thúc dự kiến: {UiHelpers.FormatDate(_currentClass.NgayKetThucDuKien)}";
 
+            // v15: lớp chỉ nhận học viên trong 4 buổi đầu; kiểm tra độ tuổi & trùng giờ do backend chặn.
+            if (_currentClass.SoCaHoc > 0)
+            {
+                lblClassDetails.Text += $"    •    Đã sinh {_currentClass.SoCaHoc} ca học";
+            }
+
             btnOpenEnrollDialog.Enabled = !isFull;
             btnRemoveFromClass.Enabled = true;
         }
@@ -294,10 +300,14 @@ public partial class UcXepLop : UserControl
     /// </summary>
     private void ThemDongTrongLop(EnrollmentListItemDto s)
     {
+        var ngaySinh = s.NgaySinh == default
+            ? "—"
+            : $"{s.NgaySinh:dd/MM/yyyy} ({TinhTuoi(s.NgaySinh)} tuổi)";
+
         var rowIdx = dgvInClass.Rows.Add(
             s.MaHocVien,
             s.TenHocVien,
-            s.NgaySinh == default ? "—" : s.NgaySinh.ToString("dd/MM/yyyy"),
+            ngaySinh,
             string.IsNullOrWhiteSpace(s.GioiTinh) ? "—" : s.GioiTinh,
             string.IsNullOrWhiteSpace(s.SoDienThoai) ? "—" : s.SoDienThoai,
             string.IsNullOrWhiteSpace(s.Email) ? "—" : s.Email,
@@ -321,7 +331,9 @@ public partial class UcXepLop : UserControl
             string.IsNullOrWhiteSpace(p.SoDienThoai) ? "—" : p.SoDienThoai,
             string.IsNullOrWhiteSpace(p.Email) ? "—" : p.Email,
             p.TenKhoaHoc,
-            UiHelpers.FormatDateTime(p.NgayDangKy),
+            p.NgaySinh == default
+                ? UiHelpers.FormatDateTime(p.NgayDangKy)
+                : $"{UiHelpers.FormatDateTime(p.NgayDangKy)} · {TinhTuoi(p.NgaySinh)} tuổi",
             $"{p.HocPhiSauGiam:N0} ₫",
             p.TrangThaiDangKy);
 
@@ -524,6 +536,20 @@ public partial class UcXepLop : UserControl
     /// <summary>Đăng ký đang chọn ở bảng "chờ xếp lớp" (null nếu chưa chọn dòng nào).</summary>
     private EnrollmentListItemDto? DangKyDangChon()
         => dgvPending.CurrentRow?.Tag as EnrollmentListItemDto;
+
+    /// <summary>Tuổi tại thời điểm hiện tại (dùng để đối chiếu độ tuổi chương trình).</summary>
+    private static int TinhTuoi(DateOnly ngaySinh)
+    {
+        var homNay = DateOnly.FromDateTime(DateTime.Today);
+        var tuoi = homNay.Year - ngaySinh.Year;
+
+        if (homNay < ngaySinh.AddYears(tuoi))
+        {
+            tuoi--;
+        }
+
+        return tuoi;
+    }
 
     /// <summary>
     /// Từ chối (hủy) một đăng ký học còn chờ xếp lớp — chuyển trạng thái sang "Đã hủy".

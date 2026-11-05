@@ -87,6 +87,8 @@ public sealed class SessionStore : ISessionStore
                 GioBatDau = x.GioBatDau,
                 GioKetThuc = x.GioKetThuc,
                 NoiDungBaiHoc = x.NoiDungBaiHoc,
+                SoBuoi = x.SoBuoi,
+                LoaiBuoi = x.LoaiBuoi,
                 TrangThai = x.TrangThai,
                 LyDoThayDoi = x.LyDoThayDoi,
                 SoDiemDanh = x.DiemDanhs.Count()
@@ -126,6 +128,8 @@ public sealed class SessionStore : ISessionStore
                 GioBatDau = x.GioBatDau,
                 GioKetThuc = x.GioKetThuc,
                 NoiDungBaiHoc = x.NoiDungBaiHoc,
+                SoBuoi = x.SoBuoi,
+                LoaiBuoi = x.LoaiBuoi,
                 TrangThai = x.TrangThai,
                 LyDoThayDoi = x.LyDoThayDoi,
                 SoDiemDanh = x.DiemDanhs.Count()
@@ -259,8 +263,7 @@ public sealed class SessionStore : ISessionStore
 
     public async Task<IReadOnlyList<TeacherClassDto>> ListTeacherClassesAsync(
         string maGiaoVien,
-        CancellationToken cancellationToken)
-    {
+        CancellationToken cancellationToken)    {
         var code = maGiaoVien.Trim();
 
         return await _dbContext.PhanCongGiangDays
@@ -286,6 +289,281 @@ public sealed class SessionStore : ISessionStore
             .ToListAsync(cancellationToken);
     }
 
+    /// <summary>
+    /// Tiến độ từng buổi của lớp. Buổi "hiện tại" = buổi gần nhất đã tới ngày
+    /// (hoặc buổi sắp tới gần nhất nếu lớp chưa bắt đầu).
+    /// </summary>
+    public async Task<ClassProgressDto?> GetClassProgressAsync(
+        int maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var lop = await _dbContext.LopHocs
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == maLopHoc)
+            .Select(x => new
+            {
+                x.MaLopHoc,
+                x.MaLop,
+                x.TenLop,
+                x.MaKhoaHoc,
+                TenKhoaHoc = x.KhoaHoc.TenKhoaHoc,
+                SoBuoiKhoaHoc = x.KhoaHoc.SoBuoi
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lop is null)
+        {
+            return null;
+        }
+
+        var rows = await _dbContext.CaHocs
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == maLopHoc)
+            .OrderBy(x => x.NgayHoc)
+            .ThenBy(x => x.GioBatDau)
+            .Select(x => new
+            {
+                x.MaCaHoc,
+                x.SoBuoi,
+                x.NgayHoc,
+                x.GioBatDau,
+                x.GioKetThuc,
+                x.LoaiBuoi,
+                x.TrangThai,
+                x.NoiDungBaiHoc,
+                x.MaGiaoVienThucTe,
+                TenGiaoVienThucTe = x.GiaoVienThucTe != null ? x.GiaoVienThucTe.HoTen : null,
+                x.MaTroGiangThucTe,
+                TenTroGiangThucTe = x.TroGiangThucTe != null ? x.TroGiangThucTe.HoTen : null,
+                SoDiemDanh = x.DiemDanhs.Count()
+            })
+            .ToListAsync(cancellationToken);
+
+        var today = DateOnly.FromDateTime(DateTime.Today);
+
+        // Buổi hiện tại: buổi cuối cùng đã tới ngày và chưa hủy; nếu chưa có thì buổi sắp tới.
+        var viTriHienTai = -1;
+
+        for (var i = 0; i < rows.Count; i++)
+        {
+            if (rows[i].TrangThai != SessionStatuses.DaHuy && rows[i].NgayHoc <= today)
+            {
+                viTriHienTai = i;
+            }
+        }
+
+        if (viTriHienTai < 0)
+        {
+            viTriHienTai = rows.FindIndex(x => x.TrangThai != SessionStatuses.DaHuy);
+        }
+
+        var buois = new List<SessionProgressItemDto>(rows.Count);
+
+        for (var i = 0; i < rows.Count; i++)
+        {
+            var x = rows[i];
+            var daHoc = x.TrangThai != SessionStatuses.DaHuy && x.NgayHoc <= today;
+
+            buois.Add(new SessionProgressItemDto
+            {
+                MaCaHoc = x.MaCaHoc,
+                SoBuoi = x.SoBuoi,
+                NgayHoc = x.NgayHoc,
+                GioBatDau = x.GioBatDau,
+                GioKetThuc = x.GioKetThuc,
+                LoaiBuoi = x.LoaiBuoi,
+                LaBuoiThi = SessionKinds.IsExam(x.LoaiBuoi),
+                TrangThai = x.TrangThai,
+                NoiDungBaiHoc = x.NoiDungBaiHoc,
+                MaGiaoVienThucTe = x.MaGiaoVienThucTe,
+                TenGiaoVienThucTe = x.TenGiaoVienThucTe,
+                MaTroGiangThucTe = x.MaTroGiangThucTe,
+                TenTroGiangThucTe = x.TenTroGiangThucTe,
+                SoDiemDanh = x.SoDiemDanh,
+                DaHoc = daHoc,
+                LaBuoiHienTai = i == viTriHienTai
+            });
+        }
+
+        var tongSoBuoi = lop.SoBuoiKhoaHoc > 0 ? lop.SoBuoiKhoaHoc : buois.Count;
+        var soBuoiDaHoc = buois.Count(x => x.DaHoc);
+        var hienTai = viTriHienTai >= 0 && viTriHienTai < buois.Count ? buois[viTriHienTai] : null;
+
+        return new ClassProgressDto
+        {
+            MaLopHoc = lop.MaLopHoc,
+            MaLop = lop.MaLop,
+            TenLop = lop.TenLop,
+            MaKhoaHoc = lop.MaKhoaHoc,
+            TenKhoaHoc = lop.TenKhoaHoc,
+            TongSoBuoi = tongSoBuoi,
+            SoBuoiDaSinh = buois.Count,
+            SoBuoiDaHoc = soBuoiDaHoc,
+            SoBuoiConLai = Math.Max(0, tongSoBuoi - soBuoiDaHoc),
+            TienDoPhanTram = tongSoBuoi == 0
+                ? 0m
+                : Math.Round(soBuoiDaHoc * 100m / tongSoBuoi, 2),
+            MaCaHocHienTai = hienTai?.MaCaHoc,
+            SoBuoiHienTai = hienTai?.SoBuoi,
+            NgayHocHienTai = hienTai?.NgayHoc,
+            LoaiBuoiHienTai = hienTai?.LoaiBuoi,
+            Buois = buois
+        };
+    }
+
+    /// <summary>
+    /// Đồng bộ giáo viên cho các ca CHƯA diễn ra của lớp theo quy ước:
+    /// buổi LẺ (đầu tuần) → GV nước ngoài, buổi CHẴN → GV chính.
+    /// Chỉ ghi đè khi tìm được người tương ứng; ca đã diễn ra/đã hủy không bị đụng tới.
+    /// </summary>
+    public async Task<SyncTeachersOutcome> SyncTeachersAsync(
+        int maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var lop = await _dbContext.LopHocs
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == maLopHoc)
+            .Select(x => new { x.MaLopHoc, x.ThuBuoi1, x.ThuBuoi2 })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (lop is null)
+        {
+            return new SyncTeachersOutcome(false, 0, 0, 0, 0, null, null, null);
+        }
+
+        var lichCuaLop = await _dbContext.LichHocs
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == maLopHoc && x.TrangThai != ScheduleStatuses.NgungApDung)
+            .Select(x => new { x.MaLichHoc, x.ThuTrongTuan })
+            .ToListAsync(cancellationToken);
+
+        byte? thu1 = lop.ThuBuoi1;
+        byte? thu2 = lop.ThuBuoi2;
+
+        if (thu1 is null || thu2 is null)
+        {
+            var cacThu = lichCuaLop
+                .Select(x => x.ThuTrongTuan)
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            if (cacThu.Count < 2)
+            {
+                return new SyncTeachersOutcome(true, 0, 0, 0, 0, null, null, null);
+            }
+
+            thu1 ??= cacThu[0];
+            thu2 ??= cacThu[1];
+        }
+
+        if (thu1 > thu2)
+        {
+            (thu1, thu2) = (thu2, thu1);
+        }
+
+        var phanCong = await _dbContext.PhanCongGiangDays
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == maLopHoc
+                        && x.TrangThai == AssignmentStatuses.DangPhanCong
+                        && x.MaGiaoVien != null)
+            .OrderByDescending(x => x.MaPhanCong)
+            .Select(x => new { x.MaGiaoVien, x.VaiTroPhanCong })
+            .ToListAsync(cancellationToken);
+
+        var maGiaoVienChinh = phanCong
+            .FirstOrDefault(x => x.VaiTroPhanCong == AssignmentRoles.GiaoVienChinh)?.MaGiaoVien;
+        var maGiaoVienNuocNgoai = phanCong
+            .FirstOrDefault(x => x.VaiTroPhanCong == AssignmentRoles.GiaoVienNuocNgoai)?.MaGiaoVien;
+        var maTroGiang = phanCong
+            .FirstOrDefault(x => x.VaiTroPhanCong == AssignmentRoles.TroGiang)?.MaGiaoVien;
+
+        if (maGiaoVienChinh is null && maGiaoVienNuocNgoai is null && maTroGiang is null)
+        {
+            return new SyncTeachersOutcome(true, 0, 0, 0, 0, null, null, null);
+        }
+
+        var caHocs = await _dbContext.CaHocs
+            .Where(x => x.MaLopHoc == maLopHoc && x.TrangThai == SessionStatuses.ChuaDienRa)
+            .ToListAsync(cancellationToken);
+
+        var soCaCapNhat = 0;
+        var soCaKhongDoi = 0;
+        var soCaBoQua = 0;
+
+        foreach (var ca in caHocs)
+        {
+            bool? laBuoiLe = null;
+
+            if (ca.SoBuoi is { } soBuoi)
+            {
+                laBuoiLe = soBuoi % 2 == 1;
+            }
+            else
+            {
+                var thuCuaCa = lichCuaLop
+                    .FirstOrDefault(l => l.MaLichHoc == ca.MaLichHoc)?.ThuTrongTuan;
+
+                if (thuCuaCa == thu1)
+                {
+                    laBuoiLe = true;
+                }
+                else if (thuCuaCa == thu2)
+                {
+                    laBuoiLe = false;
+                }
+            }
+
+            if (laBuoiLe is null)
+            {
+                soCaBoQua++;
+                continue;
+            }
+
+            var giaoVien = laBuoiLe.Value
+                ? maGiaoVienNuocNgoai ?? maGiaoVienChinh
+                : maGiaoVienChinh ?? maGiaoVienNuocNgoai;
+
+            var doiNguoi = false;
+
+            if (giaoVien is not null && ca.MaGiaoVienThucTe != giaoVien)
+            {
+                ca.MaGiaoVienThucTe = giaoVien;
+                doiNguoi = true;
+            }
+
+            if (maTroGiang is not null && ca.MaTroGiangThucTe != maTroGiang)
+            {
+                ca.MaTroGiangThucTe = maTroGiang;
+                doiNguoi = true;
+            }
+
+            if (doiNguoi)
+            {
+                soCaCapNhat++;
+            }
+            else
+            {
+                soCaKhongDoi++;
+            }
+        }
+
+        if (soCaCapNhat > 0)
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
+        return new SyncTeachersOutcome(
+            true,
+            caHocs.Count,
+            soCaCapNhat,
+            soCaKhongDoi,
+            soCaBoQua,
+            maGiaoVienChinh,
+            maGiaoVienNuocNgoai,
+            maTroGiang);
+    }
+
     // ========================================================================
     // GHI
     // ========================================================================
@@ -305,6 +583,10 @@ public sealed class SessionStore : ISessionStore
             // Mỗi buổi cố định 2 tiếng — không cho lệch giờ kết thúc.
             GioKetThuc = request.GioBatDau.AddHours(2),
             NoiDungBaiHoc = TextValue.Required(request.NoiDungBaiHoc),
+            SoBuoi = request.SoBuoi,
+            LoaiBuoi = SessionKinds.IsValid(request.LoaiBuoi?.Trim())
+                ? request.LoaiBuoi!.Trim()
+                : SessionKinds.BuoiHoc,
             TrangThai = SessionStatuses.ChuaDienRa,
             LyDoThayDoi = TextValue.Required(request.LyDoThayDoi)
         };
@@ -372,6 +654,16 @@ public sealed class SessionStore : ISessionStore
         if (changes.NoiDungBaiHoc is not null)
         {
             entity.NoiDungBaiHoc = TextValue.Required(changes.NoiDungBaiHoc);
+        }
+
+        if (!string.IsNullOrWhiteSpace(changes.LoaiBuoi))
+        {
+            var loaiBuoi = changes.LoaiBuoi.Trim();
+
+            if (SessionKinds.IsValid(loaiBuoi))
+            {
+                entity.LoaiBuoi = loaiBuoi;
+            }
         }
 
         if (changes.LyDoThayDoi is not null)
@@ -575,13 +867,14 @@ public sealed class SessionStore : ISessionStore
                 .ToListAsync(cancellationToken))
             .ToHashSet();
 
-        // Nội dung 20 buổi của khóa.
+        // Nội dung 20 buổi của khóa (kèm loại buổi: học / thi).
         var noiDung = await _dbContext.NoiDungBaiHocs
             .AsNoTracking()
             .Where(x => x.MaKhoaHoc == lop.MaKhoaHoc)
-            .ToDictionaryAsync(x => x.SoBuoi, x => x.TieuDe, cancellationToken);
+            .Select(x => new { x.SoBuoi, x.TieuDe, x.LoaiBuoi })
+            .ToDictionaryAsync(x => x.SoBuoi, x => x, cancellationToken);
 
-        // Giáo viên chính / trợ giảng đang được phân công.
+        // Giáo viên chính / giáo viên nước ngoài / trợ giảng đang được phân công.
         var phanCong = await _dbContext.PhanCongGiangDays
             .AsNoTracking()
             .Where(x => x.MaLopHoc == lop.MaLopHoc
@@ -593,6 +886,8 @@ public sealed class SessionStore : ISessionStore
 
         var maGiaoVienChinh = phanCong
             .FirstOrDefault(x => x.VaiTroPhanCong == AssignmentRoles.GiaoVienChinh)?.MaGiaoVien;
+        var maGiaoVienNuocNgoai = phanCong
+            .FirstOrDefault(x => x.VaiTroPhanCong == AssignmentRoles.GiaoVienNuocNgoai)?.MaGiaoVien;
         var maTroGiang = phanCong
             .FirstOrDefault(x => x.VaiTroPhanCong == AssignmentRoles.TroGiang)?.MaGiaoVien;
 
@@ -658,7 +953,14 @@ public sealed class SessionStore : ISessionStore
                 continue;
             }
 
-            noiDung.TryGetValue(buoi, out var tieuDe);
+            noiDung.TryGetValue(buoi, out var nd);
+
+            // QUY ƯỚC LỚP 2 BUỔI/TUẦN:
+            //   buổi ĐẦU TUẦN (thứ nhỏ hơn) → giáo viên nước ngoài;
+            //   buổi còn lại            → giáo viên chính (người Việt).
+            var maGiaoVienBuoi = laBuoiLe
+                ? maGiaoVienNuocNgoai ?? maGiaoVienChinh
+                : maGiaoVienChinh ?? maGiaoVienNuocNgoai;
 
             _dbContext.CaHocs.Add(new CaHoc
             {
@@ -668,9 +970,11 @@ public sealed class SessionStore : ISessionStore
                 NgayHoc = ngay,
                 GioBatDau = gioBatDau,
                 GioKetThuc = gioKetThuc,
-                MaGiaoVienThucTe = maGiaoVienChinh,
+                MaGiaoVienThucTe = maGiaoVienBuoi,
                 MaTroGiangThucTe = maTroGiang,
-                NoiDungBaiHoc = TaoNoiDungBuoi(buoi, tieuDe),
+                NoiDungBaiHoc = TaoNoiDungBuoi(buoi, nd?.TieuDe),
+                SoBuoi = buoi,
+                LoaiBuoi = SessionKinds.IsValid(nd?.LoaiBuoi) ? nd!.LoaiBuoi : SessionKinds.BuoiHoc,
                 TrangThai = SessionStatuses.ChuaDienRa,
                 LyDoThayDoi = null
             });
@@ -771,6 +1075,8 @@ public sealed class SessionStore : ISessionStore
             GioBatDau = x.GioBatDau,
             GioKetThuc = x.GioKetThuc,
             NoiDungBaiHoc = x.NoiDungBaiHoc,
+            SoBuoi = x.SoBuoi,
+            LoaiBuoi = x.LoaiBuoi,
             TrangThai = x.TrangThai,
             LyDoThayDoi = x.LyDoThayDoi,
             SoDiemDanh = x.DiemDanhs.Count()

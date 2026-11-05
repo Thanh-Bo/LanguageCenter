@@ -98,4 +98,18 @@ public sealed class AdminSessionsController : ControllerBase
         [FromBody] GenerateSessionsRequest request,
         CancellationToken cancellationToken)
         => (await _sessionService.GenerateAsync(request, cancellationToken)).ToActionResult();
+
+    /// <summary>
+    /// Đồng bộ lại giáo viên cho các ca CHƯA diễn ra của lớp theo quy ước
+    /// "buổi đầu tuần = GV nước ngoài, buổi còn lại = GV chính".
+    /// <para>Dùng cho lớp đã sinh buổi trước khi có phân công GV nước ngoài.</para>
+    /// </summary>
+    [HttpPost("sync-teachers")]
+    [ProducesResponseType(typeof(SyncSessionTeachersResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SyncTeachersAsync(
+        [FromBody] SyncSessionTeachersRequest request,
+        CancellationToken cancellationToken)
+        => (await _sessionService.SyncTeachersAsync(request, cancellationToken)).ToActionResult();
 }

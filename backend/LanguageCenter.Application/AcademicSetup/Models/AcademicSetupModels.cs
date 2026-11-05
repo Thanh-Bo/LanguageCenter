@@ -21,6 +21,9 @@ public sealed class LessonContentDto
     public string? NoiDung { get; init; }
 
     public string? MucTieu { get; init; }
+
+    /// <summary>"Buổi học" hoặc "Buổi thi".</summary>
+    public string LoaiBuoi { get; init; } = "Buổi học";
 }
 
 /// <summary>Một dòng gửi lên khi lưu nội dung buổi học.</summary>
@@ -38,6 +41,10 @@ public sealed class LessonContentInput
 
     [StringLength(500, ErrorMessage = "Mục tiêu tối đa 500 ký tự.")]
     public string? MucTieu { get; set; }
+
+    /// <summary>"Buổi học" hoặc "Buổi thi". Để trống = "Buổi học".</summary>
+    [StringLength(30)]
+    public string? LoaiBuoi { get; set; }
 }
 
 /// <summary>Body của <c>PUT /api/admin/lesson-contents/{maKhoaHoc}</c> — lưu cả 20 buổi 1 lần.</summary>

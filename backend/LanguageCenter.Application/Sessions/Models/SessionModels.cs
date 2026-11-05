@@ -42,6 +42,14 @@ public sealed class CreateSessionRequest
 
     public string? NoiDungBaiHoc { get; set; }
 
+    /// <summary>"Buổi học" hoặc "Buổi thi". Để trống = "Buổi học".</summary>
+    [StringLength(30)]
+    public string? LoaiBuoi { get; set; }
+
+    /// <summary>Buổi thứ mấy trong khóa. Để trống = tự đánh số theo ngày.</summary>
+    [Range(1, 200)]
+    public int? SoBuoi { get; set; }
+
     [StringLength(500, ErrorMessage = "Lý do thay đổi tối đa 500 ký tự.")]
     public string? LyDoThayDoi { get; set; }
 }
@@ -68,6 +76,10 @@ public sealed class UpdateSessionRequest
     public TimeOnly? GioKetThuc { get; set; }
 
     public string? NoiDungBaiHoc { get; set; }
+
+    /// <summary>"Buổi học" / "Buổi thi".</summary>
+    [StringLength(30)]
+    public string? LoaiBuoi { get; set; }
 
     [StringLength(500, ErrorMessage = "Lý do thay đổi tối đa 500 ký tự.")]
     public string? LyDoThayDoi { get; set; }
@@ -148,6 +160,12 @@ public sealed class SessionListItemDto
 
     public string? NoiDungBaiHoc { get; init; }
 
+    /// <summary>Buổi thứ mấy trong khóa (NULL với ca phát sinh).</summary>
+    public int? SoBuoi { get; init; }
+
+    /// <summary>"Buổi học" hoặc "Buổi thi".</summary>
+    public string LoaiBuoi { get; init; } = string.Empty;
+
     public string TrangThai { get; init; } = string.Empty;
 
     public string? LyDoThayDoi { get; init; }
@@ -193,6 +211,12 @@ public sealed class SessionDetailDto
     public TimeOnly GioKetThuc { get; init; }
 
     public string? NoiDungBaiHoc { get; init; }
+
+    /// <summary>Buổi thứ mấy trong khóa (NULL với ca phát sinh).</summary>
+    public int? SoBuoi { get; init; }
+
+    /// <summary>"Buổi học" hoặc "Buổi thi".</summary>
+    public string LoaiBuoi { get; init; } = string.Empty;
 
     public string TrangThai { get; init; } = string.Empty;
 
@@ -270,4 +294,121 @@ public sealed class TeacherClassStudentDto
     public string HoTen { get; init; } = string.Empty;
 
     public int MaDangKy { get; init; }
+}
+
+/// <summary>Body của <c>POST /api/admin/sessions/sync-teachers</c>.</summary>
+public sealed class SyncSessionTeachersRequest
+{
+    [Range(1, int.MaxValue, ErrorMessage = "Lớp học là bắt buộc.")]
+    public int MaLopHoc { get; set; }
+}
+
+/// <summary>
+/// Kết quả đồng bộ giáo viên cho các ca CHƯA diễn ra theo quy ước
+/// "buổi đầu tuần = GV nước ngoài, buổi còn lại = GV chính".
+/// </summary>
+public sealed class SyncSessionTeachersResponse
+{
+    public int MaLopHoc { get; init; }
+
+    /// <summary>Tổng số ca CHƯA diễn ra được xét.</summary>
+    public int TongSoCa { get; init; }
+
+    /// <summary>Số ca được cập nhật giáo viên/trợ giảng.</summary>
+    public int SoCaCapNhat { get; init; }
+
+    /// <summary>Số ca đã đúng người (không cần sửa).</summary>
+    public int SoCaKhongDoi { get; init; }
+
+    /// <summary>Số ca bị bỏ qua (đã diễn ra / đã hủy / không xác định được buổi).</summary>
+    public int SoCaBoQua { get; init; }
+
+    public string? MaGiaoVienChinh { get; init; }
+
+    public string? MaGiaoVienNuocNgoai { get; init; }
+
+    public string? MaTroGiang { get; init; }
+}
+
+/// <summary>
+/// Tiến độ học của một lớp — dùng để tô màu các buổi trên giao diện:
+/// buổi đã học, buổi thi, buổi hiện tại.
+/// </summary>
+public sealed class ClassProgressDto
+{
+    public int MaLopHoc { get; init; }
+
+    public string MaLop { get; init; } = string.Empty;
+
+    public string TenLop { get; init; } = string.Empty;
+
+    public int MaKhoaHoc { get; init; }
+
+    public string TenKhoaHoc { get; init; } = string.Empty;
+
+    /// <summary>Tổng số buổi theo khóa học (thường là 20).</summary>
+    public int TongSoBuoi { get; init; }
+
+    /// <summary>Số ca học đã sinh cho lớp.</summary>
+    public int SoBuoiDaSinh { get; init; }
+
+    /// <summary>Số buổi đã diễn ra (ngày học ≤ hôm nay và không bị hủy).</summary>
+    public int SoBuoiDaHoc { get; init; }
+
+    public int SoBuoiConLai { get; init; }
+
+    /// <summary>Phần trăm hoàn thành (0..100), làm tròn 2 chữ số.</summary>
+    public decimal TienDoPhanTram { get; init; }
+
+    /// <summary>Mã ca học của buổi hiện tại (buổi gần nhất đã/chưa diễn ra).</summary>
+    public int? MaCaHocHienTai { get; init; }
+
+    /// <summary>Số thứ tự buổi hiện tại (1..N).</summary>
+    public int? SoBuoiHienTai { get; init; }
+
+    public DateOnly? NgayHocHienTai { get; init; }
+
+    public string? LoaiBuoiHienTai { get; init; }
+
+    public IReadOnlyList<SessionProgressItemDto> Buois { get; init; } = [];
+}
+
+/// <summary>Một buổi trong tiến độ lớp.</summary>
+public sealed class SessionProgressItemDto
+{
+    public int MaCaHoc { get; init; }
+
+    public int? SoBuoi { get; init; }
+
+    public DateOnly NgayHoc { get; init; }
+
+    public TimeOnly GioBatDau { get; init; }
+
+    public TimeOnly GioKetThuc { get; init; }
+
+    /// <summary>"Buổi học" hoặc "Buổi thi".</summary>
+    public string LoaiBuoi { get; init; } = string.Empty;
+
+    public bool LaBuoiThi { get; init; }
+
+    public string TrangThai { get; init; } = string.Empty;
+
+    public string? NoiDungBaiHoc { get; init; }
+
+    public string? MaGiaoVienThucTe { get; init; }
+
+    public string? TenGiaoVienThucTe { get; init; }
+
+    public string? MaTroGiangThucTe { get; init; }
+
+    public string? TenTroGiangThucTe { get; init; }
+
+    /// <summary>Số học viên đã được điểm danh trong buổi.</summary>
+    public int SoDiemDanh { get; init; }
+
+    /// <summary>Buổi đã diễn ra (theo ngày) — giao diện tô màu "đã học".</summary>
+    public bool DaHoc { get; init; }
+
+    /// <summary>Buổi đang là buổi hiện tại — giao diện tô màu khác.</summary>
+    public bool LaBuoiHienTai { get; init; }
 }

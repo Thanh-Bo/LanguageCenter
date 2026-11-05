@@ -22,6 +22,9 @@ public class NoiDungBaiHoc
 
     public string? MucTieu { get; set; }
 
+    /// <summary>"Buổi học" hoặc "Buổi thi" — ca học sinh ra sẽ kế thừa giá trị này.</summary>
+    public string LoaiBuoi { get; set; } = "Buổi học";
+
     // References
     public KhoaHoc KhoaHoc { get; set; } = null!;
 }

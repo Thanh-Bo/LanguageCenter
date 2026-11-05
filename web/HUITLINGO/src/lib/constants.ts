@@ -29,6 +29,34 @@ export const TRANG_THAI_CA_HOC = [
 
 export const TRANG_THAI_DIEM_DANH = ['Có mặt', 'Vắng', 'Vắng có phép', 'Đi trễ'] as const
 
+/** Loại buổi học — khớp SessionKinds ở backend. */
+export const LOAI_BUOI = ['Buổi học', 'Buổi thi'] as const
+
+/** Vai trò phân công — khớp AssignmentRoles ở backend. */
+export const VAI_TRO_PHAN_CONG = [
+  'Giáo viên chính',
+  'Giáo viên nước ngoài',
+  'Giáo viên thay thế',
+  'Trợ giảng',
+] as const
+
+/** 1 = Thứ Hai … 7 = Chủ Nhật. */
+export const TEN_THU = [
+  '',
+  'Thứ Hai',
+  'Thứ Ba',
+  'Thứ Tư',
+  'Thứ Năm',
+  'Thứ Sáu',
+  'Thứ Bảy',
+  'Chủ Nhật',
+] as const
+
+export function tenThu(thu?: number | null): string {
+  if (!thu || thu < 1 || thu > 7) return '—'
+  return TEN_THU[thu]
+}
+
 export const TRANG_THAI_HOC_PHI = [
   'Chưa thanh toán',
   'Thanh toán một phần',
