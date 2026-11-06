@@ -23,6 +23,12 @@ export const NHOM_QUAN_TRI: VaiTro[] = [
 /** 2 vai trò dùng giao diện giáo viên */
 export const NHOM_GIAO_VIEN: VaiTro[] = [giaoVien, troGiang]
 
+/**
+ * Chỉ TRỢ GIẢNG được điểm danh (theo yêu cầu nghiệp vụ) —
+ * Giáo viên không có mục "Điểm danh".
+ */
+export const NHOM_DIEM_DANH: VaiTro[] = [troGiang]
+
 export const NHOM_HOC_VIEN: VaiTro[] = [hocVien]
 
 export type MucMenu = {
@@ -86,7 +92,12 @@ const MENU_GIAO_VIEN: MucMenu[] = [
   { nhan: 'Tổng quan', duong: '/giaovien', icon: 'grid', chinhXac: true },
   { nhan: 'Lớp của tôi', duong: '/giaovien/lop-cua-toi', icon: 'users' },
   { nhan: 'Lịch dạy', duong: '/giaovien/lich-day', icon: 'calendar' },
-  { nhan: 'Điểm danh', duong: '/giaovien/diem-danh', icon: 'check' },
+  {
+    nhan: 'Điểm danh',
+    duong: '/giaovien/diem-danh',
+    icon: 'check',
+    chiVaiTro: NHOM_DIEM_DANH,
+  },
   { nhan: 'Bảng điểm', duong: '/giaovien/bang-diem', icon: 'chart' },
   { nhan: 'Thông báo', duong: '/giaovien/thong-bao', icon: 'bell' },
   { nhan: 'Cài đặt', duong: '/giaovien/cai-dat', icon: 'settings' },
@@ -94,6 +105,7 @@ const MENU_GIAO_VIEN: MucMenu[] = [
 
 const MENU_HOC_VIEN: MucMenu[] = [
   { nhan: 'Tổng quan', duong: '/hocvien', icon: 'grid', chinhXac: true },
+  { nhan: 'Lớp của tôi', duong: '/hocvien/lop-cua-toi', icon: 'users' },
   { nhan: 'Lịch học', duong: '/hocvien/lich-hoc', icon: 'calendar' },
   { nhan: 'Điểm số', duong: '/hocvien/diem-so', icon: 'chart' },
   { nhan: 'Học phí', duong: '/hocvien/hoc-phi', icon: 'wallet' },

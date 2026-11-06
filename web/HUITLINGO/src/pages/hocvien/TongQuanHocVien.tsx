@@ -226,7 +226,7 @@ export function HVTongQuan() {
                 return (
                   <li key={lop.maDangKy}>
                     <Link
-                      to={`/hocvien/khoa-hoc/${lop.maLopHoc}`}
+                      to={`/hocvien/lop-cua-toi/${encodeURIComponent(lop.maLop)}`}
                       className="block rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition hover:border-blue-200 hover:bg-blue-50/50"
                     >
                       <div className="flex items-start justify-between gap-2">

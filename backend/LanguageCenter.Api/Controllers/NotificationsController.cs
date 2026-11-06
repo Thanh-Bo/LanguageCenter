@@ -57,6 +57,30 @@ public sealed class NotificationsController : ControllerBase
         => (await _notificationService.GetDetailForCurrentUserAsync(id, BuildActor(), cancellationToken))
             .ToActionResult();
 
+    /// <summary>
+    /// Thông báo do CHÍNH người đang đăng nhập gửi (kể cả đã thu hồi) — tab "Đã gửi".
+    /// <para>Giáo viên / Trợ giảng dùng để xem lại và thu hồi thông báo mình đã gửi cho lớp.</para>
+    /// </summary>
+    [HttpGet("sent")]
+    [ProducesResponseType(typeof(PagedResult<NotificationDto>), StatusCodes.Status200OK)]
+    public async Task<IActionResult> ListSentAsync(
+        [FromQuery] NotificationListQuery query,
+        CancellationToken cancellationToken)
+        => (await _notificationService.ListSentByCurrentUserAsync(BuildActor(), query, cancellationToken))
+            .ToActionResult();
+
+    /// <summary>
+    /// Thu hồi (ẩn mềm) thông báo do CHÍNH mình gửi: chuyển trạng thái sang "Đã thu hồi"
+    /// để người nhận không thấy nữa, nhưng vẫn giữ trong tab "Đã gửi".
+    /// </summary>
+    [HttpPost("{id:int}/revoke")]
+    [ProducesResponseType(typeof(bool), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> RevokeAsync(int id, CancellationToken cancellationToken)
+        => (await _notificationService.RevokeOwnAsync(id, BuildActor(), cancellationToken))
+            .ToActionResult();
+
     // ========================================================================
     // PRIVATE
     // ========================================================================

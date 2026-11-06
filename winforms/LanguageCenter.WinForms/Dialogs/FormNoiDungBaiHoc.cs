@@ -120,14 +120,14 @@ public sealed class FormNoiDungBaiHoc : Form
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "NoiDung", HeaderText = "Nội dung giảng dạy", FillWeight = 260 });
         _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "MucTieu", HeaderText = "Mục tiêu / chuẩn đầu ra", FillWeight = 200 });
 
-        // v15: buổi nào là BUỔI THI — ca sinh ra sẽ kế thừa giá trị này.
+        // v15: buổi nào là KIỂM TRA / THI — ca sinh ra sẽ kế thừa giá trị này.
         _grid.Columns.Add(new DataGridViewComboBoxColumn
         {
             Name = "LoaiBuoi",
             HeaderText = "Loại buổi",
             FillWeight = 90,
             FlatStyle = FlatStyle.Flat,
-            DataSource = new[] { "Buổi học", "Buổi thi" }
+            DataSource = new[] { "Buổi học", "Kiểm tra", "Buổi thi" }
         });
 
         Controls.Add(_grid);
@@ -228,7 +228,7 @@ public sealed class FormNoiDungBaiHoc : Form
                 nd?.TieuDe ?? string.Empty,
                 nd?.NoiDung ?? string.Empty,
                 nd?.MucTieu ?? string.Empty,
-                nd?.LoaiBuoi is "Buổi thi" ? "Buổi thi" : "Buổi học");
+                nd?.LoaiBuoi is "Buổi thi" or "Kiểm tra" ? nd.LoaiBuoi : "Buổi học");
         }
 
         var soDaCo = daLuu.Count;
@@ -277,7 +277,9 @@ public sealed class FormNoiDungBaiHoc : Form
                 tieuDe,
                 noiDung = row.Cells["NoiDung"].Value?.ToString(),
                 mucTieu = row.Cells["MucTieu"].Value?.ToString(),
-                loaiBuoi = row.Cells["LoaiBuoi"].Value?.ToString() == "Buổi thi" ? "Buổi thi" : "Buổi học"
+                loaiBuoi = row.Cells["LoaiBuoi"].Value?.ToString() is "Buổi thi" or "Kiểm tra"
+                    ? row.Cells["LoaiBuoi"].Value!.ToString()
+                    : "Buổi học"
             });
         }
 

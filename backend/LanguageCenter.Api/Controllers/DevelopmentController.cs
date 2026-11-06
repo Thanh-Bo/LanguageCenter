@@ -1,4 +1,5 @@
 using LanguageCenter.Application.Abstractions;
+using LanguageCenter.Domain.Constants;
 using LanguageCenter.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -134,6 +135,110 @@ public sealed class DevelopmentController : ControllerBase
             danhSachTaiKhoan = taiKhoans.Select(x => x.TenDangNhap).ToList()
         });
     }
+
+    /// <summary>
+    /// Danh sách tài khoản mẫu để hiển thị ở khung "đăng nhập nhanh" trên trang đăng nhập
+    /// (Development only). Chỉ trả mã đăng nhập + họ tên, KHÔNG trả mật khẩu.
+    /// <para>
+    /// Nhóm theo vai trò; giáo viên được tách "nước ngoài" theo
+    /// <c>GiaoVien.ChuyenMon</c> bắt đầu bằng "Giáo viên bản ngữ".
+    /// </para>
+    /// </summary>
+    /// <response code="200">Danh sách nhóm tài khoản mẫu.</response>
+    /// <response code="404">Chỉ tồn tại ở môi trường Development.</response>
+    [HttpGet("demo-accounts")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetDemoAccountsAsync(CancellationToken cancellationToken)
+    {
+        if (!_environment.IsDevelopment())
+        {
+            return NotFound();
+        }
+
+        var rows = await _dbContext.TaiKhoans
+            .AsNoTracking()
+            .Where(x => x.TrangThaiTaiKhoan == AccountStatuses.HoatDong)
+            .OrderBy(x => x.TenDangNhap)
+            .Select(x => new
+            {
+                x.TenDangNhap,
+                x.MaVaiTro,
+                HoTen = x.HocVien != null
+                    ? x.HocVien.HoTen
+                    : x.GiaoVien != null
+                        ? x.GiaoVien.HoTen
+                        : x.NhanVien != null
+                            ? x.NhanVien.HoTen
+                            : x.TenDangNhap,
+                LoaiGiaoVien = x.GiaoVien != null ? x.GiaoVien.LoaiGiaoVien : null,
+                ChuyenMon = x.GiaoVien != null ? x.GiaoVien.ChuyenMon : null
+            })
+            .ToListAsync(cancellationToken);
+
+        const string dauHieuBanNgu = "Giáo viên bản ngữ";
+
+        static bool LaBanNgu(string? chuyenMon)
+            => chuyenMon is not null
+               && chuyenMon.StartsWith(dauHieuBanNgu, StringComparison.OrdinalIgnoreCase);
+
+        static DemoAccountGroup Nhom(
+            string ma,
+            string nhan,
+            string icon,
+            IEnumerable<(string TenDangNhap, string HoTen)> nguon)
+            => new(
+                ma,
+                nhan,
+                icon,
+                nguon.Select(x => new DemoAccount(x.TenDangNhap, x.HoTen)).ToList());
+
+        // Trả về TOÀN BỘ tài khoản đang hoạt động, gom nhóm theo vai trò.
+        var nhom = new List<DemoAccountGroup>
+        {
+            Nhom(
+                "quanTri",
+                "Quản trị viên",
+                "shield",
+                rows.Where(x => x.MaVaiTro == 1).Select(x => (x.TenDangNhap, x.HoTen))),
+            Nhom(
+                "giaoVien",
+                "Giáo viên",
+                "presentation",
+                rows.Where(x => x.MaVaiTro == 5 && !LaBanNgu(x.ChuyenMon)).Select(x => (x.TenDangNhap, x.HoTen))),
+            Nhom(
+                "troGiang",
+                "Trợ giảng",
+                "badgeCheck",
+                rows.Where(x => x.MaVaiTro == 6).Select(x => (x.TenDangNhap, x.HoTen))),
+            Nhom(
+                "nuocNgoai",
+                "Giáo viên nước ngoài",
+                "users",
+                rows.Where(x => x.MaVaiTro == 5 && LaBanNgu(x.ChuyenMon)).Select(x => (x.TenDangNhap, x.HoTen))),
+            Nhom(
+                "hocVien",
+                "Học viên",
+                "bookUser",
+                rows.Where(x => x.MaVaiTro == 7).Select(x => (x.TenDangNhap, x.HoTen)))
+        };
+
+        return Ok(new
+        {
+            matKhauMacDinh = MatKhauMacDinh,
+            nhom = nhom.Where(x => x.TaiKhoans.Count > 0).ToList()
+        });
+    }
+
+    /// <summary>Một tài khoản mẫu hiển thị ở trang đăng nhập.</summary>
+    public sealed record DemoAccount(string TenDangNhap, string HoTen);
+
+    /// <summary>Nhóm tài khoản mẫu theo vai trò.</summary>
+    public sealed record DemoAccountGroup(
+        string Ma,
+        string Nhan,
+        string Icon,
+        IReadOnlyList<DemoAccount> TaiKhoans);
 
     /// <summary>Body của <c>POST /api/development/reset-all-passwords</c>.</summary>
     public sealed class ResetAllPasswordsRequest

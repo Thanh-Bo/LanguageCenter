@@ -355,6 +355,24 @@ public sealed class SessionService : ISessionService
         return OperationResult<IReadOnlyList<SessionListItemDto>>.Ok(sessions);
     }
 
+    public async Task<OperationResult<SettleSessionsResponse>> SettleAsync(
+        SettleSessionsRequest request,
+        CancellationToken cancellationToken)
+    {
+        var homNay = DateOnly.FromDateTime(DateTime.Today);
+
+        var outcome = await _sessionStore.SettleByDateAsync(
+            homNay, request.MaLopHoc, cancellationToken);
+
+        return OperationResult<SettleSessionsResponse>.Ok(new SettleSessionsResponse
+        {
+            NgayChot = outcome.NgayChot,
+            MaLopHoc = outcome.MaLopHoc,
+            SoCaDaChot = outcome.SoCaDaChot,
+            SoCaMoLai = outcome.SoCaMoLai
+        });
+    }
+
     public async Task<OperationResult<IReadOnlyList<TeacherClassDto>>> ListMyClassesAsync(
         string maGiaoVien,
         CancellationToken cancellationToken)

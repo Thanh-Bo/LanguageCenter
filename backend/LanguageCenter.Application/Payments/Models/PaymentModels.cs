@@ -20,6 +20,31 @@ public sealed record PaymentActor(string TenDangNhap);
 // ============================================================================
 
 /// <summary>
+/// Body của <c>POST /api/students/me/tuition-fees/{id}/payments</c> — học viên tự thanh toán (MÔ PHỎNG).
+/// <para>
+/// Học viên KHÔNG gửi <c>maNhanVienKeToan</c>, <c>loaiGiaoDich</c>, <c>ghiChu</c> hay <c>trangThai</c>:
+/// người ghi nhận là nhân việc kế toán hệ thống, các trường còn lại do server sinh.
+/// </para>
+/// </summary>
+public sealed class StudentPayRequest
+{
+    /// <summary>
+    /// Khoá chống trùng (idempotency key) — BẮT BUỘC.
+    /// Gửi lại cùng giá trị sẽ KHÔNG tạo giao dịch mới mà trả về giao dịch đã có.
+    /// </summary>
+    [Required(ErrorMessage = "Mã giao dịch là bắt buộc.")]
+    [StringLength(150, MinimumLength = 3, ErrorMessage = "Mã giao dịch phải từ 3 đến 150 ký tự.")]
+    public string MaGiaoDich { get; set; } = string.Empty;
+
+    [Range(typeof(decimal), "0.01", "1000000000000", ErrorMessage = "Số tiền phải lớn hơn 0.")]
+    public decimal SoTien { get; set; }
+
+    [Required(ErrorMessage = "Phương thức thanh toán là bắt buộc.")]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "Phương thức thanh toán tối đa 100 ký tự.")]
+    public string PhuongThucThanhToan { get; set; } = string.Empty;
+}
+
+/// <summary>
 /// Body của <c>POST /api/admin/tuition-fees/{id}/payments</c>.
 /// <para>
 /// KHÔNG nhận <c>maNhanVienKeToan</c>, <c>ngayThanhToan</c>, <c>trangThai</c> từ client —

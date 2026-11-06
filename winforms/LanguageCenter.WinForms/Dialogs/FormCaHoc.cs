@@ -124,10 +124,10 @@ public sealed class FormCaHoc : Form
         });
         Controls.Add(_txtNoiDung);
 
-        // Loại buổi — "Buổi học" / "Buổi thi" (tô tím buổi thi ở các màn danh sách).
+        // Loại buổi — "Buổi học" / "Kiểm tra" / "Buổi thi" (tô màu khác nhau ở màn danh sách).
         _cboLoaiBuoi.DropDownStyle = ComboBoxStyle.DropDownList;
         _cboLoaiBuoi.Items.Clear();
-        _cboLoaiBuoi.Items.AddRange(["Buổi học", "Buổi thi"]);
+        _cboLoaiBuoi.Items.AddRange(["Buổi học", "Kiểm tra", "Buổi thi"]);
         _cboLoaiBuoi.SelectedIndex = 0;
         _cboLoaiBuoi.Location = new Point(360, 434);
         Controls.Add(new Label

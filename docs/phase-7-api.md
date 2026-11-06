@@ -29,6 +29,8 @@ Content-Type: application/json
 | Endpoint | QTV | NV học vụ | NV kế toán | NV tư vấn | Giáo viên | Trợ giảng | Học viên |
 |---|:--:|:--:|:--:|:--:|:--:|:--:|:--:|
 | `GET /api/notifications*` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `GET /api/notifications/sent` | ✅ | ✅ | ✅ | ✅ | ✅ của mình | ✅ của mình | ✅ của mình |
+| `POST /api/notifications/{id}/revoke` | ✅ | ✅ | ✅ | ✅ | ✅ của mình | ✅ của mình | ✅ của mình |
 | `GET /api/admin/notifications*` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `POST /api/admin/notifications` | ✅ | ✅ | ❌ | ❌ | ✅ lớp mình | ✅ lớp mình | ❌ |
 | `PATCH/DELETE /api/admin/notifications/{id}` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -47,8 +49,9 @@ Giáo viên/Trợ giảng gửi thông báo: **bắt buộc** `maLopHoc` và ph�
 
 Phạm vi hiển thị:
 - Học viên: gửi trực tiếp cho tôi **+** gửi cho lớp tôi đang học (`Đã xếp lớp` / `Hoàn thành`).
-- Giáo viên/Trợ giảng: gửi trực tiếp **+** gửi cho lớp tôi được phân công.
-- Vai trò khác: **chỉ** thông báo gửi trực tiếp.
+- Giáo viên/Trợ giảng: gửi trực tiếp **+** gửi cho lớp tôi được phân công — **trừ thông báo do chính tôi gửi**
+  (những thông báo đó nằm ở `GET /api/notifications/sent`).
+- Vai trò khác: **chỉ** thông báo gửi trực tiếp (và cũng loại thông báo do chính mình gửi).
 - Thông báo `Đã thu hồi` luôn bị ẩn.
 
 ### `GET /api/notifications`
@@ -92,6 +95,23 @@ Query: `loaiThongBao`, `tuNgay`, `denNgay`, `search`, `page`, `pageSize`
 ### `GET /api/notifications/{id}`
 
 Không thuộc phạm vi của mình ⇒ **404** (không lộ sự tồn tại).
+
+### `GET /api/notifications/sent` — tab "Đã gửi"
+
+Thông báo do **chính mình** gửi (lọc theo `MaTaiKhoanGui` trong JWT, client không truyền được).
+**Không** lọc trạng thái → thấy cả thông báo `Đã thu hồi`.
+
+Query: `loaiThongBao`, `tuNgay`, `denNgay`, `search`, `page`, `pageSize` — cùng shape với `GET /api/notifications`.
+
+### `POST /api/notifications/{id}/revoke` — thu hồi (ẩn mềm)
+
+Chuyển `ThongBao.TrangThai` sang `Đã thu hồi`: người nhận **không thấy nữa**, nhưng thông báo **vẫn còn** trong tab "Đã gửi" của người gửi.
+
+| Mã | Trường hợp |
+|---|---|
+| `200` + `true` | Thu hồi thành công (hoặc đã thu hồi trước đó — idempotent) |
+| `403` | Thông báo của người khác |
+| `404` | Không tồn tại |
 
 ---
 

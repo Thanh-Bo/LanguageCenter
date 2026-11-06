@@ -112,4 +112,16 @@ public sealed record GradeComponentInfo(
     string TenLoaiDiem,
     decimal TrongSo,
     decimal DiemToiDa,
-    int ThuTu);
+    int ThuTu)
+{
+    /// <summary>
+    /// Ngày buổi kiểm tra / buổi thi gắn với đầu điểm (xem <c>ExamSchedule</c>).
+    /// <c>null</c> với đầu điểm không phải bài thi (Chuyên cần, Bài tập…) hoặc lớp chưa sinh buổi.
+    /// </summary>
+    public DateOnly? NgayThi { get; init; }
+
+    /// <summary>
+    /// Đã tới ngày thi → được phép nhập điểm. Đầu điểm không có ngày thi luôn được nhập.
+    /// </summary>
+    public bool CoTheNhapDiem { get; init; } = true;
+}

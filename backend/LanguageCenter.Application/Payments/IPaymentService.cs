@@ -42,4 +42,17 @@ public interface IPaymentService
         int maThanhToan,
         string maHocVien,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Học viên TỰ thanh toán học phí của chính mình — MÔ PHỎNG, không kết nối cổng thanh toán.
+    /// <para>
+    /// Người ghi nhận (<c>MaNhanVienKeToan</c>) được gán cố định cho nhân viên kế toán hệ thống;
+    /// chỉ chấp nhận phiếu học phí thuộc chính học viên trong token.
+    /// </para>
+    /// </summary>
+    Task<OperationResult<PaymentDto>> PayByStudentAsync(
+        int maHocPhi,
+        string maHocVien,
+        StudentPayRequest request,
+        CancellationToken cancellationToken);
 }

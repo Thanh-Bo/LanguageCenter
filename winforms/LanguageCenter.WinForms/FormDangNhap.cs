@@ -14,6 +14,8 @@ public partial class FormDangNhap : Form
         "GV001",
         "GV002",
         "GV003",
+        "GV012",   // giáo viên nước ngoài (native UK) — buổi đầu tuần
+        "GV013",   // giáo viên nước ngoài (native US)
         "TG001"
     };
 
@@ -51,7 +53,7 @@ public partial class FormDangNhap : Form
         var flp = new FlowLayoutPanel
         {
             Location = new Point(0, 24),
-            Size = new Size(425, 74),
+            Size = new Size(425, 80),
             FlowDirection = FlowDirection.LeftToRight,
             WrapContents = true,
             BackColor = Color.White
@@ -78,7 +80,7 @@ public partial class FormDangNhap : Form
             ForeColor = Color.FromArgb(148, 163, 184),
             AutoSize = false,
             Size = new Size(425, 32),
-            Location = new Point(0, 100)
+            Location = new Point(0, 108)
         });
 
         pnlForm.Controls.Add(pnl);

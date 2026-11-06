@@ -639,6 +639,31 @@ public partial class UcHocPhi : UserControl
 
     private void BtnPrintReceipt_Click(object? sender, EventArgs e)
     {
+        // Tab 2: in lại biên nhận đã phát hành (trước đây đọc nhầm lưới học phí).
+        if (_currentTab == 2)
+        {
+            if (dgvReceipts.CurrentRow is null || dgvReceipts.CurrentRow.Index < 0)
+            {
+                MessageBox.Show(FindForm(), "Vui lòng chọn một biên nhận để in lại!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var soBienNhan = dgvReceipts.Rows[dgvReceipts.CurrentRow.Index].Cells[0].Value?.ToString();
+            var payment = _payments.FirstOrDefault(p => p.BienNhan?.SoBienNhan == soBienNhan);
+            var phieu = payment is null
+                ? null
+                : _items.FirstOrDefault(x => x.MaHocPhi == payment.MaHocPhi.ToString());
+
+            if (phieu is null)
+            {
+                MessageBox.Show(FindForm(), "Không tìm thấy phiếu học phí tương ứng với biên nhận này.", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            ShowReceiptDetail(phieu);
+            return;
+        }
+
         if (dgvTuition.CurrentRow is null || dgvTuition.CurrentRow.Index < 0)
         {
             MessageBox.Show(FindForm(), "Vui lòng chọn một dòng học phí để xem và in biên lai!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -660,6 +685,11 @@ public partial class UcHocPhi : UserControl
         var item = _items.FirstOrDefault(x => x.MaHocPhi == maHp);
         if (item is null) return;
 
+        ShowReceiptDetail(item);
+    }
+
+    private void ShowReceiptDetail(TuitionFeeItem item)
+    {
         using var dlg = new Form
         {
             Text = $"Biên lai thu tiền học phí — {item.SoBienNhan}",
@@ -722,7 +752,29 @@ public partial class UcHocPhi : UserControl
         btnPrint.FlatAppearance.BorderSize = 0;
         btnPrint.Click += (_, _) =>
         {
-            MessageBox.Show(dlg, $"Đã gửi lệnh in biên lai \"{item.SoBienNhan}\" thành công!", "In biên lai", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            // In thật: chọn máy in "Microsoft Print to PDF" để lưu biên nhận thành PDF.
+            using var tai = new System.Drawing.Printing.PrintDocument();
+            tai.DocumentName = $"BienNhan_{item.SoBienNhan}";
+            tai.PrintPage += (_, ev) =>
+            {
+                using var font = new Font("Consolas", 10f);
+                var vung = new RectangleF(40, 40, ev.PageBounds.Width - 80, ev.PageBounds.Height - 80);
+                ev.Graphics!.DrawString(txtContent.Text, font, Brushes.Black, vung);
+                ev.HasMorePages = false;
+            };
+
+            using var hopThoaiIn = new PrintDialog
+            {
+                Document = tai,
+                UseEXDialog = true,
+                AllowSomePages = false,
+                AllowSelection = false
+            };
+
+            if (hopThoaiIn.ShowDialog(dlg) == DialogResult.OK)
+            {
+                tai.Print();
+            }
         };
 
         var btnClose = new Button

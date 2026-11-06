@@ -25,6 +25,23 @@ public interface INotificationService
         NotificationActor actor,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Thông báo do chính người đang đăng nhập gửi (kể cả đã thu hồi) — tab "Đã gửi".
+    /// </summary>
+    Task<OperationResult<PagedResult<NotificationDto>>> ListSentByCurrentUserAsync(
+        NotificationActor actor,
+        NotificationListQuery query,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Thu hồi (ẩn mềm) thông báo do CHÍNH người đang đăng nhập gửi.
+    /// Không xoá khỏi database — chuyển <c>TrangThai</c> sang "Đã thu hồi".
+    /// </summary>
+    Task<OperationResult<bool>> RevokeOwnAsync(
+        int maThongBao,
+        NotificationActor actor,
+        CancellationToken cancellationToken);
+
     // ------------------------------------------------------------------
     // QUẢN TRỊ
     // ------------------------------------------------------------------

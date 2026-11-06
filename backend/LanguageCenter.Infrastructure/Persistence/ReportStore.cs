@@ -1,4 +1,5 @@
 using LanguageCenter.Application.Abstractions;
+using LanguageCenter.Application.Grades;
 using LanguageCenter.Application.GradeTypes.Models;
 using LanguageCenter.Application.Reports.Models;
 using LanguageCenter.Domain.Constants;
@@ -156,7 +157,11 @@ public sealed class ReportStore : IReportStore
             return null;
         }
 
-        var components = await LoadComponentsAsync(lop.MaKhoaHoc, cancellationToken);
+        var components = await WithExamDatesAsync(
+            await LoadComponentsAsync(lop.MaKhoaHoc, cancellationToken),
+            maLopHoc,
+            cancellationToken);
+
         var tongTrongSo = components.Sum(x => x.TrongSo);
 
         var enrollments = await LoadEnrollmentsAsync(maLopHoc, cancellationToken);
@@ -460,11 +465,42 @@ public sealed class ReportStore : IReportStore
                 x.ThuTu))
             .ToListAsync(cancellationToken);
 
+    /// <summary>
+    /// Gắn NGÀY THI và cờ “đã tới ngày thi → được nhập điểm” cho từng đầu điểm của lớp.
+    /// Buổi kiểm tra/thi lấy từ <c>CaHoc</c> của chính lớp đó (xem <c>ExamSchedule</c>).
+    /// </summary>
+    private async Task<IReadOnlyList<GradeComponentInfo>> WithExamDatesAsync(
+        IReadOnlyList<GradeComponentInfo> components,
+        int maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var buoi = await _dbContext.CaHocs
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == maLopHoc
+                        && (x.LoaiBuoi == SessionKinds.KiemTra || x.LoaiBuoi == SessionKinds.BuoiThi))
+            .Select(x => new ExamSessionInfo(x.MaCaHoc, x.SoBuoi, x.NgayHoc, x.LoaiBuoi))
+            .ToListAsync(cancellationToken);
+
+        var homNay = DateOnly.FromDateTime(DateTime.Now);
+
+        return components
+            .Select(x =>
+            {
+                var ngayThi = ExamSchedule.ResolveExamDate(x.TenLoaiDiem, buoi);
+
+                return x with
+                {
+                    NgayThi = ngayThi,
+                    CoTheNhapDiem = ngayThi is null || ngayThi <= homNay
+                };
+            })
+            .ToList();
+    }
+
     private async Task<IReadOnlyList<EnrollmentRow>> LoadEnrollmentsAsync(
         int maLopHoc,
         CancellationToken cancellationToken)
-        => await _dbContext.DangKyHocs
-            .AsNoTracking()
+        => await _dbContext.DangKyHocs            .AsNoTracking()
             .Where(x => x.MaLopHoc == maLopHoc
                         && (x.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
                             || x.TrangThaiDangKy == EnrollmentStatuses.HoanThanh))

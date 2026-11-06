@@ -23,6 +23,7 @@ import {
   GVThongBao,
 } from './pages/giaovien/TeacherPages'
 import { GVTongQuan } from './pages/giaovien/TongQuanGiaoVien'
+import { GVLopChiTiet } from './pages/giaovien/LopChiTiet'
 import {
   HVDiemSo,
   HVHocPhi,
@@ -31,8 +32,8 @@ import {
   HVThongBao,
 } from './pages/hocvien/StudentPages'
 import { HVTongQuan } from './pages/hocvien/TongQuanHocVien'
-import { HVTienDoKhoaHoc } from './pages/hocvien/TienDoKhoaHoc'
-import { NHOM_GIAO_VIEN, NHOM_HOC_VIEN, NHOM_QUAN_TRI } from './lib/roles'
+import { HVLopChiTiet, HVLopCuaToi } from './pages/hocvien/LopCuaToi'
+import { NHOM_DIEM_DANH, NHOM_GIAO_VIEN, NHOM_HOC_VIEN, NHOM_QUAN_TRI } from './lib/roles'
 
 export const router = createBrowserRouter([
   // ============ PUBLIC (Navbar + Footer) ============
@@ -81,9 +82,16 @@ export const router = createBrowserRouter([
         children: [
           { index: true, Component: GVTongQuan },
           { path: 'lop-cua-toi', Component: GVLopCuaToi },
+          { path: 'lop-cua-toi/:maLop', Component: GVLopChiTiet },
           { path: 'lich-day', Component: GVLichDay },
-          { path: 'diem-danh', Component: GVDiemDanh },
+          {
+            // Điểm danh CHỈ dành cho Trợ giảng — Giáo viên vào sẽ bị đẩy về trang chủ.
+            element: <BaoVe choPhep={NHOM_DIEM_DANH} />,
+            children: [{ path: 'diem-danh', Component: GVDiemDanh }],
+          },
+          // /bang-diem = danh sách lớp · /bang-diem/:maLop (vd IELTS-A-01) = bảng điểm của lớp đó.
           { path: 'bang-diem', Component: GVBangDiem },
+          { path: 'bang-diem/:maLop', Component: GVBangDiem },
           { path: 'thong-bao', Component: GVThongBao },
           { path: 'cai-dat', Component: CaiDat },
         ],
@@ -100,7 +108,8 @@ export const router = createBrowserRouter([
         Component: PortalLayout,
         children: [
           { index: true, Component: HVTongQuan },
-          { path: 'khoa-hoc/:maLopHoc', Component: HVTienDoKhoaHoc },
+          { path: 'lop-cua-toi', Component: HVLopCuaToi },
+          { path: 'lop-cua-toi/:maLop', Component: HVLopChiTiet },
           { path: 'lich-hoc', Component: HVLichHoc },
           { path: 'diem-so', Component: HVDiemSo },
           { path: 'hoc-phi', Component: HVHocPhi },

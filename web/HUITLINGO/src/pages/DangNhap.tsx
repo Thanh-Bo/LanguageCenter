@@ -1,13 +1,65 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router";
 import logo from "../assets/logo.png";
-import { Icon } from "../components/BieuTuong";
+import { Icon, type IconName } from "../components/BieuTuong";
 import { dungXacThuc, duongDanTheoVaiTro } from "../contexts/NguCanhXacThuc";
+import { devApi } from "../lib/api/endpoints";
 
 const SANS = "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif";
 
 /** Mật khẩu chung của các tài khoản mẫu (đã đặt lại toàn bộ về 111111). */
 const MAT_KHAU_MAU = "111111";
+
+type TaiKhoanMau = { ma: string; ten: string };
+
+type NhomTaiKhoan = { nhan: string; icon: IconName; danhSach: TaiKhoanMau[] };
+
+/**
+ * Danh sách DỰ PHÒNG cho khung đăng nhập nhanh.
+ * Khi backend chạy ở môi trường Development, danh sách thật sẽ được tải từ
+ * `GET /api/development/demo-accounts` và thay thế danh sách này.
+ * `ma` = tên đăng nhập trong DB, `ten` = họ tên trong hồ sơ (GiaoVien / HocVien / NhanVien).
+ */
+const NHOM_MAC_DINH: NhomTaiKhoan[] = [
+  {
+    nhan: "Quản trị viên",
+    icon: "shield",
+    danhSach: [{ ma: "ADMIN001", ten: "Đỗ Minh Khoa" }],
+  },
+  {
+    nhan: "Giáo viên",
+    icon: "presentation",
+    danhSach: [
+      { ma: "GV001", ten: "Phạm Minh Tuấn" },
+      { ma: "GV002", ten: "Nguyễn Thu Hà" },
+      { ma: "GV009", ten: "Lê Quang Dũng" },
+      { ma: "GV011", ten: "Nguyễn Thị Mai Lan" },
+    ],
+  },
+  {
+    nhan: "Trợ giảng",
+    icon: "badgeCheck",
+    danhSach: [{ ma: "TG001", ten: "Võ Thanh Thảo" }],
+  },
+  {
+    nhan: "Giáo viên nước ngoài",
+    icon: "users",
+    danhSach: [
+      { ma: "GV012", ten: "Michael Andrew Smith" },
+      { ma: "GV013", ten: "Sarah Elizabeth Johnson" },
+    ],
+  },
+  {
+    nhan: "Học viên",
+    icon: "bookUser",
+    danhSach: [
+      { ma: "HV001", ten: "Nguyễn Minh Anh" },
+      { ma: "HV002", ten: "Trần Quang Huy" },
+      { ma: "HV003", ten: "Nguyễn Ngọc Linh" },
+      { ma: "HV004", ten: "Lê Hoàng Nam" },
+    ],
+  },
+];
 
 export default function DangNhap() {
   const navigate = useNavigate();
@@ -19,6 +71,47 @@ export default function DangNhap() {
   const [error, setError] = useState<string | null>(null);
   const [tenDangNhap, setTenDangNhap] = useState("ADMIN001");
   const [password, setPassword] = useState(MAT_KHAU_MAU);
+  const [nhomTaiKhoan, setNhomTaiKhoan] = useState<NhomTaiKhoan[]>([]);
+  const [dangTaiTk, setDangTaiTk] = useState(true);
+  const [tuKhoa, setTuKhoa] = useState("");
+  const [nhomDangDong, setNhomDangDong] = useState<string[]>([]);
+
+  // Tải danh sách tài khoản mẫu THẬT từ database (chỉ Development).
+  // Trong lúc chờ: hiện khung tải (không hiện danh sách cứng để tránh nhấp nháy dữ liệu cũ).
+  // API lỗi / không phải Development → mới dùng NHOM_MAC_DINH.
+  useEffect(() => {
+    let daHuy = false;
+
+    void (async () => {
+      try {
+        const kq = await devApi.taiKhoanMau();
+        const danhSachNhom = kq?.nhom ?? [];
+
+        if (daHuy) return;
+
+        setNhomTaiKhoan(
+          danhSachNhom.length === 0
+            ? NHOM_MAC_DINH
+            : danhSachNhom.map((nhom) => ({
+                nhan: nhom.nhan,
+                icon: nhom.icon as IconName,
+                danhSach: nhom.taiKhoans.map((tk) => ({
+                  ma: tk.tenDangNhap,
+                  ten: tk.hoTen,
+                })),
+              })),
+        );
+      } catch {
+        if (!daHuy) setNhomTaiKhoan(NHOM_MAC_DINH);
+      } finally {
+        if (!daHuy) setDangTaiTk(false);
+      }
+    })();
+
+    return () => {
+      daHuy = true;
+    };
+  }, []);
 
   const xuLyDangNhap = async (ten: string, matKhau: string) => {
     setLoading(true);
@@ -46,6 +139,35 @@ export default function DangNhap() {
     setPassword(MAT_KHAU_MAU);
     void xuLyDangNhap(ten, MAT_KHAU_MAU);
   };
+
+  const tuKhoaChuan = tuKhoa.trim().toLowerCase();
+  const dangTimKiem = tuKhoaChuan.length > 0;
+  const tongTaiKhoan = nhomTaiKhoan.reduce(
+    (tong, nhom) => tong + nhom.danhSach.length,
+    0,
+  );
+
+  // Khi tìm kiếm thì bỏ qua trạng thái thu gọn để kết quả luôn hiện ra.
+  const nhomHienThi = nhomTaiKhoan
+    .map((nhom) => ({
+      ...nhom,
+      danhSach: dangTimKiem
+        ? nhom.danhSach.filter((tk) =>
+            `${tk.ma} ${tk.ten}`.toLowerCase().includes(tuKhoaChuan),
+          )
+        : nhom.danhSach,
+    }))
+    .filter((nhom) => nhom.danhSach.length > 0);
+
+  const dangDong = (nhan: string) =>
+    !dangTimKiem && nhomDangDong.includes(nhan);
+
+  const doiTrangThaiNhom = (nhan: string) =>
+    setNhomDangDong((truoc) =>
+      truoc.includes(nhan)
+        ? truoc.filter((x) => x !== nhan)
+        : [...truoc, nhan],
+    );
 
   return (
     <main className="min-h-screen bg-slate-50 lg:grid lg:grid-cols-[1.08fr_.92fr]">
@@ -243,81 +365,121 @@ export default function DangNhap() {
             </span>
           </div>
 
-          {/* Tài khoản demo */}
-          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm">
-            <div className="mb-3 flex items-center gap-1.5 font-bold text-slate-700">
-              <Icon name="lock" className="size-3.5" /> Tài khoản mẫu (mật khẩu:{" "}
-              <code className="rounded bg-slate-200 px-1.5 py-0.5">{MAT_KHAU_MAU}</code>
-              ) — bấm để đăng nhập ngay
+          {/* Tài khoản demo — hiển thị TOÀN BỘ tài khoản đang hoạt động trong database */}
+          <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+            <div className="mb-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm font-bold text-slate-700">
+              <Icon name="lock" className="size-3.5 shrink-0" />
+              <span>Tài khoản mẫu</span>
+              <span className="font-normal text-slate-500">(mật khẩu:</span>
+              <code className="rounded bg-slate-200 px-1.5 py-0.5 font-mono text-xs font-bold text-slate-700">
+                {MAT_KHAU_MAU}
+              </code>
+              <span className="font-normal text-slate-500">)</span>
+              <span className="ml-auto rounded-full bg-slate-200 px-2 py-0.5 text-[11px] font-bold text-slate-600">
+                {dangTaiTk ? '…' : `${tongTaiKhoan} tài khoản`}
+              </span>
             </div>
 
-            {/* Quản trị viên */}
-            <div className="mb-3">
-              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                <Icon name="shield" className="size-3.5" /> Quản trị viên
-              </div>
-              <button
-                type="button"
-                disabled={loading}
-                onClick={() => dangNhapNhanh("ADMIN001")}
-                className="block w-full rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
-              >
-                ADMIN001
-              </button>
+            <div className="relative mb-3">
+              <Icon
+                name="search"
+                className="pointer-events-none absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-slate-400"
+              />
+              <input
+                value={tuKhoa}
+                onChange={(event) => setTuKhoa(event.target.value)}
+                disabled={dangTaiTk}
+                placeholder={dangTaiTk ? 'Đang tải tài khoản…' : 'Tìm tài khoản: GV001, Nguyễn…'}
+                className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-2.5 text-xs text-slate-700 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 disabled:cursor-progress disabled:bg-slate-50"
+              />
             </div>
 
-            {/* Giáo viên */}
-            <div className="mb-3">
-              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                <Icon name="presentation" className="size-3.5" /> Giáo viên
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                {[
-                  "GV001",
-                  "GV002",
-                  "GV003",
-                  "TG001",
-                ].map((e) => (
-                  <button
-                    key={e}
-                    type="button"
-                    disabled={loading}
-                    onClick={() => dangNhapNhanh(e)}
-                    className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
-                  >
-                    {e}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <div className="max-h-96 space-y-2 overflow-y-auto pr-1">
+              {dangTaiTk && <KhungTaiTaiKhoan />}
 
-            {/* Học viên */}
-            <div>
-              <div className="mb-1 flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
-                <Icon name="bookUser" className="size-3.5" /> Học viên
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                {[
-                  "HV001",
-                  "HV002",
-                  "HV003",
-                  "HV004",
-                ].map((e) => (
-                  <button
-                    key={e}
-                    type="button"
-                    disabled={loading}
-                    onClick={() => dangNhapNhanh(e)}
-                    className="rounded-lg bg-white px-3 py-2 text-left text-xs text-slate-600 transition hover:bg-blue-50 hover:text-blue-700 disabled:opacity-50"
-                  >
-                    {e}
-                  </button>
-                ))}
-              </div>
+              {!dangTaiTk &&
+                nhomHienThi.map((nhom) => {
+                const dong = dangDong(nhom.nhan);
+
+                return (
+                  <div key={nhom.nhan}>
+                    <button
+                      type="button"
+                      onClick={() => doiTrangThaiNhom(nhom.nhan)}
+                      className="flex w-full items-center gap-1.5 rounded-md px-1 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-500 transition hover:text-blue-700"
+                    >
+                      <Icon name={nhom.icon} className="size-3.5 shrink-0" />
+                      <span>{nhom.nhan}</span>
+                      <span className="rounded-full bg-slate-200 px-1.5 py-px text-[10px] font-bold leading-4 text-slate-600">
+                        {nhom.danhSach.length}
+                      </span>
+                      <Icon
+                        name={dong ? "chevronDown" : "chevronUp"}
+                        className="ml-auto size-3.5 shrink-0 text-slate-400"
+                      />
+                    </button>
+
+                    {!dong && (
+                      <div className="mt-1.5 grid grid-cols-2 gap-1.5">
+                        {nhom.danhSach.map(({ ma, ten }) => (
+                          <button
+                            key={ma}
+                            type="button"
+                            disabled={loading}
+                            title={`${ma} — ${ten}`}
+                            onClick={() => dangNhapNhanh(ma)}
+                            className="group flex w-full flex-col items-start gap-0.5 rounded-lg border border-slate-200/80 bg-white px-3 py-1.5 text-left transition hover:border-blue-300 hover:bg-blue-50 hover:shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <span className="text-xs font-bold leading-4 text-slate-700 group-hover:text-blue-700">
+                              {ma}
+                            </span>
+                            <span className="w-full truncate text-[11px] font-normal leading-4 text-slate-400 group-hover:text-blue-500">
+                              {ten}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+
+              {!dangTaiTk && nhomHienThi.length === 0 && (
+                <p className="py-4 text-center text-xs text-slate-400">
+                  Không có tài khoản nào khớp “{tuKhoa.trim()}”.
+                </p>
+              )}
             </div>
           </div>
         </div>
       </section>
     </main>
+  );
+}
+
+/**
+ * Khung xương hiển thị trong lúc chờ API tài khoản mẫu.
+ * Nhờ đó người dùng KHÔNG thấy danh sách cứng cũ rồi bị thay bằng dữ liệu thật
+ * (trước đây danh sách cũ hiện ~2 giây đầu rồi mới nhảy sang dữ liệu thật).
+ */
+function KhungTaiTaiKhoan() {
+  return (
+    <div aria-hidden className="space-y-3 py-1">
+      {[0, 1].map((nhom) => (
+        <div key={nhom}>
+          <div className="mb-1.5 flex items-center gap-2 px-1">
+            <span className="size-3.5 animate-pulse rounded bg-slate-200" />
+            <span className="h-3 w-24 animate-pulse rounded bg-slate-200" />
+            <span className="ml-auto size-3.5 animate-pulse rounded bg-slate-200" />
+          </div>
+
+          <div className="grid grid-cols-2 gap-1.5">
+            {[0, 1].map((o) => (
+              <div key={o} className="h-11.5 animate-pulse rounded-lg bg-slate-200/70" />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }

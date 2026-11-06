@@ -100,6 +100,18 @@ public sealed class GradeService : IGradeService
                 [$"Đầu điểm '{gradeType.TenLoaiDiem}' đang ở trạng thái '{gradeType.TrangThai}'."]);
         }
 
+        // ---- Ràng buộc: chỉ được nhập điểm SAU khi buổi kiểm tra / thi đã diễn ra ----
+        var examError = await CheckExamDateAsync(
+            enrollment.MaLopHoc,
+            request.MaLoaiDiem,
+            gradeType.TenLoaiDiem,
+            cancellationToken);
+
+        if (examError is not null)
+        {
+            return OperationResult<GradeDetailDto>.BadRequest("Chưa tới ngày kiểm tra.", [examError]);
+        }
+
         var errors = ValidateScore(request.Diem, gradeType.DiemToiDa, request.TrangThaiKetQua);
 
         if (errors.Count > 0)
@@ -129,8 +141,8 @@ public sealed class GradeService : IGradeService
             if (!SessionKinds.IsExam(session.LoaiBuoi))
             {
                 return OperationResult<GradeDetailDto>.BadRequest(
-                    "Ca học được chọn không phải buổi thi.",
-                    [$"Ca học {maCaHoc} đang là '{session.LoaiBuoi}' — hãy đổi sang 'Buổi thi' trước khi gắn điểm."]);
+                    "Ca học được chọn không phải buổi kiểm tra.",
+                    [$"Ca học {maCaHoc} đang là '{session.LoaiBuoi}' — hãy đổi sang 'Kiểm tra' hoặc 'Buổi thi' trước khi gắn điểm."]);
             }
         }
 
@@ -224,11 +236,22 @@ public sealed class GradeService : IGradeService
             }
         }
 
+        // ---- Ràng buộc: chỉ được sửa điểm SAU khi buổi kiểm tra / thi đã diễn ra ----
+        var examError = await CheckExamDateAsync(
+            current.MaLopHoc,
+            current.MaLoaiDiem,
+            current.TenLoaiDiem,
+            cancellationToken);
+
+        if (examError is not null)
+        {
+            return OperationResult<GradeDetailDto>.BadRequest("Chưa tới ngày kiểm tra.", [examError]);
+        }
+
         var errors = ValidateScore(
             request.Diem ?? current.Diem,
             current.DiemToiDa,
             request.TrangThaiKetQua);
-
         if (errors.Count > 0)
         {
             return OperationResult<GradeDetailDto>.BadRequest("Dữ liệu không hợp lệ.", errors);
@@ -377,6 +400,40 @@ public sealed class GradeService : IGradeService
     // ========================================================================
     // PRIVATE HELPERS
     // ========================================================================
+
+    /// <summary>
+    /// Chỉ cho nhập / sửa điểm khi buổi kiểm tra / thi gắn với đầu điểm ĐÃ DIỄN RA.
+    /// Trả về thông báo lỗi; <c>null</c> nếu hợp lệ (hoặc đầu điểm không phải bài thi).
+    /// <para>
+    /// Ngày thi được suy ra từ <c>CaHoc</c> của lớp: “Giữa kỳ n” → buổi Kiểm tra thứ n,
+    /// “Cuối kỳ n” → buổi Buổi thi thứ n (xem <see cref="ExamSchedule"/>).
+    /// </para>
+    /// </summary>
+    private async Task<string?> CheckExamDateAsync(
+        int? maLopHoc,
+        int maLoaiDiem,
+        string tenLoaiDiem,
+        CancellationToken cancellationToken)
+    {
+        if (maLopHoc is not { } lop)
+        {
+            return null;
+        }
+
+        var ngayThi = await _lookupStore.GetExamDateAsync(lop, maLoaiDiem, cancellationToken);
+
+        if (ngayThi is not { } ngay)
+        {
+            return null;
+        }
+
+        var homNay = DateOnly.FromDateTime(DateTime.Now);
+
+        return ngay <= homNay
+            ? null
+            : $"Đầu điểm '{tenLoaiDiem}' có buổi thi ngày {ngay:dd/MM/yyyy} — " +
+              "chỉ được nhập điểm từ ngày đó trở đi.";
+    }
 
     private static List<string> ValidateScore(
         decimal diem,

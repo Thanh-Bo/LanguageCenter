@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router'
 import logo from '../../assets/logo.png'
 import { Icon } from '../BieuTuong'
@@ -9,10 +9,29 @@ import { menuTheoVaiTro } from '../../lib/roles'
  * Khung giao diện dùng chung cho cả 3 khu vực (/admin, /giaovien, /hocvien).
  * Menu được lọc theo vai trò thật của người đăng nhập.
  */
+const KHOA_THU_GON = 'lingohub:thu-gon-thanh-ben'
+
 export default function PortalLayout() {
   const { nguoiDung, dangXuat } = dungXacThuc()
   const navigate = useNavigate()
   const [moMenu, setMoMenu] = useState(false)
+
+  /** Thu gọn thanh bên trên desktop — nhớ lựa chọn qua các lần tải trang. */
+  const [thuGon, setThuGon] = useState(() => {
+    try {
+      return localStorage.getItem(KHOA_THU_GON) === '1'
+    } catch {
+      return false
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(KHOA_THU_GON, thuGon ? '1' : '0')
+    } catch {
+      // Trình duyệt chặn localStorage — không sao, chỉ mất phần ghi nhớ.
+    }
+  }, [thuGon])
 
   if (!nguoiDung) return null
 
@@ -34,9 +53,9 @@ export default function PortalLayout() {
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-72 flex-col border-r border-slate-200 bg-white transition-transform duration-300 ${ 
           moMenu ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        } ${thuGon ? 'lg:-translate-x-full' : 'lg:translate-x-0'}`}
       >
         <div className="flex h-18 items-center justify-between border-b border-slate-100 px-6">
           <Link to="/" className="flex items-center gap-3 text-slate-900 no-underline">
@@ -103,7 +122,9 @@ export default function PortalLayout() {
         </div>
       </aside>
 
-      <div className="lg:pl-72">
+      <div
+        className={`transition-[padding] duration-300 ${thuGon ? 'lg:pl-0' : 'lg:pl-72'}`}
+      >
         <header className="sticky top-0 z-20 flex h-18 items-center gap-3 border-b border-slate-200 bg-white/90 px-4 backdrop-blur-xl sm:px-7">
           <button
             onClick={() => setMoMenu(true)}
@@ -111,6 +132,16 @@ export default function PortalLayout() {
             aria-label="Mở menu"
           >
             <Icon name="menu" className="size-6" />
+          </button>
+
+          {/* Ẩn / hiện thanh bên (chỉ desktop) — ẩn thì nội dung rộng 100% */}
+          <button
+            onClick={() => setThuGon((truoc) => !truoc)}
+            className="hidden size-9 place-items-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-blue-600 lg:grid"
+            aria-label={thuGon ? 'Hiện thanh bên' : 'Ẩn thanh bên'}
+            title={thuGon ? 'Hiện thanh bên' : 'Ẩn thanh bên'}
+          >
+            <Icon name={thuGon ? 'menu' : 'chevronLeft'} className="size-5" />
           </button>
 
           <p className="hidden text-sm font-semibold text-slate-500 sm:block">

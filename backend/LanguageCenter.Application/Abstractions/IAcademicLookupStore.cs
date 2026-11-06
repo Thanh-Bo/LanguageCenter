@@ -69,6 +69,16 @@ public interface IAcademicLookupStore
 
     /// <summary>Tên ngày lễ nếu ngày đó là ngày nghỉ của trung tâm; <c>null</c> nếu không.</summary>
     Task<string?> GetHolidayNameAsync(DateOnly ngay, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Ngày kiểm tra / thi của một đầu điểm trong lớp (ghép theo quy ước tên
+    /// “Giữa kỳ n” → buổi Kiểm tra thứ n, “Cuối kỳ n” → buổi Buổi thi thứ n).
+    /// <c>null</c> nếu đầu điểm không phải bài thi hoặc lớp chưa sinh buổi tương ứng.
+    /// </summary>
+    Task<DateOnly?> GetExamDateAsync(
+        int maLopHoc,
+        int maLoaiDiem,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>Thông tin tối thiểu của lớp học.</summary>

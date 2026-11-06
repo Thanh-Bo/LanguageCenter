@@ -6,7 +6,6 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { Icon } from '../BieuTuong'
 
 type LoaiToast = 'thanhCong' | 'loi' | 'thongTin'
 
@@ -40,7 +39,7 @@ export function NhaCungCapToast({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      <div className="pointer-events-none fixed bottom-6 right-6 z-60 flex w-80 flex-col gap-2">
+      <div className="pointer-events-none fixed top-5 left-1/2 z-60 flex w-[min(92vw,28rem)] -translate-x-1/2 flex-col gap-2">
         {ds.map((t) => {
           const mau =
             t.loai === 'thanhCong'
@@ -52,13 +51,9 @@ export function NhaCungCapToast({ children }: { children: ReactNode }) {
           return (
             <div
               key={t.id}
-              className={`pointer-events-auto flex items-start gap-3 rounded-xl border px-4 py-3 text-sm font-medium shadow-lg ${mau}`}
+              className={`animate-toast-xuong pointer-events-auto rounded-xl border px-4 py-3 text-sm font-medium shadow-lg ${mau}`}
             >
-              <Icon
-                name={t.loai === 'loi' ? 'alert' : 'check'}
-                className="mt-0.5 size-4 shrink-0"
-              />
-              <span className="flex-1">{t.noiDung}</span>
+              <span className="block">{t.noiDung}</span>
             </div>
           )
         })}

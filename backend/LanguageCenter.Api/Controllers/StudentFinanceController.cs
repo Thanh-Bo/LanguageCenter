@@ -135,4 +135,34 @@ public sealed class StudentFinanceController : ControllerBase
         return (await _receiptService.GetDetailForStudentAsync(id, maHocVien, cancellationToken))
             .ToActionResult();
     }
+
+    /// <summary>
+    /// Học viên TỰ thanh toán học phí của chính mình — <b>MÔ PHỎNG</b>, không kết nối cổng thanh toán.
+    /// <para>
+    /// Người ghi nhận được gán cố định cho nhân viên kế toán hệ thống; biên nhận do server tự sinh.
+    /// Gửi lại cùng <c>maGiaoDich</c> sẽ trả về giao dịch đã có (idempotent).
+    /// </para>
+    /// </summary>
+    [HttpPost("tuition-fees/{id:int}/payments")]
+    [ProducesResponseType(typeof(PaymentDto), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> PayTuitionAsync(
+        int id,
+        [FromBody] StudentPayRequest request,
+        CancellationToken cancellationToken)
+    {
+        var maHocVien = User.GetTenDangNhap();
+
+        if (string.IsNullOrWhiteSpace(maHocVien))
+        {
+            return Unauthorized();
+        }
+
+        return (await _paymentService.PayByStudentAsync(id, maHocVien, request, cancellationToken))
+            .ToActionResult();
+    }
 }

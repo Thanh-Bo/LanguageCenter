@@ -30,7 +30,7 @@ export const TRANG_THAI_CA_HOC = [
 export const TRANG_THAI_DIEM_DANH = ['Có mặt', 'Vắng', 'Vắng có phép', 'Đi trễ'] as const
 
 /** Loại buổi học — khớp SessionKinds ở backend. */
-export const LOAI_BUOI = ['Buổi học', 'Buổi thi'] as const
+export const LOAI_BUOI = ['Buổi học', 'Kiểm tra', 'Buổi thi'] as const
 
 /** Vai trò phân công — khớp AssignmentRoles ở backend. */
 export const VAI_TRO_PHAN_CONG = [
@@ -66,6 +66,13 @@ export const TRANG_THAI_HOC_PHI = [
 export const TRANG_THAI_THANH_TOAN = ['Thành công', 'Đã hủy'] as const
 
 export const PHUONG_THUC_THANH_TOAN = ['Tiền mặt', 'Chuyển khoản'] as const
+
+/** Phương thức hiển thị trên cổng thanh toán MÔ PHỎNG của học viên. */
+export const PHUONG_THUC_MO_PHONG = [
+  'Chuyển khoản',
+  'Ví điện tử (mô phỏng)',
+  'Tiền mặt',
+] as const
 
 export const TRANG_THAI_KHAO_SAT = ['Hoạt động', 'Tạm dừng', 'Đã kết thúc'] as const
 

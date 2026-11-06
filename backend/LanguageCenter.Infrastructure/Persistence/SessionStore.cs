@@ -235,15 +235,18 @@ public sealed class SessionStore : ISessionStore
     {
         var code = maGiaoVien.Trim();
 
+        // CHỈ ca do CHÍNH mình dạy / trợ giảng.
+        // Ngoại lệ: ca CHƯA gán người dạy thực tế (vừa sinh, chưa đồng bộ giáo viên)
+        // thì hiển thị cho người đang được phân công lớp đó.
         var source = _dbContext.CaHocs
             .AsNoTracking()
             .Where(x => x.MaGiaoVienThucTe == code
                         || x.MaTroGiangThucTe == code
-                        // Hoặc được phân công giảng dạy lớp này (kể cả khi chưa gán người dạy thực tế)
-                        || _dbContext.PhanCongGiangDays.Any(
-                            p => p.MaLopHoc == x.MaLopHoc
-                                 && p.MaGiaoVien == code
-                                 && p.TrangThai == AssignmentStatuses.DangPhanCong));
+                        || (x.MaGiaoVienThucTe == null
+                            && _dbContext.PhanCongGiangDays.Any(
+                                p => p.MaLopHoc == x.MaLopHoc
+                                     && p.MaGiaoVien == code
+                                     && p.TrangThai == AssignmentStatuses.DangPhanCong)));
 
         if (tuNgay is { } tu)
         {
@@ -562,6 +565,45 @@ public sealed class SessionStore : ISessionStore
             maGiaoVienChinh,
             maGiaoVienNuocNgoai,
             maTroGiang);
+    }
+
+    /// <summary>
+    /// Chốt trạng thái ca học theo NGÀY — idempotent, KHÔNG đụng ca "Đã hủy".
+    /// <para>Ngày đã qua (trước hôm nay): Chưa diễn ra / Đang diễn ra → Đã hoàn thành.</para>
+    /// <para>Ngày còn ở tương lai: Đang diễn ra → Chưa diễn ra.</para>
+    /// <para>Ca của CHÍNH HÔM NAY giữ nguyên trạng thái.</para>
+    /// </summary>
+    public async Task<SettleSessionsOutcome> SettleByDateAsync(
+        DateOnly homNay,
+        int? maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var nguon = _dbContext.CaHocs.AsQueryable();
+
+        if (maLopHoc is { } lop)
+        {
+            nguon = nguon.Where(x => x.MaLopHoc == lop);
+        }
+
+        var soCaDaChot = await nguon
+            .Where(x => x.NgayHoc < homNay
+                        && (x.TrangThai == SessionStatuses.ChuaDienRa
+                            || x.TrangThai == SessionStatuses.DangDienRa))
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(x => x.TrangThai, SessionStatuses.DaHoanThanh),
+                cancellationToken);
+
+        var soCaMoLai = await nguon
+            .Where(x => x.NgayHoc > homNay
+                        && x.TrangThai == SessionStatuses.DangDienRa)
+            .ExecuteUpdateAsync(
+                s => s.SetProperty(x => x.TrangThai, SessionStatuses.ChuaDienRa),
+                cancellationToken);
+
+        return new SettleSessionsOutcome(homNay, soCaDaChot, soCaMoLai)
+        {
+            MaLopHoc = maLopHoc
+        };
     }
 
     // ========================================================================

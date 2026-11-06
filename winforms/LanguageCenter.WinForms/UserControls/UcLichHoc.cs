@@ -409,6 +409,13 @@ public partial class UcLichHoc : UserControl
             dgvShifts.Rows.Clear();
             foreach (var s in list)
             {
+                var nhanLoaiBuoi = s.LoaiBuoi switch
+                {
+                    "Buổi thi" => "Buổi thi",
+                    "Kiểm tra" => "Kiểm tra",
+                    _ => null
+                };
+
                 var rowIdx = dgvShifts.Rows.Add(
                     s.MaCaHoc,
                     UiHelpers.FormatDate(s.NgayHoc),
@@ -419,11 +426,28 @@ public partial class UcLichHoc : UserControl
                     $"{s.GioBatDau:HH\\:mm} - {s.GioKetThuc:HH\\:mm}",
                     s.NoiDungBaiHoc ?? "—",
                     (s.SoBuoi is { } soBuoi ? $"Buổi {soBuoi}" : "—")
-                        + (s.LoaiBuoi == "Buổi thi" ? " · THI" : string.Empty),
+                        + (nhanLoaiBuoi is null ? string.Empty : " · " + nhanLoaiBuoi),
                     s.TrangThai
                 );
-                dgvShifts.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(s.TrangThai);
-                dgvShifts.Rows[rowIdx].Tag = s;
+
+                var row = dgvShifts.Rows[rowIdx];
+                row.Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(s.TrangThai);
+
+                // Tô màu + in đậm để phân biệt buổi KIỂM TRA / THI so với buổi học thường
+                if (s.LoaiBuoi == "Buổi thi")
+                {
+                    row.DefaultCellStyle.BackColor = Color.FromArgb(243, 232, 255);  // tím nhạt
+                    row.Cells["Buoi"].Style.ForeColor = Color.FromArgb(109, 40, 217);
+                    row.Cells["Buoi"].Style.Font = new Font(dgvShifts.Font, FontStyle.Bold);
+                }
+                else if (s.LoaiBuoi == "Kiểm tra")
+                {
+                    row.DefaultCellStyle.BackColor = Color.FromArgb(254, 243, 199);  // hổ phách nhạt
+                    row.Cells["Buoi"].Style.ForeColor = Color.FromArgb(180, 83, 9);
+                    row.Cells["Buoi"].Style.Font = new Font(dgvShifts.Font, FontStyle.Bold);
+                }
+
+                row.Tag = s;
             }
             lblSummary.Text = $"Hiển thị {list.Count}/{_sessions.Count} ca học thực tế";
         }

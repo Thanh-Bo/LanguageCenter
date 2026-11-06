@@ -185,6 +185,10 @@ export type GradeComponent = {
   trongSo: number
   diemToiDa: number
   thuTu: number
+  /** Ngày buổi kiểm tra / thi gắn với đầu điểm (null với Chuyên cần, Bài tập…). */
+  ngayThi?: string | null
+  /** false = chưa tới ngày thi nên không được nhập điểm. */
+  coTheNhapDiem?: boolean
 }
 
 export type ComponentScore = {
@@ -317,8 +321,7 @@ export type TuitionItem = {
   conNo: boolean
 }
 
-export type ReceiptBrief = {
-  maBienNhan: number
+export type ReceiptBrief = {  maBienNhan: number
   soBienNhan: string
   ngayLap: string
   trangThai: string
@@ -618,6 +621,14 @@ export type SyncSessionTeachersResult = {
   maGiaoVienChinh?: string | null
   maGiaoVienNuocNgoai?: string | null
   maTroGiang?: string | null
+}
+
+/** Kết quả chốt trạng thái ca học theo ngày. */
+export type SettleSessionsResult = {
+  ngayChot: string
+  maLopHoc?: number | null
+  soCaDaChot: number
+  soCaMoLai: number
 }
 
 /** Giáo viên / trợ giảng — dùng cho dropdown chọn người dạy. */

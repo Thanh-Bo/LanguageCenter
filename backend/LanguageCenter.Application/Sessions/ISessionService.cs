@@ -83,4 +83,12 @@ public interface ISessionService
     Task<OperationResult<SyncSessionTeachersResponse>> SyncTeachersAsync(
         SyncSessionTeachersRequest request,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Chốt trạng thái ca học theo NGÀY: buổi đã qua → "Đã hoàn thành",
+    /// buổi chưa tới ngày → "Chưa diễn ra". Không đụng ca "Đã hủy".
+    /// </summary>
+    Task<OperationResult<SettleSessionsResponse>> SettleAsync(
+        SettleSessionsRequest request,
+        CancellationToken cancellationToken);
 }

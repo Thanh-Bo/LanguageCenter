@@ -156,8 +156,14 @@ export function GVTongQuan() {
         </div>
       </div>
 
-      {/* Hàng 2: lối tắt */}
-      <DaiLoiTat ds={LOI_TAT} />
+      {/* Hàng 2: lối tắt (Điểm danh chỉ hiện với Trợ giảng) */}
+      <DaiLoiTat
+        ds={
+          laTroGiang
+            ? LOI_TAT
+            : LOI_TAT.filter((x) => x.duong !== '/giaovien/diem-danh')
+        }
+      />
 
       {/* Hàng 3: 2 khối dữ liệu (đã bỏ khối "Ca dạy trong tuần") */}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -180,7 +186,12 @@ export function GVTongQuan() {
           moTa="Lớp được phân công giảng dạy / trợ giảng"
           hanhDong={
             lop.length > 0 ? (
-              <span className="text-xs font-semibold text-slate-400">{lop.length} lớp</span>
+              <Link
+                to="/giaovien/lop-cua-toi"
+                className="text-xs font-bold text-blue-600 hover:underline"
+              >
+                Xem tất cả ({lop.length})
+              </Link>
             ) : null
           }
         >
@@ -199,34 +210,45 @@ export function GVTongQuan() {
                 const phanTram = tong > 0 ? Math.round((xong / tong) * 100) : 0
 
                 return (
-                  <li
-                    key={l.maLopHoc}
-                    className="rounded-xl border border-slate-100 bg-slate-50/70 p-3"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-bold text-slate-900">{l.tenLop}</p>
-                        <p className="text-[11px] text-slate-500">
-                          {l.maLop} · {l.tenKhoaHoc}
-                        </p>
+                  <li key={l.maLopHoc}>
+                    <Link
+                      to={`/giaovien/lop-cua-toi/${encodeURIComponent(l.maLop)}`}
+                      title={`Xem chi tiết lớp ${l.tenLop}`}
+                      className="group block rounded-xl border border-slate-100 bg-slate-50/70 p-3 transition hover:border-blue-300 hover:bg-blue-50/60 hover:shadow-sm"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-bold text-slate-900 transition group-hover:text-blue-700">
+                            {l.tenLop}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            {l.maLop} · {l.tenKhoaHoc}
+                          </p>
+                        </div>
+                        <Nhan>{l.trangThai}</Nhan>
                       </div>
-                      <Nhan>{l.trangThai}</Nhan>
-                    </div>
 
-                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white">
-                      <div
-                        className="h-full rounded-full bg-blue-600"
-                        style={{ width: `${phanTram}%` }}
-                      />
-                    </div>
+                      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-white">
+                        <div
+                          className="h-full rounded-full bg-blue-600"
+                          style={{ width: `${phanTram}%` }}
+                        />
+                      </div>
 
-                    <p className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
-                      <span>
-                        {xong}
-                        {tong > 0 ? `/${tong}` : ''} ca · {l.siSo}/{l.siSoToiDa} học viên
-                      </span>
-                      <span className="font-semibold text-slate-600">{l.vaiTroPhanCong}</span>
-                    </p>
+                      <p className="mt-1 flex items-center justify-between text-[11px] text-slate-500">
+                        <span>
+                          {xong}
+                          {tong > 0 ? `/${tong}` : ''} ca · {l.siSo}/{l.siSoToiDa} học viên
+                        </span>
+                        <span className="flex items-center gap-1 font-semibold text-slate-600">
+                          {l.vaiTroPhanCong}
+                          <Icon
+                            name="arrowRight"
+                            className="size-3.5 text-blue-600 opacity-0 transition group-hover:opacity-100"
+                          />
+                        </span>
+                      </p>
+                    </Link>
                   </li>
                 )
               })}

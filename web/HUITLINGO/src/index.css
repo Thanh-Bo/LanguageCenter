@@ -24,6 +24,22 @@
   --font-nunito: 'Nunito', 'Be Vietnam Pro', system-ui, sans-serif;
 }
 
+/* ========== TOAST — trượt từ trên xuống ========== */
+@keyframes toast-truot-xuong {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-toast-xuong {
+  animation: toast-truot-xuong 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 /* ========== BASE ========== */
 * {
   box-sizing: border-box;

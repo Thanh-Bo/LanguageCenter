@@ -52,7 +52,8 @@ export function TheChiSo({
 }: {
   nhan: string
   giaTri: ReactNode
-  icon: IconName
+  /** Bỏ trống nếu không muốn hiện ô icon phía trên. */
+  icon?: IconName
   moTa?: string
   tone?: 'blue' | 'emerald' | 'amber' | 'rose' | 'slate'
   /** Có onClick → thẻ biến thành nút bấm được (hover + gợi ý "Xem chi tiết"). */
@@ -68,10 +69,14 @@ export function TheChiSo({
 
   const noiDung = (
     <>
-      <span className={`grid size-11 place-items-center rounded-xl ${mau[tone]}`}>
-        <Icon name={icon} className="size-5" />
+      {icon && (
+        <span className={`grid size-11 place-items-center rounded-xl ${mau[tone]}`}>
+          <Icon name={icon} className="size-5" />
+        </span>
+      )}
+      <span className={`${icon ? 'mt-5' : ''} block text-sm font-medium text-slate-500`}>
+        {nhan}
       </span>
-      <span className="mt-5 block text-sm font-medium text-slate-500">{nhan}</span>
       <span className="mt-1 block text-2xl font-bold text-slate-900">{giaTri}</span>
       {moTa && <span className="mt-1 block text-xs text-slate-400">{moTa}</span>}
     </>
@@ -169,12 +174,15 @@ export function Bang<T>({
   khoa,
   dangTai,
   thongBaoRong = 'Không có dữ liệu',
+  lopDong,
 }: {
   cot: CotBang<T>[]
   duLieu: T[]
   khoa: (dong: T) => string | number
   dangTai?: boolean
   thongBaoRong?: string
+  /** className tuỳ biến theo từng dòng (VD: tô màu theo loại buổi). */
+  lopDong?: (dong: T) => string
 }) {
   if (dangTai) {
     return <DangTai />
@@ -203,7 +211,12 @@ export function Bang<T>({
         </thead>
         <tbody className="divide-y divide-slate-100">
           {duLieu.map((dong) => (
-            <tr key={khoa(dong)} className="transition hover:bg-slate-50/70">
+            <tr
+              key={khoa(dong)}
+              className={`transition ${
+                lopDong ? lopDong(dong) : 'hover:bg-slate-50/70'
+              }`}
+            >
               {cot.map((c) => (
                 <td
                   key={c.khoa}

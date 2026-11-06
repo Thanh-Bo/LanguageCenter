@@ -112,4 +112,16 @@ public sealed class AdminSessionsController : ControllerBase
         [FromBody] SyncSessionTeachersRequest request,
         CancellationToken cancellationToken)
         => (await _sessionService.SyncTeachersAsync(request, cancellationToken)).ToActionResult();
+
+    /// <summary>
+    /// Chốt trạng thái ca học theo NGÀY: buổi đã qua → "Đã hoàn thành",
+    /// buổi chưa tới ngày → "Chưa diễn ra". Bỏ trống <c>maLopHoc</c> = áp dụng toàn bộ.
+    /// </summary>
+    [HttpPost("settle")]
+    [ProducesResponseType(typeof(SettleSessionsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> SettleAsync(
+        [FromBody] SettleSessionsRequest request,
+        CancellationToken cancellationToken)
+        => (await _sessionService.SettleAsync(request, cancellationToken)).ToActionResult();
 }

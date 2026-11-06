@@ -39,6 +39,14 @@ public interface INotificationStore
         NotificationListQuery query,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Thông báo do MỘT tài khoản gửi (kể cả đã thu hồi) — dùng cho tab "Đã gửi".
+    /// </summary>
+    Task<PagedResult<NotificationDto>> ListBySenderAsync(
+        int maTaiKhoanGui,
+        NotificationListQuery query,
+        CancellationToken cancellationToken);
+
     Task<int> CountForAudienceAsync(
         NotificationAudience audience,
         CancellationToken cancellationToken);

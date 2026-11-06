@@ -21,8 +21,10 @@ Content-Type: application/json
 | `GET /api/students/me/tuition-fees*` | — | — | — | ✅ (chỉ của mình) |
 | `GET /api/students/me/payments` | — | — | — | ✅ (chỉ của mình) |
 | `GET /api/students/me/receipts*` | — | — | — | ✅ (chỉ của mình) |
+| `POST /api/students/me/tuition-fees/{id}/payments` | — | — | — | ✅ (thanh toán **mô phỏng**) |
 
-> **Học viên KHÔNG có** bất kỳ endpoint ghi nào. Việc ghi nhận thanh toán chỉ do
+> **Học viên KHÔNG có** endpoint ghi nào ngoài `POST .../payments` — đây là cổng thanh toán
+> **MÔ PHỎNG** (không kết nối cổng thanh toán thật). Mọi thao tác thu/hoàn tiền khác vẫn chỉ do
 > Quản trị viên / Nhân viên kế toán thực hiện.
 
 ---
@@ -310,8 +312,30 @@ Danh tính lấy từ JWT (`unique_name` = `MaHocVien`). **Không** có tham s�
 | `GET /api/students/me/payments` | Giao dịch của mình |
 | `GET /api/students/me/receipts` | Biên nhận của mình |
 | `GET /api/students/me/receipts/{id}` | Chi tiết — không thuộc sở hữu ⇒ **404** |
+| `POST /api/students/me/tuition-fees/{id}/payments` | Tự thanh toán (**MÔ PHỎNG**) |
 
 > Trả **404** (không phải 403) để không làm lộ sự tồn tại của bản ghi người khác.
+
+### `POST /api/students/me/tuition-fees/{id}/payments` — thanh toán mô phỏng
+
+```json
+{
+  "maGiaoDich": "SIM-12-1730000000000",
+  "soTien": 2000000,
+  "phuongThucThanhToan": "Ví điện tử (mô phỏng)"
+}
+```
+
+- Client **không** gửi `maNhanVienKeToan` / `loaiGiaoDich` / `ghiChu`: server gán
+  người ghi nhận là nhân viên kế toán hệ thống **`NVKT001`**, loại giao dịch `"Thu tiền"`,
+  ghi chú `"Thanh toán mô phỏng do học viên <maHocVien> thực hiện"`.
+- `phuongThucThanhToan` chỉ nhận: `"Tiền mặt"`, `"Chuyển khoản"`, `"Ví điện tử (mô phỏng)"`.
+- `201` → trả `PaymentDto` (đã kèm `bienNhan`). Biên nhận do server tự sinh
+  (`BN<yyyyMMdd>###`), `SoTienDaDong` và `TrangThaiHocPhi` được cập nhật trong cùng transaction.
+- `200` nếu gửi lại cùng `maGiaoDich` (idempotent — không tạo giao dịch mới).
+- `400` số tiền ≤ 0 / vượt số còn thiếu / phương thức không hợp lệ.
+- `404` phiếu không tồn tại **hoặc không thuộc học viên đang đăng nhập**.
+- `409` học phí đã thanh toán đủ.
 
 ---
 

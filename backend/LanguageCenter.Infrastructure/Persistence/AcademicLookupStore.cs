@@ -1,4 +1,5 @@
 using LanguageCenter.Application.Abstractions;
+using LanguageCenter.Application.Grades;
 using LanguageCenter.Domain.Constants;
 using LanguageCenter.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
@@ -176,5 +177,31 @@ public sealed class AcademicLookupStore : IAcademicLookupStore
             .Where(x => x.Ngay == ngay)
             .Select(x => (string?)x.TenNgayLe)
             .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<DateOnly?> GetExamDateAsync(
+        int maLopHoc,
+        int maLoaiDiem,
+        CancellationToken cancellationToken)
+    {
+        var tenLoaiDiem = await _dbContext.LoaiDiems
+            .AsNoTracking()
+            .Where(x => x.MaLoaiDiem == maLoaiDiem)
+            .Select(x => x.TenLoaiDiem)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (tenLoaiDiem is null)
+        {
+            return null;
+        }
+
+        var buoi = await _dbContext.CaHocs
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc == maLopHoc
+                        && (x.LoaiBuoi == SessionKinds.KiemTra || x.LoaiBuoi == SessionKinds.BuoiThi))
+            .Select(x => new ExamSessionInfo(x.MaCaHoc, x.SoBuoi, x.NgayHoc, x.LoaiBuoi))
+            .ToListAsync(cancellationToken);
+
+        return ExamSchedule.ResolveExamDate(tenLoaiDiem, buoi);
+    }
 }
 

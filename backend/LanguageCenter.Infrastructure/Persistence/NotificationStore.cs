@@ -68,6 +68,49 @@ public sealed class NotificationStore : INotificationStore
         => Project(BuildAudienceQuery(audience).Where(x => x.MaThongBao == maThongBao))
             .FirstOrDefaultAsync(cancellationToken);
 
+    public async Task<PagedResult<NotificationDto>> ListBySenderAsync(
+        int maTaiKhoanGui,
+        NotificationListQuery query,
+        CancellationToken cancellationToken)
+    {
+        // KHÔNG lọc TrangThai: người gửi cần thấy cả thông báo đã thu hồi.
+        var source = _dbContext.ThongBaos
+            .AsNoTracking()
+            .Where(x => x.MaTaiKhoanGui == maTaiKhoanGui);
+
+        if (!string.IsNullOrWhiteSpace(query.LoaiThongBao))
+        {
+            var loai = query.LoaiThongBao.Trim();
+            source = source.Where(x => x.LoaiThongBao == loai);
+        }
+
+        if (query.TuNgay is { } tuNgay)
+        {
+            var from = tuNgay.ToDateTime(TimeOnly.MinValue);
+            source = source.Where(x => x.ThoiGianGui >= from);
+        }
+
+        if (query.DenNgay is { } denNgay)
+        {
+            var toExclusive = denNgay.ToDateTime(TimeOnly.MinValue).AddDays(1);
+            source = source.Where(x => x.ThoiGianGui < toExclusive);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            var search = query.Search.Trim();
+            source = source.Where(x => x.TieuDe.Contains(search) || x.NoiDung.Contains(search));
+        }
+
+        return await ProjectPageAsync(
+            source,
+            query.Skip,
+            query.Take,
+            query.Page,
+            query.PageSize,
+            cancellationToken);
+    }
+
     // ========================================================================
     // QUẢN TRỊ
     // ========================================================================
@@ -262,15 +305,18 @@ public sealed class NotificationStore : INotificationStore
 
         var maTaiKhoan = audience.MaTaiKhoan;
 
+        // Loại thông báo do CHÍNH MÌNH gửi: chúng nằm ở tab "Đã gửi",
+        // tránh trùng lặp ở tab "Đã nhận".
         if (!audience.IncludeClassBroadcasts || audience.ClassIds.Count == 0)
         {
-            return source.Where(x => x.MaTaiKhoanNhan == maTaiKhoan);
+            return source.Where(x => x.MaTaiKhoanNhan == maTaiKhoan && x.MaTaiKhoanGui != maTaiKhoan);
         }
 
         var classIds = audience.ClassIds.ToList();
 
-        return source.Where(x => x.MaTaiKhoanNhan == maTaiKhoan
-                                 || (x.MaLopHoc != null && classIds.Contains(x.MaLopHoc.Value)));
+        return source.Where(x => x.MaTaiKhoanGui != maTaiKhoan
+                                 && (x.MaTaiKhoanNhan == maTaiKhoan
+                                     || (x.MaLopHoc != null && classIds.Contains(x.MaLopHoc.Value))));
     }
 
     private async Task<PagedResult<NotificationDto>> ProjectPageAsync(

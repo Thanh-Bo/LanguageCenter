@@ -23,7 +23,10 @@ public sealed class TeacherSelfController : ControllerBase
         _sessionService = sessionService;
     }
 
-    /// <summary>Ca học mà mình là người dạy thực tế hoặc lớp mình được phân công.</summary>
+    /// <summary>
+    /// Ca học mà CHÍNH mình là người dạy / trợ giảng.
+    /// Ca chưa gán người dạy thực tế thì hiển thị theo phân công giảng dạy của lớp.
+    /// </summary>
     [HttpGet("schedule")]
     [ProducesResponseType(typeof(IReadOnlyList<SessionListItemDto>), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]

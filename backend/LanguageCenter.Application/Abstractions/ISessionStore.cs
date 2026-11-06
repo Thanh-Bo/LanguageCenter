@@ -96,6 +96,18 @@ public interface ISessionStore
     Task<SyncTeachersOutcome> SyncTeachersAsync(
         int maLopHoc,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Chốt trạng thái ca học theo NGÀY (idempotent, không đụng ca Đã hủy):
+    /// <list type="bullet">
+    /// <item>Ngày đã qua + Chưa diễn ra / Đang diễn ra  → Đã hoàn thành</item>
+    /// <item>Ngày còn ở tương lai + Đang diễn ra  → Chưa diễn ra</item>
+    /// </list>
+    /// </summary>
+    Task<SettleSessionsOutcome> SettleByDateAsync(
+        DateOnly homNay,
+        int? maLopHoc,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>Kết quả tạo ca học hàng loạt từ lịch định kỳ.</summary>
@@ -117,6 +129,16 @@ public sealed record GenerateOutcome(
 
 /// <summary>Một ngày không tạo được ca học và lý do.</summary>
 public sealed record GenerateConflict(DateOnly NgayHoc, string LyDo);
+
+/// <summary>Kết quả chốt trạng thái ca học theo ngày.</summary>
+public sealed record SettleSessionsOutcome(
+    DateOnly NgayChot,
+    int SoCaDaChot,
+    int SoCaMoLai)
+{
+    /// <summary>Lớp được giới hạn (null = toàn bộ).</summary>
+    public int? MaLopHoc { get; init; }
+}
 
 /// <summary>Kết quả đồng bộ giáo viên cho ca học đã sinh.</summary>
 public sealed record SyncTeachersOutcome(

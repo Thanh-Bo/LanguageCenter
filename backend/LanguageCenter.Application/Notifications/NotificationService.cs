@@ -68,6 +68,70 @@ public sealed class NotificationService : INotificationService
         return OperationResult<NotificationSummaryDto>.Ok(new NotificationSummaryDto { TongSo = total });
     }
 
+    public async Task<OperationResult<PagedResult<NotificationDto>>> ListSentByCurrentUserAsync(
+        NotificationActor actor,
+        NotificationListQuery query,
+        CancellationToken cancellationToken)
+    {
+        var invalid = ValidateFilter(query.TuNgay, query.DenNgay);
+
+        if (invalid is not null)
+        {
+            return OperationResult<PagedResult<NotificationDto>>.BadRequest(
+                "Khoảng ngày không hợp lệ.",
+                [invalid]);
+        }
+
+        var page = await _notificationStore.ListBySenderAsync(
+            actor.MaTaiKhoan, query, cancellationToken);
+
+        return OperationResult<PagedResult<NotificationDto>>.Ok(page);
+    }
+
+    public async Task<OperationResult<bool>> RevokeOwnAsync(
+        int maThongBao,
+        NotificationActor actor,
+        CancellationToken cancellationToken)
+    {
+        var detail = await _notificationStore.GetDetailAsync(maThongBao, cancellationToken);
+
+        if (detail is null)
+        {
+            return OperationResult<bool>.NotFound($"Không tìm thấy thông báo có id = {maThongBao}.");
+        }
+
+        if (detail.MaTaiKhoanGui != actor.MaTaiKhoan)
+        {
+            return OperationResult<bool>.Forbidden("Bạn chỉ được thu hồi thông báo do chính mình gửi.");
+        }
+
+        // Idempotent: đã thu hồi rồi thì coi như thành công.
+        if (detail.TrangThai == NotificationStatuses.DaThuHoi)
+        {
+            return OperationResult<bool>.Ok(true);
+        }
+
+        var outcome = await _notificationStore.UpdateAsync(
+            maThongBao,
+            new NotificationUpdateData(
+                CapNhatTieuDe: false,
+                TieuDe: null,
+                CapNhatNoiDung: false,
+                NoiDung: null,
+                CapNhatLoai: false,
+                LoaiThongBao: null,
+                TrangThai: NotificationStatuses.DaThuHoi),
+            cancellationToken);
+
+        return outcome switch
+        {
+            WriteOutcome.Success => OperationResult<bool>.Ok(true),
+            WriteOutcome.NotFound => OperationResult<bool>.NotFound(
+                $"Không tìm thấy thông báo có id = {maThongBao}."),
+            _ => OperationResult<bool>.Conflict("Không thể thu hồi thông báo.")
+        };
+    }
+
     // ========================================================================
     // QUẢN TRỊ — ĐỌC
     // ========================================================================

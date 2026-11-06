@@ -204,6 +204,7 @@ export function HVTienDoKhoaHoc() {
                 const diemDanhCuaBuoi = trangThaiTheoCa.get(b.maCaHoc)
                 const dangChon = caDangChon === b.maCaHoc
                 const laBuoiThi = b.loaiBuoi === 'Buổi thi'
+                const laKiemTra = b.loaiBuoi === 'Kiểm tra'
                 const laHienTai = tienDo?.maCaHocHienTai === b.maCaHoc
                 const soBuoiCua = b.soBuoi ?? i + 1
 
@@ -220,11 +221,13 @@ export function HVTienDoKhoaHoc() {
                     } ${laHienTai ? 'ring-2 ring-blue-400' : ''} ${
                       laBuoiThi
                         ? 'border-violet-300 bg-violet-50 text-violet-700'
-                        : lopOBuoi(b, diemDanhCuaBuoi, homNay)
+                        : laKiemTra
+                          ? 'border-amber-300 bg-amber-50 text-amber-700'
+                          : lopOBuoi(b, diemDanhCuaBuoi, homNay)
                     }`}
                   >
                     <span className="block text-[11px] leading-none opacity-70">
-                      {laBuoiThi ? 'Thi' : 'Buổi'}
+                      {laBuoiThi ? 'Thi' : laKiemTra ? 'KT' : 'Buổi'}
                     </span>
                     <span className="text-sm">{soBuoiCua}</span>
                   </button>
@@ -249,7 +252,10 @@ export function HVTienDoKhoaHoc() {
                 <span className="size-3 rounded border border-slate-200 bg-slate-100" /> Đã hủy
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="size-3 rounded border border-violet-300 bg-violet-50" /> Buổi thi
+                <span className="size-3.5 rounded border-2 border-violet-500 bg-violet-100" /> Buổi thi
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="size-3.5 rounded border-2 border-amber-500 bg-amber-100" /> Kiểm tra
               </span>
             </div>
           </>
@@ -272,6 +278,9 @@ export function HVTienDoKhoaHoc() {
                   <div className="flex items-center gap-2">
                     {b.loaiBuoi === 'Buổi thi' && (
                       <Nhan tone="blue">Buổi thi</Nhan>
+                    )}
+                    {b.loaiBuoi === 'Kiểm tra' && (
+                      <Nhan tone="blue">Kiểm tra</Nhan>
                     )}
                     <Nhan tone={dd ? 'blue' : 'slate'}>{dd ?? b.trangThai}</Nhan>
                   </div>

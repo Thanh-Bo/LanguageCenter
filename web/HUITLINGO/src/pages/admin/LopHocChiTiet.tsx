@@ -336,7 +336,16 @@ export function LopHocChiTiet({
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {caHocs.map((ca) => (
-                    <tr key={ca.maCaHoc} className={ca.loaiBuoi === 'Buổi thi' ? 'bg-violet-50/50' : ''}>
+                    <tr
+                      key={ca.maCaHoc}
+                      className={
+                        ca.loaiBuoi === 'Buổi thi'
+                          ? 'bg-violet-50/50'
+                          : ca.loaiBuoi === 'Kiểm tra'
+                            ? 'bg-amber-50/50'
+                            : ''
+                      }
+                    >
                       <td className="px-3 py-2 font-semibold text-slate-700">
                         Buổi {ca.soBuoi ?? '—'}
                       </td>

@@ -20,6 +20,7 @@ import type {
   ReportOverview,
   ScheduleListItem,
   SessionListItem,
+  SettleSessionsResult,
   StudentAttendanceHistory,
   StudentCourseGrade,
   StudentListItem,
@@ -53,6 +54,24 @@ export const authApi = {
       newPassword,
       confirmPassword,
     }),
+}
+
+// ===== TIỆN ÍCH DEVELOPMENT (chỉ có ở môi trường Development) =====
+export const devApi = {
+  /**
+   * Tài khoản mẫu để hiện ở khung "đăng nhập nhanh".
+   * Trả về `null` nếu API không có endpoint (môi trường không phải Development).
+   */
+  taiKhoanMau: () =>
+    http.getKhongChan401<{
+      matKhauMacDinh: string
+      nhom: Array<{
+        ma: string
+        nhan: string
+        icon: string
+        taiKhoans: Array<{ tenDangNhap: string; hoTen: string }>
+      }>
+    }>('/development/demo-accounts'),
 }
 
 // ===== HỌC VIÊN (quản trị) =====
@@ -91,6 +110,12 @@ export const caHocApi = {
   /** Đồng bộ GV cho các ca CHƯA diễn ra: buổi đầu tuần = GV nước ngoài. */
   dongBoGiaoVien: (maLopHoc: number) =>
     http.post<SyncSessionTeachersResult>('/admin/sessions/sync-teachers', { maLopHoc }),
+  /**
+   * Chốt trạng thái theo NGÀY: buổi đã qua → "Đã hoàn thành",
+   * buổi chưa tới ngày → "Chưa diễn ra". Bỏ trống lớp = toàn bộ.
+   */
+  chotBuoiDaQua: (maLopHoc?: number) =>
+    http.post<SettleSessionsResult>('/admin/sessions/settle', { maLopHoc: maLopHoc ?? null }),
   capNhat: (
     maCaHoc: number,
     body: {
@@ -130,6 +155,12 @@ export const hocPhiApi = {
 export const thongBaoApi = {
   cuaToi: (q: Query = {}) => http.get<PagedResult<NotificationItem>>(`/notifications${qs(q)}`),
   tongHop: () => http.get<NotificationSummary>('/notifications/summary'),
+
+  /** Thông báo do CHÍNH mình gửi (kể cả đã thu hồi) — tab "Đã gửi". */
+  daGui: (q: Query = {}) =>
+    http.get<PagedResult<NotificationItem>>(`/notifications/sent${qs(q)}`),
+  /** Thu hồi (ẩn mềm) thông báo mình đã gửi — người nhận không thấy nữa. */
+  thuHoi: (maThongBao: number) => http.post<boolean>(`/notifications/${maThongBao}/revoke`, {}),
 
   quanTri: (q: Query = {}) =>
     http.get<PagedResult<NotificationItem>>(`/admin/notifications${qs(q)}`),
@@ -242,6 +273,11 @@ export const hocVienSelfApi = {
     http.get<PagedResult<TuitionItem>>(`/students/me/tuition-fees${qs(q)}`),
   thanhToan: (q: Query = {}) =>
     http.get<PagedResult<Payment>>(`/students/me/payments${qs(q)}`),
+  /** Học viên tự thanh toán học phí — MÔ PHỎNG, server tự sinh biên nhận. */
+  thanhToanHocPhi: (
+    maHocPhi: number,
+    body: { maGiaoDich: string; soTien: number; phuongThucThanhToan: string },
+  ) => http.post<Payment>(`/students/me/tuition-fees/${maHocPhi}/payments`, body),
 
   khaoSat: () => http.get<MySurvey[]>('/students/me/surveys'),
   khaoSatChiTiet: (maKhaoSat: number) =>

@@ -1,7 +1,8 @@
 // Khu vực học viên.
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { Icon } from '../../components/BieuTuong'
+import { ThoiKhoaBieuTuan, dungLichTuan } from '../../components/ThoiKhoaBieuTuan'
 import {
   Bang,
   DangTai,
@@ -29,10 +30,8 @@ import type {
   TuitionItem,
   Payment,
 } from '../../lib/api/types'
-import { LOAI_CAU_HOI } from '../../lib/constants'
+import { LOAI_CAU_HOI, PHUONG_THUC_MO_PHONG } from '../../lib/constants'
 import {
-  congNgayIso,
-  dauTuanIso,
   dinhDangKhoangGio,
   dinhDangNgay,
   dinhDangNgayGio,
@@ -211,7 +210,7 @@ export function HVTongQuanCu() {
                     return (
                       <Link
                         key={lop.maDangKy}
-                        to={`/hocvien/khoa-hoc/${lop.maLopHoc}`}
+                        to={`/hocvien/lop-cua-toi/${encodeURIComponent(lop.maLop)}`}
                         className="group flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-blue-300 hover:shadow-md"
                       >
                         <div className="flex items-start justify-between gap-3">
@@ -287,229 +286,35 @@ export function HVTongQuanCu() {
 }
 
 // ============================================================
-// LỊCH HỌC — thời khóa biểu theo tuần
+// LỊCH HỌC — dùng CHUNG lưới thời khóa biểu với Giáo viên / Admin
 // ============================================================
-const NHAN_THU = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'CN']
-
-const CA_HOC = [
-  { khoa: 'sang', nhan: 'Sáng' },
-  { khoa: 'chieu', nhan: 'Chiều' },
-  { khoa: 'toi', nhan: 'Tối' },
-] as const
-
-type KhoaCa = (typeof CA_HOC)[number]['khoa']
-
-/** Ca học thuộc buổi nào — dựa trên giờ bắt đầu "HH:mm:ss". */
-function caCuaBuoiHoc(gioBatDau: string): KhoaCa {
-  const gio = Number.parseInt(gioBatDau.slice(0, 2), 10)
-  if (gio < 12) return 'sang'
-  if (gio < 18) return 'chieu'
-  return 'toi'
-}
-
-function lopTheoTrangThai(trangThai: string): string {
-  if (trangThai === 'Đã hủy') return 'border-rose-200 bg-rose-50'
-  if (trangThai === 'Đã hoàn thành') return 'border-slate-200 bg-slate-100'
-  if (trangThai === 'Đang diễn ra') return 'border-emerald-300 bg-emerald-50'
-  return 'border-blue-200 bg-blue-50'
-}
-
-function mauChuTheoTrangThai(trangThai: string): string {
-  if (trangThai === 'Đã hủy') return 'text-rose-700'
-  if (trangThai === 'Đã hoàn thành') return 'text-slate-600'
-  if (trangThai === 'Đang diễn ra') return 'text-emerald-700'
-  return 'text-blue-700'
-}
-
-function TheCaHoc({ ca }: { ca: SessionListItem }) {
-  return (
-    <div
-      className={`rounded-lg border p-2 ${lopTheoTrangThai(ca.trangThai)}`}
-      title={`${ca.tenLop} · ${ca.trangThai}${ca.noiDungBaiHoc ? ` · ${ca.noiDungBaiHoc}` : ''}`}
-    >
-      <p className={`text-xs font-bold ${mauChuTheoTrangThai(ca.trangThai)}`}>
-        {dinhDangKhoangGio(ca.gioBatDau, ca.gioKetThuc)}
-      </p>
-      <p className="mt-0.5 truncate text-xs font-semibold text-slate-900">{ca.tenLop}</p>
-      <p className="truncate text-xs text-slate-500">{ca.tenPhong}</p>
-      {ca.tenGiaoVienThucTe ? (
-        <p className="truncate text-xs text-slate-500">{ca.tenGiaoVienThucTe}</p>
-      ) : null}
-    </div>
-  )
-}
-
 export function HVLichHoc() {
-  const [tuanBatDau, setTuanBatDau] = useState(() => dauTuanIso(homNayIso()))
-  const [duLieu, setDuLieu] = useState<SessionListItem[]>([])
-  const [dangTai, setDangTai] = useState(true)
-  const [loi, setLoi] = useState<string | null>(null)
-  const [lanTai, setLanTai] = useState(0)
-
-  const tuanKetThuc = congNgayIso(tuanBatDau, 6)
-  const cacNgay = NHAN_THU.map((_, i) => congNgayIso(tuanBatDau, i))
-  const homNay = homNayIso()
-
-  useEffect(() => {
-    let huy = false
-
-    setDangTai(true)
-    setLoi(null)
-
-    hocVienSelfApi
-      .lichHoc({ tuNgay: tuanBatDau, denNgay: tuanKetThuc })
-      .then((ketQua) => {
-        if (!huy) setDuLieu(ketQua)
-      })
-      .catch((error) => {
-        if (!huy) {
-          setDuLieu([])
-          setLoi(thongDiepLoi(error))
-        }
-      })
-      .finally(() => {
-        if (!huy) setDangTai(false)
-      })
-
-    return () => {
-      huy = true
-    }
-  }, [tuanBatDau, tuanKetThuc, lanTai])
-
-  const caTheoNgay = new Map<string, SessionListItem[]>(cacNgay.map((n) => [n, []]))
-  for (const ca of duLieu) {
-    caTheoNgay.get(ca.ngayHoc)?.push(ca)
-  }
-  for (const ds of caTheoNgay.values()) {
-    ds.sort((a, b) => a.gioBatDau.localeCompare(b.gioBatDau))
-  }
-
-  const veTruoc = () => setTuanBatDau((t) => congNgayIso(t, -7))
-  const veSau = () => setTuanBatDau((t) => congNgayIso(t, 7))
-  const veHienTai = () => setTuanBatDau(dauTuanIso(homNayIso()))
+  const lich = dungLichTuan((q) => hocVienSelfApi.lichHoc(q))
+  const navigate = useNavigate()
 
   return (
     <div className="space-y-6">
       <TrangTieuDe
         eyebrow="Học tập"
         title="Lịch học"
-        desc="Thời khóa biểu theo tuần của các lớp bạn đang theo học."
+        desc="Thời khóa biểu theo tuần của các lớp bạn đang theo học. Bấm vào một ca để xem chi tiết buổi học."
       />
 
-      <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={veTruoc} className={LOP_NUT_PHU}>
-            <Icon name="arrowRight" className="size-4 rotate-180" />
-            Tuần trước
-          </button>
-          <button type="button" onClick={veHienTai} className={LOP_NUT_CHINH}>
-            <Icon name="calendar" className="size-4" />
-            Hiện tại
-          </button>
-          <button type="button" onClick={veSau} className={LOP_NUT_PHU}>
-            Tuần sau
-            <Icon name="arrowRight" className="size-4" />
-          </button>
-        </div>
-
-        <div className="sm:text-right">
-          <p className="text-sm font-semibold text-slate-900">
-            Tuần {dinhDangNgay(tuanBatDau)} – {dinhDangNgay(tuanKetThuc)}
-          </p>
-          <p className="text-xs text-slate-500">
-            {dangTai ? 'Đang tải…' : `${duLieu.length} ca học trong tuần`}
-          </p>
-        </div>
-      </div>
-
-      {loi ? (
-        <LoiTrang message={loi} onThuLai={() => setLanTai((n) => n + 1)} />
-      ) : dangTai ? (
-        <DangTai nhan="Đang tải lịch học…" />
-      ) : (
-        <>
-          {duLieu.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-slate-300 bg-white p-4 text-center text-sm text-slate-500">
-              Tuần này bạn không có ca học nào.
-            </p>
-          ) : null}
-
-          <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <table className="w-full min-w-225 border-collapse text-sm">
-              <thead>
-                <tr>
-                  <th className="w-20 border-b border-slate-200 bg-slate-50 px-3 py-3 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                    Ca
-                  </th>
-                  {cacNgay.map((ngay, i) => (
-                    <th
-                      key={ngay}
-                      className={`border-b border-l border-slate-200 px-2 py-3 text-center ${
-                        ngay === homNay ? 'bg-blue-50' : 'bg-slate-50'
-                      }`}
-                    >
-                      <p className="text-xs font-semibold tracking-wide text-slate-500 uppercase">
-                        {NHAN_THU[i]}
-                      </p>
-                      <p
-                        className={`text-sm font-bold ${
-                          ngay === homNay ? 'text-blue-600' : 'text-slate-800'
-                        }`}
-                      >
-                        {dinhDangNgay(ngay)}
-                      </p>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {CA_HOC.map((ca) => (
-                  <tr key={ca.khoa}>
-                    <th className="border-b border-slate-200 bg-slate-50 px-3 py-4 text-left align-top text-xs font-semibold text-slate-600">
-                      {ca.nhan}
-                    </th>
-                    {cacNgay.map((ngay) => {
-                      const ds = (caTheoNgay.get(ngay) ?? []).filter(
-                        (s) => caCuaBuoiHoc(s.gioBatDau) === ca.khoa,
-                      )
-
-                      return (
-                        <td
-                          key={ngay}
-                          className={`h-28 border-b border-l border-slate-200 p-1.5 align-top ${
-                            ngay === homNay ? 'bg-blue-50/40' : ''
-                          }`}
-                        >
-                          <div className="space-y-1">
-                            {ds.map((s) => (
-                              <TheCaHoc key={s.maCaHoc} ca={s} />
-                            ))}
-                          </div>
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded border border-blue-200 bg-blue-50" /> Chưa diễn ra
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded border border-emerald-300 bg-emerald-50" /> Đang diễn ra
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded border border-slate-200 bg-slate-100" /> Đã hoàn thành
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="size-3 rounded border border-rose-200 bg-rose-50" /> Đã hủy
-            </span>
-          </div>
-        </>
-      )}
+      <ThoiKhoaBieuTuan
+        duLieu={lich.duLieu}
+        tuanBatDau={lich.tuanBatDau}
+        tuanKetThuc={lich.tuanKetThuc}
+        onDoiTuan={lich.doiTuan}
+        dangTai={lich.dangTai}
+        loi={lich.loi}
+        onThuLai={lich.taiLai}
+        dongPhu={(ca) => [ca.tenPhong, ca.tenGiaoVienThucTe]}
+        moTaRong="Tuần này bạn không có ca học nào."
+        nhanDem="ca học"
+        onChonCaHoc={(ca) =>
+          navigate(`/hocvien/lop-cua-toi/${encodeURIComponent(ca.maLop)}?tab=buoi`)
+        }
+      />
     </div>
   )
 }
@@ -613,20 +418,41 @@ export function HVDiemSo() {
 }
 
 // ============================================================
-// HỌC PHÍ
+// HỌC PHÍ — học viên tự thanh toán (MÔ PHỎNG)
 // ============================================================
 export function HVHocPhi() {
+  const { hien } = dungToast()
   const [page, setPage] = useState(1)
+  const [dangTra, setDangTra] = useState<TuitionItem | null>(null)
+  const [bienNhan, setBienNhan] = useState<Payment | null>(null)
 
   const hocPhi = useCallback(
     () => hocVienSelfApi.hocPhi({ page, pageSize: PAGE_SIZE }),
     [page],
   )
-
-  const ds = useCallback(() => hocVienSelfApi.thanhToan({ page: 1, pageSize: PAGE_SIZE }), [])
+  const dsThanhToan = useCallback(
+    () => hocVienSelfApi.thanhToan({ page: 1, pageSize: PAGE_SIZE }),
+    [],
+  )
 
   const hp = dungDuLieu<PagedResult<TuitionItem>>(hocPhi)
-  const tt = dungDuLieu<PagedResult<Payment>>(ds)
+  const tt = dungDuLieu<PagedResult<Payment>>(dsThanhToan)
+
+  const dsHocPhi = hp.duLieu?.items ?? []
+
+  const tongPhaiDong = dsHocPhi.reduce((s, x) => s + x.soTienPhaiDong, 0)
+  const tongDaDong = dsHocPhi.reduce((s, x) => s + x.soTienDaDong, 0)
+  const tongConThieu = dsHocPhi.reduce((s, x) => s + x.soTienConThieu, 0)
+
+  const hanGanNhat = dsHocPhi
+    .filter((x) => x.soTienConThieu > 0 && x.hanThanhToan)
+    .map((x) => x.hanThanhToan as string)
+    .sort()[0]
+
+  const taiLaiTatCa = () => {
+    void hp.taiLai()
+    void tt.taiLai()
+  }
 
   const cot: CotBang<TuitionItem>[] = [
     {
@@ -635,24 +461,59 @@ export function HVHocPhi() {
       render: (r) => (
         <div>
           <p className="font-semibold text-slate-900">{r.tenKhoaHoc}</p>
-          {r.maLop && <p className="text-xs text-slate-500">{r.maLop}</p>}
+          <p className="text-xs text-slate-500">{r.maLop ? `Lớp ${r.maLop}` : 'Chưa xếp lớp'}</p>
         </div>
       ),
     },
-    { tieuDe: 'Phải đóng', khoa: 'soTienPhaiDong', canPhai: true, render: (r) => dinhDangTien(r.soTienPhaiDong) },
-    { tieuDe: 'Đã đóng', khoa: 'soTienDaDong', canPhai: true, render: (r) => dinhDangTien(r.soTienDaDong) },
+    {
+      tieuDe: 'Phải đóng',
+      khoa: 'soTienPhaiDong',
+      canPhai: true,
+      render: (r) => dinhDangTien(r.soTienPhaiDong),
+    },
+    {
+      tieuDe: 'Đã đóng',
+      khoa: 'soTienDaDong',
+      canPhai: true,
+      render: (r) => dinhDangTien(r.soTienDaDong),
+    },
     {
       tieuDe: 'Còn thiếu',
       khoa: 'soTienConThieu',
       canPhai: true,
       render: (r) => (
-        <span className={r.soTienConThieu > 0 ? 'font-bold text-rose-600' : ''}>
+        <span className={r.soTienConThieu > 0 ? 'font-bold text-rose-600' : 'text-slate-400'}>
           {dinhDangTien(r.soTienConThieu)}
         </span>
       ),
     },
-    { tieuDe: 'Hạn đóng', khoa: 'hanThanhToan', render: (r) => dinhDangNgay(r.hanThanhToan) },
-    { tieuDe: 'Trạng thái', khoa: 'trangThaiHocPhi', render: (r) => <Nhan>{r.trangThaiHocPhi}</Nhan> },
+    {
+      tieuDe: 'Hạn đóng',
+      khoa: 'hanThanhToan',
+      render: (r) => (
+        <span className={r.quaHan ? 'font-semibold text-rose-600' : ''}>
+          {dinhDangNgay(r.hanThanhToan)}
+          {r.quaHan && <span className="ml-1 text-[11px] font-bold">(quá hạn)</span>}
+        </span>
+      ),
+    },
+    {
+      tieuDe: 'Trạng thái',
+      khoa: 'trangThaiHocPhi',
+      render: (r) => <Nhan>{r.trangThaiHocPhi}</Nhan>,
+    },
+    {
+      tieuDe: '',
+      khoa: 'thaoTac',
+      render: (r) =>
+        r.soTienConThieu > 0 ? (
+          <button type="button" onClick={() => setDangTra(r)} className={LOP_NUT_CHINH}>
+            Thanh toán
+          </button>
+        ) : (
+          <span className="text-xs font-semibold text-emerald-600">Đã hoàn tất</span>
+        ),
+    },
   ]
 
   const cotTT: CotBang<Payment>[] = [
@@ -661,17 +522,24 @@ export function HVHocPhi() {
       khoa: 'ngayThanhToan',
       render: (r) => dinhDangNgayGio(r.ngayThanhToan),
     },
-    {
-      tieuDe: 'Khóa học',
-      khoa: 'tenKhoaHoc',
-      render: (r) => r.tenKhoaHoc,
-    },
+    { tieuDe: 'Khóa học', khoa: 'tenKhoaHoc', render: (r) => r.tenKhoaHoc },
     { tieuDe: 'Số tiền', khoa: 'soTien', canPhai: true, render: (r) => dinhDangTien(r.soTien) },
     { tieuDe: 'Phương thức', khoa: 'phuongThucThanhToan' },
     {
       tieuDe: 'Biên nhận',
       khoa: 'bienNhan',
-      render: (r) => r.bienNhan?.soBienNhan ?? '—',
+      render: (r) =>
+        r.bienNhan ? (
+          <button
+            type="button"
+            onClick={() => setBienNhan(r)}
+            className="font-semibold text-blue-600 hover:underline"
+          >
+            {r.bienNhan.soBienNhan}
+          </button>
+        ) : (
+          <span className="text-slate-400">—</span>
+        ),
     },
     { tieuDe: 'Trạng thái', khoa: 'trangThai', render: (r) => <Nhan>{r.trangThai}</Nhan> },
   ]
@@ -681,16 +549,36 @@ export function HVHocPhi() {
       <TrangTieuDe
         eyebrow="Tài chính"
         title="Học phí"
-        desc="Học phí và lịch sử thanh toán của bạn."
+        desc="Theo dõi học phí, tự thanh toán (mô phỏng) và xem biên nhận."
       />
 
-      <p className="flex items-start gap-3 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
-        <Icon name="alert" className="mt-0.5 size-4 shrink-0 text-blue-600" />
-        <span>
-          Học viên không tự xác nhận thanh toán. Vui lòng liên hệ nhân viên kế toán để được ghi
-          nhận và nhận biên nhận.
-        </span>
+      <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+        Cổng thanh toán MÔ PHỎNG — không phát sinh tiền thật. Biên nhận do hệ thống tự sinh để
+        minh hoạ quy trình thu học phí.
       </p>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <TheChiSo
+          nhan="Tổng phải đóng"
+          giaTri={dinhDangTien(tongPhaiDong)}
+          moTa={`${dsHocPhi.length} khoản học phí`}
+        />
+        <TheChiSo
+          nhan="Đã đóng"
+          giaTri={dinhDangTien(tongDaDong)}
+          moTa="Bao gồm giao dịch mô phỏng"
+        />
+        <TheChiSo
+          nhan="Còn thiếu"
+          giaTri={dinhDangTien(tongConThieu)}
+          moTa={tongConThieu > 0 ? 'Cần hoàn tất trước hạn' : 'Đã hoàn tất học phí'}
+        />
+        <TheChiSo
+          nhan="Hạn gần nhất"
+          giaTri={hanGanNhat ? dinhDangNgay(hanGanNhat) : '—'}
+          moTa="Của khoản còn nợ"
+        />
+      </div>
 
       {hp.loi ? (
         <LoiTrang message={hp.loi} onThuLai={hp.taiLai} />
@@ -698,10 +586,11 @@ export function HVHocPhi() {
         <>
           <Bang
             cot={cot}
-            duLieu={hp.duLieu?.items ?? []}
+            duLieu={dsHocPhi}
             khoa={(r) => r.maHocPhi}
             dangTai={hp.dangTai}
             thongBaoRong="Bạn chưa có khoản học phí nào."
+            lopDong={(r) => (r.quaHan ? 'bg-rose-50/40' : '')}
           />
           {hp.duLieu && (
             <PhanTrang
@@ -716,7 +605,7 @@ export function HVHocPhi() {
       )}
 
       <section className="space-y-3">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500">
+        <h2 className="text-sm font-bold tracking-wider text-slate-500 uppercase">
           Lịch sử thanh toán
         </h2>
         {tt.loi ? (
@@ -731,8 +620,449 @@ export function HVHocPhi() {
           />
         )}
       </section>
+
+      <HopThoaiThanhToan
+        hocPhi={dangTra}
+        onDong={() => setDangTra(null)}
+        onXong={() => {
+          setDangTra(null)
+          hien('Thanh toán mô phỏng thành công.', 'thanhCong')
+          taiLaiTatCa()
+        }}
+        onXemBienNhan={(p) => {
+          setDangTra(null)
+          setBienNhan(p)
+          taiLaiTatCa()
+        }}
+      />
+
+      <HopThoaiBienNhan thanhToan={bienNhan} onDong={() => setBienNhan(null)} />
     </div>
   )
+}
+
+/** Bước 1 → 2 → 3 của cổng thanh toán mô phỏng. */
+function HopThoaiThanhToan({
+  hocPhi,
+  onDong,
+  onXong,
+  onXemBienNhan,
+}: {
+  hocPhi: TuitionItem | null
+  onDong: () => void
+  onXong: () => void
+  onXemBienNhan: (p: Payment) => void
+}) {
+  const [buoc, setBuoc] = useState<1 | 2 | 3>(1)
+  const [soTien, setSoTien] = useState('')
+  const [phuongThuc, setPhuongThuc] = useState<string>(PHUONG_THUC_MO_PHONG[0])
+  /** Sinh MỘT LẦN cho mỗi phiếu → chống trả trùng khi bấm lại. */
+  const [maGiaoDich, setMaGiaoDich] = useState('')
+  const [dangGui, setDangGui] = useState(false)
+  const [loi, setLoi] = useState<string | null>(null)
+  const [ketQua, setKetQua] = useState<Payment | null>(null)
+
+  useEffect(() => {
+    if (!hocPhi) return
+
+    setBuoc(1)
+    setSoTien(String(hocPhi.soTienConThieu))
+    setPhuongThuc(PHUONG_THUC_MO_PHONG[0])
+    setMaGiaoDich(`SIM-${hocPhi.maHocPhi}-${Date.now()}`)
+    setDangGui(false)
+    setLoi(null)
+    setKetQua(null)
+  }, [hocPhi])
+
+  if (!hocPhi) return null
+
+  const conThieu = hocPhi.soTienConThieu
+  const giaTri = Number(soTien.replace(/[^\d.]/g, ''))
+
+  const tiepTuc = () => {
+    if (!Number.isFinite(giaTri) || giaTri <= 0) {
+      setLoi('Số tiền phải lớn hơn 0.')
+      return
+    }
+
+    if (giaTri > conThieu) {
+      setLoi(`Số tiền vượt quá số còn thiếu (${dinhDangTien(conThieu)}).`)
+      return
+    }
+
+    setLoi(null)
+    setBuoc(2)
+  }
+
+  const xacNhan = async () => {
+    setDangGui(true)
+    setLoi(null)
+
+    try {
+      const kq = await hocVienSelfApi.thanhToanHocPhi(hocPhi.maHocPhi, {
+        maGiaoDich,
+        soTien: giaTri,
+        phuongThucThanhToan: phuongThuc,
+      })
+      setKetQua(kq)
+      setBuoc(3)
+    } catch (error) {
+      setLoi(thongDiepLoi(error))
+    } finally {
+      setDangGui(false)
+    }
+  }
+
+  const chanDung = hocPhi.maLop ? `${hocPhi.tenKhoaHoc} · Lớp ${hocPhi.maLop}` : hocPhi.tenKhoaHoc
+
+  return (
+    <HopThoai
+      mo={!!hocPhi}
+      tieuDe={buoc === 3 ? 'Thanh toán thành công' : 'Thanh toán học phí (mô phỏng)'}
+      onDong={onDong}
+      footer={
+        buoc === 1 ? (
+          <>
+            <button type="button" onClick={onDong} className={LOP_NUT_PHU}>
+              Hủy
+            </button>
+            <button type="button" onClick={tiepTuc} className={LOP_NUT_CHINH}>
+              Tiếp tục
+            </button>
+          </>
+        ) : buoc === 2 ? (
+          <>
+            <button type="button" onClick={() => setBuoc(1)} className={LOP_NUT_PHU}>
+              Quay lại
+            </button>
+            <button
+              type="button"
+              onClick={() => void xacNhan()}
+              disabled={dangGui}
+              className={LOP_NUT_CHINH}
+            >
+              {dangGui ? 'Đang xử lý…' : 'Xác nhận thanh toán'}
+            </button>
+          </>
+        ) : (
+          <>
+            <button type="button" onClick={onXong} className={LOP_NUT_PHU}>
+              Đóng
+            </button>
+            <button
+              type="button"
+              onClick={() => ketQua && onXemBienNhan(ketQua)}
+              className={LOP_NUT_CHINH}
+            >
+              Xem biên nhận
+            </button>
+          </>
+        )
+      }
+    >
+      <div className="space-y-4">
+        {/* Chỉ báo 3 bước */}
+        <div className="flex items-center gap-2 text-[11px] font-bold tracking-wider uppercase">
+          {['Số tiền', 'Cổng thanh toán', 'Hoàn tất'].map((nhan, i) => {
+            const so = i + 1
+            const dangO = so === buoc
+            const daXong = so < buoc
+
+            return (
+              <span key={nhan} className="flex items-center gap-2">
+                <span
+                  className={`grid size-6 place-items-center rounded-full ${
+                    dangO
+                      ? 'bg-blue-600 text-white'
+                      : daXong
+                        ? 'bg-emerald-100 text-emerald-700'
+                        : 'bg-slate-100 text-slate-400'
+                  }`}
+                >
+                  {so}
+                </span>
+                <span className={dangO ? 'text-slate-900' : 'text-slate-400'}>{nhan}</span>
+                {i < 2 && <span className="text-slate-300">—</span>}
+              </span>
+            )
+          })}
+        </div>
+
+        <div className="rounded-xl bg-slate-50 p-4 text-sm">
+          <p className="font-bold text-slate-900">{hocPhi.hoTenHocVien}</p>
+          <p className="text-slate-500">{chanDung}</p>
+          <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+            <dt className="text-slate-500">Phải đóng</dt>
+            <dd className="text-right font-semibold">{dinhDangTien(hocPhi.soTienPhaiDong)}</dd>
+            <dt className="text-slate-500">Đã đóng</dt>
+            <dd className="text-right font-semibold">{dinhDangTien(hocPhi.soTienDaDong)}</dd>
+            <dt className="text-slate-500">Còn thiếu</dt>
+            <dd className="text-right font-bold text-rose-600">{dinhDangTien(conThieu)}</dd>
+          </dl>
+        </div>
+
+        {buoc === 1 && (
+          <>
+            <div>
+              <label className={LOP_NHAN} htmlFor="hp-so-tien">
+                Số tiền thanh toán
+              </label>
+              <input
+                id="hp-so-tien"
+                inputMode="numeric"
+                value={soTien}
+                onChange={(e) => setSoTien(e.target.value)}
+                className={`${LOP_INPUT} h-10`}
+              />
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSoTien(String(conThieu))}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:border-blue-400 hover:text-blue-600"
+                >
+                  Toàn bộ ({dinhDangTien(conThieu)})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSoTien(String(Math.round(conThieu / 2)))}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1 text-xs font-semibold text-slate-600 hover:border-blue-400 hover:text-blue-600"
+                >
+                  50%
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p className={LOP_NHAN}>Phương thức thanh toán</p>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {PHUONG_THUC_MO_PHONG.map((pt) => {
+                  const dangChon = pt === phuongThuc
+
+                  return (
+                    <button
+                      key={pt}
+                      type="button"
+                      onClick={() => setPhuongThuc(pt)}
+                      className={`rounded-xl border-2 px-3 py-2 text-left text-xs font-bold transition ${
+                        dangChon
+                          ? 'border-blue-600 bg-blue-50 text-blue-700'
+                          : 'border-slate-200 text-slate-600 hover:border-blue-300'
+                      }`}
+                    >
+                      {pt}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {buoc === 2 && (
+          <div className="space-y-3 rounded-xl border-2 border-dashed border-slate-300 bg-white p-4">
+            <p className="text-[11px] font-bold tracking-wider text-amber-600 uppercase">
+              Cổng thanh toán mô phỏng — không phát sinh tiền thật
+            </p>
+
+            <p className="text-3xl font-bold text-slate-900">{dinhDangTien(giaTri)}</p>
+
+            <div className="grid gap-2 rounded-lg bg-slate-50 p-3 text-xs text-slate-600">
+              <span className="flex justify-between gap-3">
+                <span>Ngân hàng</span>
+                <span className="font-semibold text-slate-800">HUIT Lingohub Demo Bank</span>
+              </span>
+              <span className="flex justify-between gap-3">
+                <span>Số tài khoản</span>
+                <span className="font-mono font-semibold text-slate-800">0123 456 789</span>
+              </span>
+              <span className="flex justify-between gap-3">
+                <span>Phương thức</span>
+                <span className="font-semibold text-slate-800">{phuongThuc}</span>
+              </span>
+              <span className="flex justify-between gap-3">
+                <span>Mã giao dịch</span>
+                <span className="font-mono font-semibold text-slate-800">{maGiaoDich}</span>
+              </span>
+            </div>
+
+            <div className="grid size-28 place-items-center justify-self-center rounded-xl border-4 border-slate-900 text-xs font-bold text-slate-400">
+              QR DEMO
+            </div>
+          </div>
+        )}
+
+        {buoc === 3 && ketQua && (
+          <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
+            <span className="mx-auto grid size-12 place-items-center rounded-full bg-emerald-600 text-xl font-bold text-white">
+              ✓
+            </span>
+            <p className="text-sm font-bold text-emerald-800">
+              Đã ghi nhận {dinhDangTien(ketQua.soTien)}
+            </p>
+            <p className="text-xs text-emerald-700">
+              Biên nhận: <span className="font-mono font-bold">{ketQua.bienNhan?.soBienNhan ?? '—'}</span>
+              <br />
+              Mã giao dịch: <span className="font-mono">{ketQua.maGiaoDich ?? maGiaoDich}</span>
+            </p>
+          </div>
+        )}
+
+        {loi && (
+          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">
+            {loi}
+          </p>
+        )}
+      </div>
+    </HopThoai>
+  )
+}
+
+/** Biên nhận điện tử + xuất PDF (qua hộp thoại in của trình duyệt). */
+function HopThoaiBienNhan({
+  thanhToan,
+  onDong,
+}: {
+  thanhToan: Payment | null
+  onDong: () => void
+}) {
+  if (!thanhToan) return null
+
+  const bn = thanhToan.bienNhan
+
+  return (
+    <HopThoai
+      mo={!!thanhToan}
+      tieuDe="Biên nhận thanh toán"
+      onDong={onDong}
+      footer={
+        <>
+          <button type="button" onClick={onDong} className={LOP_NUT_PHU}>
+            Đóng
+          </button>
+          <button type="button" onClick={() => xuatBienNhanPdf(thanhToan)} className={LOP_NUT_CHINH}>
+            Xuất PDF
+          </button>
+        </>
+      }
+    >
+      <div className="space-y-3">
+        <div className="rounded-xl border border-slate-200 p-4 text-sm">
+          <div className="border-b border-dashed border-slate-200 pb-3 text-center">
+            <p className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Trung tâm ngoại ngữ HUIT Lingohub
+            </p>
+            <p className="mt-1 text-base font-bold text-slate-900">BIÊN NHẬN THU HỌC PHÍ</p>
+            <p className="text-xs text-slate-500">(bản mô phỏng — không có giá trị tài chính)</p>
+          </div>
+
+          <dl className="mt-3 space-y-1.5 text-xs">
+            <div className="flex justify-between gap-3">
+              <dt className="text-slate-500">Số biên nhận</dt>
+              <dd className="font-mono font-bold text-slate-900">{bn?.soBienNhan ?? '—'}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-slate-500">Ngày lập</dt>
+              <dd className="font-semibold text-slate-800">
+                {dinhDangNgayGio(bn?.ngayLap ?? thanhToan.ngayThanhToan)}
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-slate-500">Học viên</dt>
+              <dd className="font-semibold text-slate-800">
+                {thanhToan.hoTenHocVien} ({thanhToan.maHocVien})
+              </dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-slate-500">Khóa học</dt>
+              <dd className="text-right font-semibold text-slate-800">{thanhToan.tenKhoaHoc}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-slate-500">Phương thức</dt>
+              <dd className="font-semibold text-slate-800">{thanhToan.phuongThucThanhToan}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-slate-500">Mã giao dịch</dt>
+              <dd className="font-mono text-slate-700">{thanhToan.maGiaoDich ?? '—'}</dd>
+            </div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-slate-500">Người ghi nhận</dt>
+              <dd className="font-semibold text-slate-800">{thanhToan.tenNhanVienKeToan}</dd>
+            </div>
+          </dl>
+
+          <div className="mt-3 flex items-center justify-between border-t border-dashed border-slate-200 pt-3">
+            <span className="text-xs font-bold tracking-wider text-slate-500 uppercase">
+              Số tiền
+            </span>
+            <span className="text-xl font-bold text-emerald-700">{dinhDangTien(thanhToan.soTien)}</span>
+          </div>
+        </div>
+
+        <p className="text-xs text-slate-500">
+          Bấm <b>Xuất PDF</b> → trong hộp thoại in của trình duyệt chọn <b>“Lưu thành PDF”</b>.
+        </p>
+      </div>
+    </HopThoai>
+  )
+}
+
+/** Mở cửa sổ in riêng để lưu biên nhận thành PDF. */
+function xuatBienNhanPdf(p: Payment) {
+  const bn = p.bienNhan
+  const esc = (v: string) =>
+    v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+  const html = `<!doctype html>
+<html lang="vi"><head><meta charset="utf-8" />
+<title>Bien nhan ${esc(bn?.soBienNhan ?? '')}</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: "Be Vietnam Pro", Arial, sans-serif; color: #1e293b; padding: 32px; }
+  .wrap { max-width: 720px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 28px; }
+  .center { text-align: center; }
+  .muted { color: #64748b; font-size: 12px; }
+  h1 { font-size: 20px; margin: 6px 0 2px; }
+  .hint { font-size: 11px; color: #b45309; margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 18px; font-size: 13px; }
+  td { padding: 7px 0; vertical-align: top; }
+  td.k { color: #64748b; width: 40%; }
+  td.v { text-align: right; font-weight: 600; }
+  .total { border-top: 1px dashed #cbd5e1; margin-top: 14px; padding-top: 14px; display: flex; justify-content: space-between; align-items: center; }
+  .amount { font-size: 22px; font-weight: 700; color: #047857; }
+  .foot { margin-top: 28px; border-top: 1px solid #e2e8f0; padding-top: 12px; font-size: 11px; color: #94a3b8; }
+  @page { margin: 12mm; }
+</style></head>
+<body><div class="wrap">
+  <div class="center">
+    <div class="muted" style="letter-spacing:.08em;text-transform:uppercase">Trung tâm ngoại ngữ HUIT Lingohub</div>
+    <h1>BIÊN NHẬN THU HỌC PHÍ</h1>
+    <div class="hint">Bản mô phỏng — không có giá trị tài chính</div>
+  </div>
+  <table>
+    <tr><td class="k">Số biên nhận</td><td class="v">${esc(bn?.soBienNhan ?? '—')}</td></tr>
+    <tr><td class="k">Ngày lập</td><td class="v">${esc(dinhDangNgayGio(bn?.ngayLap ?? p.ngayThanhToan))}</td></tr>
+    <tr><td class="k">Học viên</td><td class="v">${esc(p.hoTenHocVien)} (${esc(p.maHocVien)})</td></tr>
+    <tr><td class="k">Khóa học</td><td class="v">${esc(p.tenKhoaHoc)}</td></tr>
+    <tr><td class="k">Phương thức</td><td class="v">${esc(p.phuongThucThanhToan)}</td></tr>
+    <tr><td class="k">Mã giao dịch</td><td class="v">${esc(p.maGiaoDich ?? '—')}</td></tr>
+    <tr><td class="k">Người ghi nhận</td><td class="v">${esc(p.tenNhanVienKeToan)} (${esc(p.maNhanVienKeToan)})</td></tr>
+  </table>
+  <div class="total"><span class="muted" style="text-transform:uppercase;letter-spacing:.08em">Số tiền</span><span class="amount">${esc(dinhDangTien(p.soTien))}</span></div>
+  <div class="foot">Biên nhận được tạo tự động bởi hệ thống quản lý trung tâm. Giao dịch mô phỏng phục vụ minh hoạ quy trình thu học phí.</div>
+</div></body></html>`
+
+  const cuaSo = window.open('', '_blank', 'width=820,height=920')
+
+  if (!cuaSo) {
+    window.alert('Trình duyệt đã chặn cửa sổ in. Hãy cho phép popup rồi thử lại.')
+    return
+  }
+
+  cuaSo.document.open()
+  cuaSo.document.write(html)
+  cuaSo.document.close()
+  cuaSo.focus()
+  window.setTimeout(() => cuaSo.print(), 400)
 }
 
 // ============================================================
@@ -976,6 +1306,9 @@ export function HVThongBao() {
   const [loi, setLoi] = useState<string | null>(null)
   const [page, setPage] = useState(1)
 
+  /** Thông báo đang mở hộp thoại chi tiết. */
+  const [dangXem, setDangXem] = useState<NotificationItem | null>(null)
+
   const tai = useCallback(async () => {
     setDangTai(true)
     setLoi(null)
@@ -1014,7 +1347,17 @@ export function HVThongBao() {
             {ketQua?.items.map((t) => (
               <li
                 key={t.maThongBao}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                role="button"
+                tabIndex={0}
+                onClick={() => setDangXem(t)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setDangXem(t)
+                  }
+                }}
+                title="Bấm để xem chi tiết"
+                className="cursor-pointer rounded-2xl border border-slate-200 bg-white p-5 shadow-sm outline-none transition hover:border-blue-300 hover:shadow-md focus-visible:border-blue-400 focus-visible:ring-4 focus-visible:ring-blue-50"
               >
                 <div className="flex flex-wrap items-center gap-3">
                   <h3 className="text-base font-bold text-slate-900">{t.tieuDe}</h3>
@@ -1023,7 +1366,13 @@ export function HVThongBao() {
                     {dinhDangNgayGio(t.thoiGianGui)}
                   </span>
                 </div>
-                <p className="mt-2 whitespace-pre-line text-sm text-slate-600">{t.noiDung}</p>
+                <p className="mt-2 line-clamp-2 whitespace-pre-line text-sm text-slate-600">
+                  {t.noiDung}
+                </p>
+                <p className="mt-3 text-xs text-slate-400">
+                  {t.phamVi === 'Lớp' ? `Lớp ${t.maLop ?? ''}` : 'Cá nhân'} · Gửi bởi{' '}
+                  {t.tenDangNhapNguoiGui}
+                </p>
               </li>
             ))}
           </ul>
@@ -1039,6 +1388,75 @@ export function HVThongBao() {
           )}
         </>
       )}
+
+      {/* ===== HỘP THOẠI CHI TIẾT THÔNG BÁO ===== */}
+      <HopThoai
+        mo={dangXem !== null}
+        tieuDe="Chi tiết thông báo"
+        onDong={() => setDangXem(null)}
+        footer={
+          <button type="button" onClick={() => setDangXem(null)} className={LOP_NUT_PHU}>
+            Đóng
+          </button>
+        }
+      >
+        {dangXem && (
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-lg font-bold text-slate-900">{dangXem.tieuDe}</h3>
+              {dangXem.loaiThongBao && <Nhan tone="blue">{dangXem.loaiThongBao}</Nhan>}
+            </div>
+
+            <p className="whitespace-pre-line rounded-xl bg-slate-50 p-4 text-sm leading-6 text-slate-700">
+              {dangXem.noiDung}
+            </p>
+
+            <dl className="grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+              <div>
+                <dt className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                  Phạm vi
+                </dt>
+                <dd className="mt-0.5 font-semibold text-slate-700">{dangXem.phamVi}</dd>
+              </div>
+
+              <div>
+                <dt className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                  Lớp
+                </dt>
+                <dd className="mt-0.5 font-semibold text-slate-700">
+                  {dangXem.maLop ?? '—'}
+                  {dangXem.tenLop ? ` · ${dangXem.tenLop}` : ''}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                  Người gửi
+                </dt>
+                <dd className="mt-0.5 font-semibold text-slate-700">
+                  {dangXem.tenDangNhapNguoiGui}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                  Thời gian gửi
+                </dt>
+                <dd className="mt-0.5 font-semibold text-slate-700">
+                  {dinhDangNgayGio(dangXem.thoiGianGui)}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
+                  Mã thông báo
+                </dt>
+                <dd className="mt-0.5 font-mono text-slate-500">#{dangXem.maThongBao}</dd>
+              </div>
+            </dl>
+          </div>
+        )}
+      </HopThoai>
     </div>
   )
 }

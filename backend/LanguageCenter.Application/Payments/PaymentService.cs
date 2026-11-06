@@ -18,13 +18,24 @@ namespace LanguageCenter.Application.Payments;
 /// </remarks>
 public sealed class PaymentService : IPaymentService
 {
+    /// <summary>
+    /// Nhân viên kế toán được gán làm "người ghi nhận" cho giao dịch do HỌC VIÊN tự thực hiện
+    /// (bảng <c>ThanhToan.MaNhanVienKeToan</c> là NOT NULL và tham chiếu <c>NhanVien</c>).
+    /// </summary>
+    public const string SystemCollectorCode = "NVKT001";
+
     private readonly IPaymentStore _paymentStore;
     private readonly IReferenceStore _referenceStore;
+    private readonly ITuitionFeeStore _tuitionFeeStore;
 
-    public PaymentService(IPaymentStore paymentStore, IReferenceStore referenceStore)
+    public PaymentService(
+        IPaymentStore paymentStore,
+        IReferenceStore referenceStore,
+        ITuitionFeeStore tuitionFeeStore)
     {
         _paymentStore = paymentStore;
         _referenceStore = referenceStore;
+        _tuitionFeeStore = tuitionFeeStore;
     }
 
     public async Task<OperationResult<PagedResult<PaymentDto>>> ListAsync(
@@ -199,6 +210,127 @@ public sealed class PaymentService : IPaymentService
                 return created is null
                     ? OperationResult<PaymentDto>.Conflict("Đã ghi thanh toán nhưng không đọc lại được giao dịch.")
                     : OperationResult<PaymentDto>.Created(created, "Ghi nhận thanh toán thành công.");
+        }
+    }
+
+    public async Task<OperationResult<PaymentDto>> PayByStudentAsync(
+        int maHocPhi,
+        string maHocVien,
+        StudentPayRequest request,
+        CancellationToken cancellationToken)
+    {
+        var code = TextValue.Required(maHocVien);
+
+        if (code is null)
+        {
+            return OperationResult<PaymentDto>.Forbidden(
+                "Không xác định được học viên từ token.");
+        }
+
+        // ---- (1) Phiếu học phí phải thuộc CHÍNH học viên này ----
+        var hocPhi = await _tuitionFeeStore.GetDetailAsync(maHocPhi, cancellationToken);
+
+        // 404 thay vì 403 để không lộ sự tồn tại của phiếu của người khác.
+        if (hocPhi is null || !string.Equals(hocPhi.MaHocVien, code, StringComparison.Ordinal))
+        {
+            return OperationResult<PaymentDto>.NotFound($"Không tìm thấy học phí có id = {maHocPhi}.");
+        }
+
+        if (string.Equals(hocPhi.TrangThaiHocPhi, TuitionStatuses.DaThanhToan, StringComparison.Ordinal)
+            || hocPhi.SoTienConThieu <= 0m)
+        {
+            return OperationResult<PaymentDto>.Conflict(
+                "Học phí này đã được thanh toán đủ, không cần đóng thêm.");
+        }
+
+        // ---- (2) Số tiền ----
+        if (request.SoTien <= 0m)
+        {
+            return OperationResult<PaymentDto>.BadRequest(
+                "Số tiền không hợp lệ.",
+                ["Số tiền phải lớn hơn 0."]);
+        }
+
+        if (decimal.Round(request.SoTien, 2) != request.SoTien)
+        {
+            return OperationResult<PaymentDto>.BadRequest(
+                "Số tiền không hợp lệ.",
+                ["Số tiền chỉ được có tối đa 2 chữ số thập phân."]);
+        }
+
+        if (request.SoTien > hocPhi.SoTienConThieu)
+        {
+            return OperationResult<PaymentDto>.BadRequest(
+                "Số tiền vượt quá số còn thiếu.",
+                [$"Số còn thiếu của phiếu này là {hocPhi.SoTienConThieu:N0}."]);
+        }
+
+        // ---- (3) Phương thức (chỉ các phương thức chuẩn của cổng mô phỏng) ----
+        var phuongThuc = TextValue.Required(request.PhuongThucThanhToan);
+
+        if (phuongThuc is null || !PaymentMethods.IsValid(phuongThuc))
+        {
+            return OperationResult<PaymentDto>.BadRequest(
+                "Phương thức thanh toán không hợp lệ.",
+                [$"Chỉ chấp nhận: {string.Join(", ", PaymentMethods.StudentSelfServe)}."]);
+        }
+
+        // ---- (4) Khoá chống trùng ----
+        var maGiaoDich = TextValue.Required(request.MaGiaoDich);
+
+        if (maGiaoDich is null || maGiaoDich.Length is < 3 or > 150)
+        {
+            return OperationResult<PaymentDto>.BadRequest(
+                "Mã giao dịch không hợp lệ.",
+                ["Mã giao dịch phải từ 3 đến 150 ký tự."]);
+        }
+
+        // ---- (5) Người ghi nhận: nhân viên kế toán hệ thống ----
+        if (!await _referenceStore.StaffExistsAsync(SystemCollectorCode, cancellationToken))
+        {
+            return OperationResult<PaymentDto>.BadRequest(
+                "Thiếu nhân viên kế toán hệ thống.",
+                [
+                    $"Không tìm thấy nhân viên '{SystemCollectorCode}' trong bảng NhanVien. " +
+                    "Hãy bổ sung nhân viên kế toán trước khi bật thanh toán mô phỏng."
+                ]);
+        }
+
+        var data = new PaymentWriteData(
+            MaHocPhi: maHocPhi,
+            MaNhanVienKeToan: SystemCollectorCode,
+            SoTien: request.SoTien,
+            PhuongThucThanhToan: phuongThuc.Trim(),
+            MaGiaoDich: maGiaoDich,
+            LoaiGiaoDich: PaymentTypes.ThuTien,
+            GhiChu: $"Thanh toán mô phỏng do học viên {code} thực hiện",
+            NoiDungBienNhan: $"Thu học phí – {hocPhi.TenKhoaHoc}");
+
+        var result = await _paymentStore.RecordAsync(data, cancellationToken);
+
+        switch (result.Status)
+        {
+            case PaymentWriteStatus.TuitionNotFound:
+                return OperationResult<PaymentDto>.NotFound(
+                    $"Không tìm thấy học phí có id = {maHocPhi}.");
+
+            case PaymentWriteStatus.ExceedsBalance:
+                return OperationResult<PaymentDto>.Conflict(
+                    $"Số tiền vượt quá số dư còn thiếu ({result.SoTienConThieu:N0}).");
+
+            case PaymentWriteStatus.Duplicate:
+                return await HandleDuplicateAsync(maHocPhi, result.MaThanhToan, cancellationToken);
+
+            case PaymentWriteStatus.Conflict:
+                return OperationResult<PaymentDto>.Conflict(
+                    "Không thể ghi nhận thanh toán do xung đột dữ liệu. Vui lòng thử lại.");
+
+            default:
+                var created = await _paymentStore.GetDetailAsync(result.MaThanhToan, cancellationToken);
+
+                return created is null
+                    ? OperationResult<PaymentDto>.Conflict("Đã ghi thanh toán nhưng không đọc lại được giao dịch.")
+                    : OperationResult<PaymentDto>.Created(created, "Thanh toán mô phỏng thành công.");
         }
     }
 

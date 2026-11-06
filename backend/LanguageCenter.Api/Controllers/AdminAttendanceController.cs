@@ -8,16 +8,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace LanguageCenter.Api.Controllers;
 
 /// <summary>
-/// Điểm danh — Quản trị viên, Nhân viên học vụ, Giáo viên, Trợ giảng.
-/// <para>Giáo viên / Trợ giảng chỉ điểm danh được ca của mình hoặc lớp mình được phân công.</para>
+/// Điểm danh — Quản trị viên, Nhân viên học vụ, Trợ giảng.
+/// <para>
+/// GIÁO VIÊN KHÔNG điểm danh (theo yêu cầu nghiệp vụ): việc điểm danh do Trợ giảng phụ trách.
+/// </para>
+/// <para>Trợ giảng chỉ điểm danh được ca của mình hoặc lớp mình được phân công.</para>
 /// </summary>
 [ApiController]
 [Route("api/admin")]
 [Authorize(Roles = RoleNames.QuanTriVien
                    + ","
                    + RoleNames.NhanVienHocVu
-                   + ","
-                   + RoleNames.GiaoVien
                    + ","
                    + RoleNames.TroGiang)]
 public sealed class AdminAttendanceController : ControllerBase

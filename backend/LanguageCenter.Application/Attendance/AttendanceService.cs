@@ -8,12 +8,17 @@ namespace LanguageCenter.Application.Attendance;
 
 /// <inheritdoc cref="IAttendanceService"/>
 /// <remarks>
-/// QUY TẮC QUYỀN (Phase 5):
+/// QUY TẮC QUYỀN:
 /// <list type="bullet">
 /// <item>Quản trị viên / Nhân viên học vụ: điểm danh mọi ca.</item>
-/// <item>Giáo viên / Trợ giảng: chỉ ca mình là người dạy thực tế, hoặc lớp mình đang được phân công.</item>
+/// <item>Trợ giảng: chỉ ca mình là người dạy thực tế, hoặc lớp mình đang được phân công.</item>
+/// <item>Giáo viên: KHÔNG điểm danh — việc này do Trợ giảng phụ trách.</item>
 /// <item>Học viên: không được điểm danh.</item>
 /// </list>
+/// <para>
+/// Lưu điểm danh thành công sẽ TỰ CHỐT ca học sang <c>Đã hoàn thành</c>
+/// (trừ ca đã hủy / đã hoàn thành trước đó).
+/// </para>
 /// </remarks>
 public sealed class AttendanceService : IAttendanceService
 {
@@ -144,6 +149,15 @@ public sealed class AttendanceService : IAttendanceService
         {
             return OperationResult<SessionAttendanceSheetDto>.Conflict(
                 "Không thể lưu điểm danh do ràng buộc dữ liệu.");
+        }
+
+        // Điểm danh xong => chốt luôn ca học sang "Đã hoàn thành" để báo cáo/tiến độ đúng.
+        // Không đụng tới ca Đã hủy và ca đã hoàn thành từ trước.
+        if (session.TrangThai != SessionStatuses.DaHuy
+            && session.TrangThai != SessionStatuses.DaHoanThanh)
+        {
+            await _sessionStore.UpdateStatusAsync(
+                maCaHoc, SessionStatuses.DaHoanThanh, cancellationToken);
         }
 
         var sheet = await _attendanceStore.GetSheetAsync(maCaHoc, cancellationToken);

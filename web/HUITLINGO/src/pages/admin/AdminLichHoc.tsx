@@ -2,16 +2,28 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Icon } from '../../components/BieuTuong'
 import { ThoiKhoaBieuTuan, dungLichTuan } from '../../components/ThoiKhoaBieuTuan'
-import { Bang, LOP_INPUT, LOP_NHAN, Nhan, TrangTieuDe, type CotBang } from '../../components/ui'
+import {
+  Bang,
+  LOP_INPUT,
+  LOP_NHAN,
+  LOP_NUT_PHU,
+  Nhan,
+  TrangTieuDe,
+  type CotBang,
+} from '../../components/ui'
+import { dungToast } from '../../components/ui/toast'
 import { caHocApi, lopHocApi } from '../../lib/api/endpoints'
 import type { ClassListItem, SessionListItem } from '../../lib/api/types'
 import { LOAI_BUOI, tenThu } from '../../lib/constants'
 import { dinhDangKhoangGio, dinhDangNgay } from '../../lib/format'
-import { dungDuLieu } from '../../lib/useApi'
+import { dungDuLieu, thongDiepLoi } from '../../lib/useApi'
 
 export function AdminLichHoc() {
+  const { hien } = dungToast()
+
   const [maLopHoc, setMaLopHoc] = useState('')
   const [loaiBuoi, setLoaiBuoi] = useState('')
+  const [dangChot, setDangChot] = useState(false)
 
   const dsLop = dungDuLieu(async () => {
     const kq = await lopHocApi.danhSach({ page: 1, pageSize: 200 })
@@ -52,6 +64,27 @@ export function AdminLichHoc() {
       `${a.ngayHoc}${a.gioBatDau}`.localeCompare(`${b.ngayHoc}${b.gioBatDau}`),
     )
   }, [lich.duLieu, loaiBuoi])
+
+  /** Chốt trạng thái: buổi đã qua → Đã hoàn thành, buổi chưa tới → Chưa diễn ra. */
+  const chotBuoiDaQua = async () => {
+    setDangChot(true)
+
+    try {
+      const kq = await caHocApi.chotBuoiDaQua(maLopHoc ? Number(maLopHoc) : undefined)
+
+      hien(
+        `Đã chốt ${kq.soCaDaChot} buổi đã qua sang "Đã hoàn thành"` +
+          (kq.soCaMoLai > 0 ? `, mở lại ${kq.soCaMoLai} buổi về "Chưa diễn ra".` : '.'),
+        'thanhCong',
+      )
+
+      lich.taiLai()
+    } catch (error) {
+      hien(thongDiepLoi(error), 'loi')
+    } finally {
+      setDangChot(false)
+    }
+  }
 
   const cot: CotBang<SessionListItem>[] = [
     {
@@ -103,6 +136,10 @@ export function AdminLichHoc() {
         r.loaiBuoi === 'Buổi thi' ? (
           <span className="rounded-full bg-violet-100 px-2 py-0.5 text-xs font-bold text-violet-700">
             Buổi thi {r.soBuoi ? `· ${r.soBuoi}` : ''}
+          </span>
+        ) : r.loaiBuoi === 'Kiểm tra' ? (
+          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-bold text-amber-700">
+            Kiểm tra {r.soBuoi ? `· ${r.soBuoi}` : ''}
           </span>
         ) : (
           <span className="text-xs text-slate-600">Buổi {r.soBuoi ?? '—'}</span>
@@ -166,6 +203,19 @@ export function AdminLichHoc() {
               </option>
             ))}
           </select>
+        </div>
+
+        <div className="sm:w-auto">
+          <button
+            type="button"
+            onClick={() => void chotBuoiDaQua()}
+            disabled={dangChot}
+            className={`${LOP_NUT_PHU} h-10`}
+            title="Buổi đã qua → Đã hoàn thành; buổi chưa tới ngày → Chưa diễn ra"
+          >
+            <Icon name="calendarCheck" className="size-4" />
+            {dangChot ? 'Đang chốt…' : 'Chốt buổi đã qua'}
+          </button>
         </div>
       </section>
 

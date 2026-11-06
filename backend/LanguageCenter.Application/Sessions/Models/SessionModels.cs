@@ -303,6 +303,30 @@ public sealed class SyncSessionTeachersRequest
     public int MaLopHoc { get; set; }
 }
 
+/// <summary>Body của <c>POST /api/admin/sessions/settle</c> (null = toàn bộ lớp).</summary>
+public sealed class SettleSessionsRequest
+{
+    [Range(1, int.MaxValue, ErrorMessage = "Lớp học không hợp lệ.")]
+    public int? MaLopHoc { get; set; }
+}
+
+/// <summary>
+/// Kết quả chốt trạng thái ca học theo ngày:
+/// buổi đã qua → "Đã hoàn thành", buổi chưa tới ngày → "Chưa diễn ra".
+/// </summary>
+public sealed class SettleSessionsResponse
+{
+    public DateOnly NgayChot { get; init; }
+
+    public int? MaLopHoc { get; init; }
+
+    /// <summary>Số ca chuyển sang "Đã hoàn thành" (ngày đã qua).</summary>
+    public int SoCaDaChot { get; init; }
+
+    /// <summary>Số ca mở lại thành "Chưa diễn ra" (ngày còn ở tương lai).</summary>
+    public int SoCaMoLai { get; init; }
+}
+
 /// <summary>
 /// Kết quả đồng bộ giáo viên cho các ca CHƯA diễn ra theo quy ước
 /// "buổi đầu tuần = GV nước ngoài, buổi còn lại = GV chính".

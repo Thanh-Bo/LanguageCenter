@@ -175,7 +175,12 @@ public sealed class FormDiemDanh : Form
         _sheet = result.Data;
 
         var nhanBuoi = _sheet.SoBuoi is { } soBuoi ? $" · Buổi {soBuoi}" : string.Empty;
-        var nhanThi = _sheet.LoaiBuoi == "Buổi thi" ? " · BUỔI THI" : string.Empty;
+        var nhanThi = _sheet.LoaiBuoi switch
+        {
+            "Buổi thi" => " · BUỔI THI",
+            "Kiểm tra" => " · KIỂM TRA",
+            _ => string.Empty
+        };
 
         _lblTieuDe.Text = $"ĐIỂM DANH — {_sheet.TenLop} · {_sheet.NgayHoc:dd/MM/yyyy} · "
                           + $"{_sheet.GioBatDau:HH\\:mm}–{_sheet.GioKetThuc:HH\\:mm}"

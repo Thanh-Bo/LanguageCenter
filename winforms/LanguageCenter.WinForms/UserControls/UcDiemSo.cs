@@ -201,7 +201,7 @@ public partial class UcDiemSo : UserControl
                 ("pageSize", "500")));
 
         var buoiThi = (dsCa.Data?.Items ?? Array.Empty<SessionListItemDto>())
-            .Where(s => s.LoaiBuoi == "Buổi thi")
+            .Where(s => s.LoaiBuoi is "Buổi thi" or "Kiểm tra")
             .ToList();
 
         using var dlg = new FormNhapDiem(hocVien, _report.ThanhPhan, map, _teachers, gvMacDinh, buoiThi);

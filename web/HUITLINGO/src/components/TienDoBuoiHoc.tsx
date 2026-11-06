@@ -35,19 +35,22 @@ export function ChuThichMau() {
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
       <span className={o}>
-        <span className="size-3 rounded border border-emerald-200 bg-emerald-50" /> Đã học
+        <span className="size-3.5 rounded border-2 border-emerald-400 bg-emerald-100" /> Đã học
       </span>
       <span className={o}>
-        <span className="size-3 rounded border border-slate-200 bg-white" /> Chưa tới
+        <span className="size-3.5 rounded border-2 border-slate-300 bg-white" /> Chưa tới
       </span>
       <span className={o}>
-        <span className="size-3 rounded border border-violet-300 bg-violet-50" /> Buổi thi
+        <span className="size-3.5 rounded border-2 border-amber-500 bg-amber-100" /> Kiểm tra
       </span>
       <span className={o}>
-        <span className="size-3 rounded border-2 border-blue-500 bg-blue-50" /> Buổi hiện tại
+        <span className="size-3.5 rounded border-2 border-violet-500 bg-violet-100" /> Buổi thi
       </span>
       <span className={o}>
-        <span className="size-3 rounded border border-rose-200 bg-rose-50" /> Đã hủy
+        <span className="size-3.5 rounded border-2 border-blue-500 bg-blue-100" /> Buổi hiện tại
+      </span>
+      <span className={o}>
+        <span className="size-3.5 rounded border-2 border-rose-400 bg-rose-100" /> Đã hủy
       </span>
     </div>
   )
