@@ -34,6 +34,23 @@ public interface ISessionService
         GenerateSessionsRequest request,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Gợi ý thông tin ca kế tiếp của lớp theo lịch định kỳ
+    /// (buổi thứ mấy, ngày, giờ, phòng, giáo viên, trợ giảng, nội dung, loại buổi).
+    /// </summary>
+    Task<OperationResult<SessionSuggestionDto>> GetSuggestionAsync(
+        int maLopHoc,
+        int maLichHoc,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Đồng bộ nội dung bài học từ syllabus của khóa cho các ca CHƯA DIỄN RA.
+    /// Trả về số ca đã cập nhật.
+    /// </summary>
+    Task<OperationResult<int>> SyncLessonContentsAsync(
+        int maKhoaHoc,
+        CancellationToken cancellationToken);
+
     /// <summary>Lịch của lớp mà học viên đang theo học.</summary>
     Task<OperationResult<IReadOnlyList<SessionListItemDto>>> ListForStudentAsync(
         string maHocVien,

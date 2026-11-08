@@ -11,12 +11,30 @@ public partial class UcGiaoVien : UserControl
     private int _currentPage = 1;
     private int _totalPages = 1;
 
+    /// <summary>Loại hồ sơ màn hình này quản lý: Giáo viên / Giáo viên nước ngoài.</summary>
+    private readonly string _loaiGiaoVien;
+
     private readonly Button _btnSua;
     private readonly Button _btnXoa;
 
-    public UcGiaoVien()
+    public UcGiaoVien() : this(TeacherTypes.GiaoVien)
     {
+    }
+
+    public UcGiaoVien(string loaiGiaoVien)
+    {
+        _loaiGiaoVien = loaiGiaoVien;
+
         InitializeComponent();
+
+        // Nhãn theo loại hồ sơ để người dùng biết đang ở tab nào.
+        var danhXung = loaiGiaoVien == TeacherTypes.GiaoVienNuocNgoai
+            ? "giáo viên nước ngoài"
+            : "giáo viên";
+
+        btnAdd.Text = $"+ Thêm {danhXung}";
+        txtSearch.PlaceholderText = $"Tìm {danhXung} theo mã, họ tên hoặc email...";
+        lblPageInfo.Text = string.Empty;
 
         UI.UiHelpers.StyleGrid(dgvTeachers);
         dgvTeachers.CellDoubleClick += DgvTeachers_CellDoubleClick;
@@ -98,7 +116,7 @@ public partial class UcGiaoVien : UserControl
             ("page", _currentPage.ToString()),
             ("pageSize", PageSize.ToString()),
             ("search", txtSearch.Text.Trim()),
-            ("loaiGiaoVien", TeacherTypes.GiaoVien),
+            ("loaiGiaoVien", _loaiGiaoVien),
             // Lọc trạng thái Ở SERVER: lọc sau khi phân trang chỉ đúng 20 dòng/trang.
             ("trangThai", status == AllOption ? null : status));
 
@@ -149,7 +167,7 @@ public partial class UcGiaoVien : UserControl
     private async void BtnAdd_Click(object? sender, EventArgs e)
     {
         // Tab Giáo viên: loại cố định "Giáo viên".
-        using var dialog = new FormSuaGiaoVien(laTroGiang: false);
+        using var dialog = new FormSuaGiaoVien(_loaiGiaoVien);
         dialog.ShowDialog(FindForm());
 
         if (dialog.DataChanged)
@@ -167,7 +185,7 @@ public partial class UcGiaoVien : UserControl
 
         var teacherId = Convert.ToString(dgvTeachers.Rows[e.RowIndex].Cells["MaGiaoVien"].Value) ?? string.Empty;
 
-        using var dialog = new FormSuaGiaoVien(teacherId, laTroGiang: false);
+        using var dialog = new FormSuaGiaoVien(teacherId, _loaiGiaoVien);
         dialog.ShowDialog(FindForm());
 
         if (dialog.DataChanged)
@@ -211,7 +229,7 @@ public partial class UcGiaoVien : UserControl
             return;
         }
 
-        using var dialog = new FormSuaGiaoVien(maGiaoVien, laTroGiang: false);
+        using var dialog = new FormSuaGiaoVien(maGiaoVien, _loaiGiaoVien);
         dialog.ShowDialog(FindForm());
 
         if (dialog.DataChanged)

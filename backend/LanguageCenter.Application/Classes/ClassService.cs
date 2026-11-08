@@ -57,7 +57,8 @@ public sealed class ClassService : IClassService
             request.SiSoToiDa,
             request.NgayBatDau,
             request.NgayKetThucDuKien,
-            ngayKetThucThucTe: null);
+            ngayKetThucThucTe: null,
+            kiemTraNgayBatDauQuaKhu: true);
 
         ValidateGioHoc(request.GioBatDau, request.GioKetThuc, errors);
         ValidateThuHoc(request.ThuBuoi1, request.ThuBuoi2, errors);
@@ -141,7 +142,10 @@ public sealed class ClassService : IClassService
             request.SiSoToiDa ?? current.SiSoToiDa,
             request.NgayBatDau ?? current.NgayBatDau,
             request.NgayKetThucDuKien ?? current.NgayKetThucDuKien,
-            request.NgayKetThucThucTe ?? current.NgayKetThucThucTe);
+            request.NgayKetThucThucTe ?? current.NgayKetThucThucTe,
+            // Chỉ chặn quá khứ khi client THỰC SỰ gửi ngày bắt đầu mới;
+            // lớp đã chạy từ trước vẫn sửa được các trường khác.
+            kiemTraNgayBatDauQuaKhu: request.NgayBatDau is not null);
 
         ValidateGioHoc(
             request.GioBatDau ?? current.GioBatDau,
@@ -261,7 +265,8 @@ public sealed class ClassService : IClassService
         int siSoToiDa,
         DateOnly ngayBatDau,
         DateOnly ngayKetThucDuKien,
-        DateOnly? ngayKetThucThucTe)
+        DateOnly? ngayKetThucThucTe,
+        bool kiemTraNgayBatDauQuaKhu = false)
     {
         var errors = new List<string>();
 
@@ -273,6 +278,11 @@ public sealed class ClassService : IClassService
         if (ngayBatDau == default)
         {
             errors.Add("Ngày bắt đầu là bắt buộc.");
+        }
+        else if (kiemTraNgayBatDauQuaKhu && ngayBatDau < DateOnly.FromDateTime(DateTime.Today))
+        {
+            // Lớp chưa thể bắt đầu trước hôm nay.
+            errors.Add($"Ngày bắt đầu không được ở quá khứ (hôm nay {DateOnly.FromDateTime(DateTime.Today):dd/MM/yyyy}).");
         }
 
         if (ngayKetThucDuKien == default)

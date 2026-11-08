@@ -15,7 +15,10 @@ public enum NavItem
     Tuition,
     Students,
     Teachers,
+    ForeignTeachers,
     Assistants,
+    Employees,
+    Accountants,
     Notifications,
     Reports,
     Accounts,
@@ -41,6 +44,9 @@ public partial class FormChinh : Form
     {
         InitializeComponent();
         WireEvents();
+
+        // Chuẩn hoá dd/MM/yyyy cho mọi ô ngày của form chính + mọi control con thêm vào sau này.
+        UI.UiHelpers.ApDungDinhDangNgay(this);
     }
 
     private void WireEvents()
@@ -55,7 +61,10 @@ public partial class FormChinh : Form
         btnNavTuition.Click += (_, _) => NavigateTo(NavItem.Tuition);
         btnNavStudents.Click += (_, _) => NavigateTo(NavItem.Students);
         btnNavTeachers.Click += (_, _) => NavigateTo(NavItem.Teachers);
+        btnNavForeignTeachers.Click += (_, _) => NavigateTo(NavItem.ForeignTeachers);
         btnNavAssistants.Click += (_, _) => NavigateTo(NavItem.Assistants);
+        btnNavEmployees.Click += (_, _) => NavigateTo(NavItem.Employees);
+        btnNavAccountants.Click += (_, _) => NavigateTo(NavItem.Accountants);
         btnNavNotifications.Click += (_, _) => NavigateTo(NavItem.Notifications);
         btnNavReports.Click += (_, _) => NavigateTo(NavItem.Reports);
         btnNavAccounts.Click += (_, _) => NavigateTo(NavItem.Accounts);
@@ -191,7 +200,10 @@ public partial class FormChinh : Form
             (btnNavTuition, NavItem.Tuition),
             (btnNavStudents, NavItem.Students),
             (btnNavTeachers, NavItem.Teachers),
+            (btnNavForeignTeachers, NavItem.ForeignTeachers),
             (btnNavAssistants, NavItem.Assistants),
+            (btnNavEmployees, NavItem.Employees),
+            (btnNavAccountants, NavItem.Accountants),
             (btnNavNotifications, NavItem.Notifications),
             (btnNavReports, NavItem.Reports),
             (btnNavAccounts, NavItem.Accounts),
@@ -231,6 +243,13 @@ public partial class FormChinh : Form
 
         // Sao lưu / phục hồi database: CHỈ Quản trị viên (đã trả true ở trên).
         if (item == NavItem.Backups)
+        {
+            return false;
+        }
+
+        // Quản lý nhân viên học vụ / kế toán: API CRUD chỉ cho Quản trị viên
+        // (/api/admin/employees/list, POST, PATCH, DELETE).
+        if (item == NavItem.Employees || item == NavItem.Accountants)
         {
             return false;
         }
@@ -277,8 +296,11 @@ public partial class FormChinh : Form
             NavItem.Grades => new UcDiemSo(),
             NavItem.Tuition => new UcHocPhi(),
             NavItem.Students => new UcHocVien(),
-            NavItem.Teachers => new UcGiaoVien(),
+            NavItem.Teachers => new UcGiaoVien(TeacherTypes.GiaoVien),
+            NavItem.ForeignTeachers => new UcGiaoVien(TeacherTypes.GiaoVienNuocNgoai),
             NavItem.Assistants => new UcTroGiang(),
+            NavItem.Employees => new UcNhanVien(StaffPositions.NhanVienHocVu),
+            NavItem.Accountants => new UcNhanVien(StaffPositions.NhanVienKeToan),
             NavItem.Notifications => new UcThongBao(),
             NavItem.Reports => new UcBaoCao(),
             NavItem.Accounts => new UcTaiKhoan(),
@@ -298,7 +320,10 @@ public partial class FormChinh : Form
             NavItem.Tuition => "Quản lý học phí",
             NavItem.Students => "Quản lý hồ sơ học viên",
             NavItem.Teachers => "Quản lý hồ sơ giáo viên",
+            NavItem.ForeignTeachers => "Quản lý giáo viên nước ngoài",
             NavItem.Assistants => "Quản lý hồ sơ trợ giảng",
+            NavItem.Employees => "Quản lý nhân viên học vụ",
+            NavItem.Accountants => "Quản lý nhân viên kế toán",
             NavItem.Notifications => "Quản lý thông báo & tin tức nội bộ",
             NavItem.Reports => "Báo cáo thống kê & tài chính",
             NavItem.Accounts => "Quản lý tài khoản hệ thống",
@@ -309,6 +334,9 @@ public partial class FormChinh : Form
         view.Dock = DockStyle.Fill;
         pnlContent.Controls.Add(view);
         _currentView = view;
+
+        // Màn hình được tạo động nên DateTimePicker (nếu có) chưa qua hook của dialog.
+        UI.UiHelpers.ApDungDinhDangNgay(view);
     }
 
     private void HighlightActiveButton(NavItem item)
@@ -323,7 +351,10 @@ public partial class FormChinh : Form
         ResetNavButton(btnNavTuition);
         ResetNavButton(btnNavStudents);
         ResetNavButton(btnNavTeachers);
+        ResetNavButton(btnNavForeignTeachers);
         ResetNavButton(btnNavAssistants);
+        ResetNavButton(btnNavEmployees);
+        ResetNavButton(btnNavAccountants);
         ResetNavButton(btnNavNotifications);
         ResetNavButton(btnNavReports);
         ResetNavButton(btnNavAccounts);
@@ -341,7 +372,10 @@ public partial class FormChinh : Form
             NavItem.Tuition => btnNavTuition,
             NavItem.Students => btnNavStudents,
             NavItem.Teachers => btnNavTeachers,
+            NavItem.ForeignTeachers => btnNavForeignTeachers,
             NavItem.Assistants => btnNavAssistants,
+            NavItem.Employees => btnNavEmployees,
+            NavItem.Accountants => btnNavAccountants,
             NavItem.Notifications => btnNavNotifications,
             NavItem.Reports => btnNavReports,
             NavItem.Accounts => btnNavAccounts,

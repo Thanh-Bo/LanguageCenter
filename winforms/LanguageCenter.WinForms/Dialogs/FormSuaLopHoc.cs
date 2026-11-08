@@ -16,6 +16,7 @@ public partial class FormSuaLopHoc : Form
     {
         _existingClass = existing;
         InitializeComponent();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         btnSave.Click += BtnSave_Click;
         btnCancel.Click += (_, _) => DialogResult = DialogResult.Cancel;
         if (_existingClass != null)

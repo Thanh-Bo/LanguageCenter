@@ -194,6 +194,7 @@ partial class UcLichHoc
         dgvSchedules.Visible = false;
         dgvSchedules.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaLop", HeaderText = "Mã lớp", FillWeight = 85 });
         dgvSchedules.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenLop", HeaderText = "Lớp học", FillWeight = 160 });
+        dgvSchedules.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenKhoaHoc", HeaderText = "Khóa học", FillWeight = 150 });
         dgvSchedules.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenPhong", HeaderText = "Phòng học", FillWeight = 90 });
         dgvSchedules.Columns.Add(new DataGridViewTextBoxColumn { Name = "ThuText", HeaderText = "Thứ học trong tuần", FillWeight = 170 });
         dgvSchedules.Columns.Add(new DataGridViewTextBoxColumn { Name = "KhungGio", HeaderText = "Khung giờ học", FillWeight = 120 });

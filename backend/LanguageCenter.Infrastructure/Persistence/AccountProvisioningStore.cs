@@ -35,6 +35,12 @@ public sealed class AccountProvisioningStore : IAccountProvisioningStore
     private const string StudentPrefix = "HV";
     private const string TeacherPrefix = "GV";
     private const string AssistantPrefix = "TG";
+    private const string EmployeeHocVuPrefix = "NVHV";
+    private const string EmployeeTuVanPrefix = "NVTV";
+    private const string EmployeeKeToanPrefix = "NVKT";
+
+    /// <summary>Đuôi email nội bộ tự sinh khi học viên chưa có email (thường là học viên nhỏ tuổi).</summary>
+    private const string InternalEmailSuffix = "@trungtam.edu.vn";
 
     private readonly AppDbContext _dbContext;
 
@@ -68,6 +74,17 @@ public sealed class AccountProvisioningStore : IAccountProvisioningStore
             cancellationToken,
             (code, maVaiTro) => StageTeacher(code, maVaiTro, data, matKhauHash));
     }
+
+    public Task<ProvisionResult> CreateEmployeeAsync(
+        EmployeeProvisionData data,
+        string matKhauHash,
+        CancellationToken cancellationToken)
+        => ProvisionAsync(
+            data.TienTo,
+            data.VaiTro,
+            data.Email,
+            cancellationToken,
+            (code, maVaiTro) => StageEmployee(code, maVaiTro, data, matKhauHash));
 
     // ========================================================================
     // CORE
@@ -115,7 +132,9 @@ public sealed class AccountProvisioningStore : IAccountProvisioningStore
 
                 // Kiểm tra email NGAY TRONG transaction để thu hẹp cửa sổ race condition.
                 // Sau đó ràng buộc UNIQUE của database vẫn là chốt cuối.
-                if (await _dbContext.TaiKhoans.AnyAsync(taiKhoan => taiKhoan.Email == email, cancellationToken))
+                // Email rỗng = học viên nhỏ tuổi chưa có email → sẽ tự sinh <mã>@trungtam.edu.vn.
+                if (!string.IsNullOrWhiteSpace(email)
+                    && await _dbContext.TaiKhoans.AnyAsync(taiKhoan => taiKhoan.Email == email, cancellationToken))
                 {
                     await SafeRollbackAsync(transaction);
                     return ProvisionResult.Failure(ProvisionFailureReason.EmailAlreadyExists);
@@ -138,7 +157,7 @@ public sealed class AccountProvisioningStore : IAccountProvisioningStore
                 // KHÔNG nhận diện theo tên index (tên do SQL Server tự sinh, khác nhau giữa các máy).
                 // Kiểm tra lại email: nếu email đã tồn tại -> đây là lỗi trùng EMAIL, trả luôn.
                 // Ngược lại -> trùng MÃ do request đồng thời, thử lại với mã kế tiếp.
-                if (await IsEmailTakenAsync(email, cancellationToken))
+                if (!string.IsNullOrWhiteSpace(email) && await IsEmailTakenAsync(email, cancellationToken))
                 {
                     return ProvisionResult.Failure(ProvisionFailureReason.EmailAlreadyExists);
                 }
@@ -175,6 +194,10 @@ public sealed class AccountProvisioningStore : IAccountProvisioningStore
             StudentPrefix => _dbContext.HocViens
                 .Where(hocVien => EF.Functions.Like(hocVien.MaHocVien, pattern))
                 .Select(hocVien => hocVien.MaHocVien),
+
+            EmployeeHocVuPrefix or EmployeeTuVanPrefix or EmployeeKeToanPrefix => _dbContext.NhanViens
+                .Where(nhanVien => EF.Functions.Like(nhanVien.MaNhanVien, pattern))
+                .Select(nhanVien => nhanVien.MaNhanVien),
 
             _ => _dbContext.GiaoViens
                 .Where(giaoVien => EF.Functions.Like(giaoVien.MaGiaoVien, pattern))
@@ -234,12 +257,18 @@ public sealed class AccountProvisioningStore : IAccountProvisioningStore
 
     private void StageStudent(string code, int maVaiTro, StudentProvisionData data, string matKhauHash)
     {
+        // Học viên dưới 18 tuổi có thể không có email → tự sinh email nội bộ theo mã học viên.
+        // Nhờ vậy cột TaiKhoan.Email (NOT NULL + UNIQUE) vẫn thoả mà người dùng không phải nhập.
+        var email = string.IsNullOrWhiteSpace(data.Email)
+            ? code + InternalEmailSuffix
+            : data.Email;
+
         _dbContext.TaiKhoans.Add(new TaiKhoan
         {
             MaVaiTro = maVaiTro,
             TenDangNhap = code,
             MatKhauHash = matKhauHash,
-            Email = data.Email,
+            Email = email,
             TrangThaiTaiKhoan = AccountStatuses.HoatDong
         });
 
@@ -267,7 +296,7 @@ public sealed class AccountProvisioningStore : IAccountProvisioningStore
             HoTen = data.HoTen,
             NgaySinh = data.NgaySinh,
             GioiTinh = data.GioiTinh,
-            Email = data.Email,
+            Email = email,
             SoDienThoai = data.SoDienThoai,
             DiaChi = data.DiaChi,
             MucTieuHocTap = data.MucTieuHocTap,
@@ -305,7 +334,38 @@ public sealed class AccountProvisioningStore : IAccountProvisioningStore
             ChuyenMon = data.ChuyenMon,
             SoNamKinhNghiem = data.SoNamKinhNghiem,
             NgayVaoLam = data.NgayVaoLam,
-            TrangThai = data.TrangThai
+            TrangThai = data.TrangThai,
+            GhiChuBangCap = data.GhiChuBangCap
+        });
+    }
+
+    /// <summary>
+    /// Nhân viên: <c>MaNhanVien</c> vừa là PK vừa là FK trỏ tới <c>TaiKhoan.TenDangNhap</c>
+    /// (xem <c>NhanVienConfiguration</c>) → INSERT TaiKhoan phải đứng trước.
+    /// </summary>
+    private void StageEmployee(string code, int maVaiTro, EmployeeProvisionData data, string matKhauHash)
+    {
+        _dbContext.TaiKhoans.Add(new TaiKhoan
+        {
+            MaVaiTro = maVaiTro,
+            TenDangNhap = code,
+            MatKhauHash = matKhauHash,
+            Email = data.Email,
+            TrangThaiTaiKhoan = AccountStatuses.HoatDong
+        });
+
+        _dbContext.NhanViens.Add(new NhanVien
+        {
+            MaNhanVien = code,
+            HoTen = data.HoTen,
+            NgaySinh = data.NgaySinh,
+            GioiTinh = data.GioiTinh,
+            Email = data.Email,
+            SoDienThoai = data.SoDienThoai,
+            DiaChi = data.DiaChi,
+            ChucVu = data.ChucVu,
+            NgayVaoLam = data.NgayVaoLam,
+            TrangThaiLamViec = data.TrangThai
         });
     }
 }

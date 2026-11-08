@@ -10,8 +10,8 @@ namespace LanguageCenter.Application.Courses.Models;
 /// <summary>
 /// Body của <c>POST /api/admin/courses</c>.
 /// <para>
-/// <c>NgayBatDau</c> / <c>NgayKetThuc</c> là THỜI GIAN TỔ CHỨC KHÓA HỌC (chính sách),
-/// khác với thời gian của từng lớp cụ thể trong <c>LopHoc</c>.
+/// KHÔNG có ngày bắt đầu / ngày kết thúc: khóa học là KHUÔN MẪU dùng lại cho nhiều lớp.
+/// Ngày khai giảng thuộc về từng lớp (<c>LopHoc.NgayBatDau</c>).
 /// </para>
 /// </summary>
 public sealed class CreateCourseRequest
@@ -33,12 +33,6 @@ public sealed class CreateCourseRequest
 
     [Range(0, 1000000000000, ErrorMessage = "Học phí cơ bản không được âm.")]
     public decimal HocPhiCoBan { get; set; }
-
-    [Required(ErrorMessage = "Ngày bắt đầu là bắt buộc.")]
-    public DateOnly NgayBatDau { get; set; }
-
-    [Required(ErrorMessage = "Ngày kết thúc là bắt buộc.")]
-    public DateOnly NgayKetThuc { get; set; }
 }
 
 /// <summary>
@@ -60,10 +54,6 @@ public sealed class UpdateCourseRequest
 
     [Range(0, 1000000000000, ErrorMessage = "Học phí cơ bản không được âm.")]
     public decimal? HocPhiCoBan { get; set; }
-
-    public DateOnly? NgayBatDau { get; set; }
-
-    public DateOnly? NgayKetThuc { get; set; }
 }
 
 /// <summary>Tham số lọc danh sách khóa học.</summary>
@@ -107,10 +97,6 @@ public sealed class CourseListItemDto
 
     public decimal HocPhiCoBan { get; init; }
 
-    public DateOnly NgayBatDau { get; init; }
-
-    public DateOnly NgayKetThuc { get; init; }
-
     public string TrangThai { get; init; } = string.Empty;
 
     public int SoLop { get; init; }
@@ -138,10 +124,6 @@ public sealed class CourseDetailDto
     public decimal? TongSoGio { get; init; }
 
     public decimal HocPhiCoBan { get; init; }
-
-    public DateOnly NgayBatDau { get; init; }
-
-    public DateOnly NgayKetThuc { get; init; }
 
     public string TrangThai { get; init; } = string.Empty;
 

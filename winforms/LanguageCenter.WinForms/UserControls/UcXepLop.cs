@@ -36,7 +36,6 @@ public partial class UcXepLop : UserControl
 
         txtSearchPending.TextChanged += (_, _) => FilterPendingStudents();
         cboFilterCourse.SelectedIndexChanged += (_, _) => FilterPendingStudents();
-        btnEnrollSelectedPending.Click += BtnEnrollSelectedPending_Click;
         btnTuChoiDangKy.Click += BtnTuChoiDangKy_Click;
 
         _btnSuaDangKy.Click += async (_, _) => await SuaDangKyAsync();
@@ -115,8 +114,8 @@ public partial class UcXepLop : UserControl
         int right = pnlToolbar.ClientSize.Width - 20;
         btnRemoveFromClass.Location = new Point(right - btnRemoveFromClass.Width, 9);
         btnOpenEnrollDialog.Location = new Point(btnRemoveFromClass.Left - 12 - btnOpenEnrollDialog.Width, 9);
-        btnEnrollSelectedPending.Location = new Point(right - btnEnrollSelectedPending.Width, 9);
-        btnTuChoiDangKy.Location = new Point(btnEnrollSelectedPending.Left - 12 - btnTuChoiDangKy.Width, 9);
+
+        btnTuChoiDangKy.Location = new Point(right - btnTuChoiDangKy.Width, 9);
         _btnSuaDangKy.Location = new Point(btnTuChoiDangKy.Left - 12 - _btnSuaDangKy.Width, 9);
     }
 
@@ -214,9 +213,15 @@ public partial class UcXepLop : UserControl
 
         if (_currentClass is not null)
         {
-            var isFull = _currentClass.SiSoHienTai >= _currentClass.SiSoToiDa;
-            var remaining = _currentClass.SiSoToiDa - _currentClass.SiSoHienTai;
-            lblCapacityBadge.Text = $"Sĩ số: {_currentClass.SiSoHienTai}/{_currentClass.SiSoToiDa} học viên" + (isFull ? " (ĐÃ ĐẦY LỚP)" : $" (Còn {remaining} chỗ trống)");
+            // Sĩ số thực = đã xếp lớp + đang giữ chỗ (đăng ký chờ thu học phí có lớp dự kiến = lớp này).
+            var daChiemCho = _currentClass.SiSoHienTai + _currentClass.SiSoDuKien;
+            var isFull = daChiemCho >= _currentClass.SiSoToiDa;
+            var remaining = Math.Max(0, _currentClass.SiSoToiDa - daChiemCho);
+
+            lblCapacityBadge.Text = $"Sĩ số: {_currentClass.SiSoHienTai}/{_currentClass.SiSoToiDa} học viên"
+                + (_currentClass.SiSoDuKien > 0 ? $" (+{_currentClass.SiSoDuKien} giữ chỗ)" : string.Empty)
+                + (isFull ? " (ĐÃ ĐẦY LỚP)" : $" (Còn {remaining} chỗ trống)");
+
             lblCapacityBadge.ForeColor = isFull ? Theme.Danger : Theme.Success;
 
             lblClassDetails.Text = $"Khóa học: {_currentClass.TenKhoaHoc}    •    Học vụ: {_currentClass.TenNhanVienHocVu}    •    Khai giảng: {UiHelpers.FormatDate(_currentClass.NgayBatDau)}    •    Kết thúc dự kiến: {UiHelpers.FormatDate(_currentClass.NgayKetThucDuKien)}";
@@ -284,7 +289,6 @@ public partial class UcXepLop : UserControl
 
         txtSearchPending.Visible = !isInClassTab;
         cboFilterCourse.Visible = !isInClassTab;
-        btnEnrollSelectedPending.Visible = !isInClassTab;
         btnTuChoiDangKy.Visible = !isInClassTab;
         _btnSuaDangKy.Visible = !isInClassTab;
 
@@ -388,6 +392,14 @@ public partial class UcXepLop : UserControl
     /// <summary>Đổ 1 đăng ký học vào bảng "chờ xếp lớp" — đúng thứ tự cột của lưới.</summary>
     private void ThemDongChoXepLop(EnrollmentListItemDto p)
     {
+        // Học phí: chưa thu / còn thiếu / đã thu đủ.
+        var hocPhiText = p.SoTienConThieuHocPhi switch
+        {
+            null => $"{p.HocPhiSauGiam:N0} ₫",
+            0m => "Đã thu đủ",
+            var conThieu => $"{conThieu:N0} ₫ còn thiếu"
+        };
+
         var rowIdx = dgvPending.Rows.Add(
             p.MaDangKy,
             p.MaHocVien,
@@ -398,13 +410,32 @@ public partial class UcXepLop : UserControl
             p.NgaySinh == default
                 ? UiHelpers.FormatDateTime(p.NgayDangKy)
                 : $"{UiHelpers.FormatDateTime(p.NgayDangKy)} · {TinhTuoi(p.NgaySinh)} tuổi",
-            $"{p.HocPhiSauGiam:N0} ₫",
+            hocPhiText,
+            string.IsNullOrWhiteSpace(p.MaLopDuKienText) ? "— Chưa chọn —" : p.MaLopDuKienText,
             p.TrangThaiDangKy);
 
         var row = dgvPending.Rows[rowIdx];
         row.Tag = p;
-        row.Cells["HocPhi"].Style.ForeColor = Theme.Warning;
-        row.Cells["TrangThai"].Style.ForeColor = Theme.Warning;
+
+        var cellHocPhi = row.Cells["HocPhi"];
+        cellHocPhi.Style.ForeColor = p.SoTienConThieuHocPhi is 0m ? Theme.Success : Theme.Warning;
+
+        var cellLop = row.Cells["LopDuKien"];
+        cellLop.Style.ForeColor = string.IsNullOrWhiteSpace(p.MaLopDuKienText) ? Theme.Danger : Theme.TextDark;
+
+        var cellTrangThai = row.Cells["TrangThai"];
+        cellTrangThai.Style.ForeColor = Theme.Warning;
+
+        // Đã thu đủ tiền mà vẫn chờ → lớp dự kiến không xếp được (đầy / quá 4 buổi / trùng giờ / sai tuổi).
+        // Cần admin mở "Sửa đăng ký" để đổi lớp dự kiến.
+        if (p.DaThuDuChuaXepDuocLop)
+        {
+            cellTrangThai.Value = "Đã thu đủ — chưa xếp được lớp";
+            cellTrangThai.Style.ForeColor = Theme.Danger;
+            cellTrangThai.ToolTipText =
+                "Học phí đã thu đủ nhưng lớp dự kiến không còn nhận được (đầy sĩ số / quá 4 buổi / trùng giờ / sai độ tuổi).\n"
+                + "Bấm \"Sửa đăng ký\" để chọn lớp dự kiến khác — hệ thống sẽ tự xếp ngay.";
+        }
     }
 
     private void FilterPendingStudents()
@@ -480,7 +511,9 @@ public partial class UcXepLop : UserControl
             return;
         }
 
-        using var dlg = new FormDangKyHoc(hocViens, khoaHocs, _classesApi);
+        // Truyền cả danh sách đăng ký để form ẩn những học viên ĐÃ có đăng ký còn hiệu lực
+        // cho khóa đang chọn (đã ở trong lớp hoặc đang chờ xếp lớp) — tránh tạo trùng.
+        using var dlg = new FormDangKyHoc(hocViens, khoaHocs, _classesApi, _enrollApi);
 
         if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
         {
@@ -529,81 +562,14 @@ public partial class UcXepLop : UserControl
         await ReloadAsync();
     }
 
-    private async void BtnEnrollSelectedPending_Click(object? sender, EventArgs e)
-    {
-        if (_currentClass is null)
-        {
-            MessageBox.Show(FindForm(), "Vui lòng chọn lớp học mục tiêu ở thanh phía trên trước khi xếp lớp.", "Chưa chọn lớp", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        var dangKy = DangKyDangChon();
-
-        if (dangKy is null)
-        {
-            MessageBox.Show(FindForm(), "Vui lòng chọn một học viên trong danh sách chờ xếp lớp.", "Chưa chọn học viên", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
-        if (_currentClass.SiSoHienTai >= _currentClass.SiSoToiDa)
-        {
-            MessageBox.Show(FindForm(), $"Lớp {_currentClass.MaLop} đã đạt sĩ số tối đa ({_currentClass.SiSoToiDa} học viên).\nKhông thể xếp thêm học viên vào lớp này.", "Lớp đã đầy", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        // Chặn sớm: lớp đang chọn phải CÙNG KHÓA HỌC với đăng ký (backend cũng kiểm tra).
-        if (_currentClass.MaKhoaHoc != dangKy.MaKhoaHoc)
-        {
-            MessageBox.Show(FindForm(),
-                $"Đăng ký của \"{dangKy.TenHocVien}\" thuộc khóa:\n"
-                + $"   • {dangKy.TenKhoaHoc}\n\n"
-                + $"Lớp đang chọn \"{_currentClass.TenLop}\" thuộc khóa:\n"
-                + $"   • {_currentClass.TenKhoaHoc}\n\n"
-                + "Hai khóa khác nhau nên không thể xếp lớp.\n"
-                + "Hãy chọn lớp đúng khóa ở ô chọn lớp phía trên.",
-                "Khác khóa học", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        var studentName = dangKy.TenHocVien;
-
-        var confirm = MessageBox.Show(
-            FindForm(),
-            $"Xác nhận xếp học viên \"{studentName}\" vào lớp \"{_currentClass.TenLop}\"?",
-            "Xác nhận xếp lớp",
-            MessageBoxButtons.YesNo,
-            MessageBoxIcon.Question);
-
-        if (confirm != DialogResult.Yes)
-        {
-            return;
-        }
-
-        UseWaitCursor = true;
-
-        // Phase 4: gán lớp cho đăng ký học (kiểm tra sĩ số + trạng thái ở backend)
-        var result = await AppSession.Api.PatchAsync<EnrollmentListItemDto>(
-            $"admin/enrollments/{dangKy.MaDangKy}/assign-class",
-            new { maLopHoc = _currentClass.MaLopHoc });
-
-        UseWaitCursor = false;
-
-        if (!result.Success)
-        {
-            MessageBox.Show(FindForm(), result.ThongDiepDayDu(), "Xếp lớp thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            return;
-        }
-
-        await ReloadAsync();
-    }
-
     /// <summary>Đăng ký đang chọn ở bảng "chờ xếp lớp" (null nếu chưa chọn dòng nào).</summary>
     private EnrollmentListItemDto? DangKyDangChon()
         => dgvPending.CurrentRow?.Tag as EnrollmentListItemDto;
 
     /// <summary>
-    /// Sửa đăng ký học (đổi ưu đãi / ghi chú) — gọi <c>PATCH /api/admin/enrollments/{id}</c>.
-    /// Server tự tính lại số tiền giảm khi đổi ưu đãi.
+    /// Sửa đăng ký học (ghi chú) — gọi <c>PATCH /api/admin/enrollments/{id}</c>.
+    /// Ưu đãi và lịch học không sửa ở đây: ưu đãi xử lý ở màn khuyến mãi,
+    /// lịch học suy ra từ lớp đã xếp nên chỉ hiển thị.
     /// </summary>
     private async Task SuaDangKyAsync()
     {
@@ -616,7 +582,7 @@ public partial class UcXepLop : UserControl
             return;
         }
 
-        using var dlg = new FormSuaDangKy(dangKy);
+        using var dlg = new FormSuaDangKy(dangKy, _classesApi);
 
         if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
         {

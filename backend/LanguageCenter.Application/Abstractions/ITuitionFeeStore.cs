@@ -39,6 +39,12 @@ public interface ITuitionFeeStore
     Task<TuitionSummaryReportDto> GetSummaryReportAsync(
         TuitionReportQuery query,
         CancellationToken cancellationToken);
+
+    /// <summary>Ẩn / bỏ ẩn phiếu khỏi sổ học phí — KHÔNG xoá dữ liệu tài chính.</summary>
+    Task<WriteOutcome> SetHiddenAsync(
+        int maHocPhi,
+        bool daAn,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>Ảnh chụp số tiền của một đăng ký học — nguồn duy nhất để tạo nghĩa vụ học phí.</summary>

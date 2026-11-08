@@ -121,7 +121,8 @@ public sealed class CreateStudentRequest
     public string HoTen { get; set; } = string.Empty;
     public DateOnly NgaySinh { get; set; }
     public string? GioiTinh { get; set; }
-    public string Email { get; set; } = string.Empty;
+    /// <summary>Bắt buộc khi học viên từ 18 tuổi; dưới 18 tuổi để null được.</summary>
+    public string? Email { get; set; }
     public string? SoDienThoai { get; set; }
     public string? DiaChi { get; set; }
     public string? MucTieuHocTap { get; set; }
@@ -216,8 +217,9 @@ public sealed class CreateTeacherRequest
     public string? ChuyenMon { get; set; }
     public int? SoNamKinhNghiem { get; set; }
     public DateOnly? NgayVaoLam { get; set; }
+    /// <summary>Bằng cấp / chứng chỉ gõ tay (văn bản tự do, tối đa 1000 ký tự).</summary>
+    public string? GhiChuBangCap { get; set; }
 }
-
 public sealed class UpdateTeacherRequest
 {
     public string? HoTen { get; set; }
@@ -230,6 +232,8 @@ public sealed class UpdateTeacherRequest
     public int? SoNamKinhNghiem { get; set; }
     public DateOnly? NgayVaoLam { get; set; }
     public string? TrangThai { get; set; }
+    /// <summary>Bằng cấp / chứng chỉ gõ tay (văn bản tự do, tối đa 1000 ký tự).</summary>
+    public string? GhiChuBangCap { get; set; }
 }
 
 public sealed class CreateTeacherResponse
@@ -281,6 +285,8 @@ public sealed class TeacherDetailDto
     public int? SoNamKinhNghiem { get; init; }
     public DateOnly? NgayVaoLam { get; init; }
     public string TrangThai { get; init; } = string.Empty;
+    /// <summary>Bằng cấp / chứng chỉ gõ tay (văn bản tự do, không phải file).</summary>
+    public string? GhiChuBangCap { get; init; }
     public IReadOnlyList<BangCapDto> BangCaps { get; init; } = Array.Empty<BangCapDto>();
     public IReadOnlyList<ChungChiDto> ChungChis { get; init; } = Array.Empty<ChungChiDto>();
 }
@@ -598,6 +604,8 @@ public sealed class ClassListItemDto
     public DateOnly? NgayKetThucThucTe { get; init; }
     public int SiSoToiDa { get; init; }
     public int SiSoHienTai { get; init; }
+    /// <summary>Số đăng ký đang giữ chỗ (chờ thu học phí). Sĩ số thực = SiSoHienTai + SiSoDuKien.</summary>
+    public int SiSoDuKien { get; init; }
     public int SoCaHoc { get; init; }
     /// <summary>Số phân công giảng dạy đang hiệu lực. 0 = lớp CHƯA phân công giáo viên.</summary>
     public int SoPhanCong { get; init; }
@@ -684,6 +692,31 @@ public sealed class RoomListItemDto
     public string TrangThai { get; init; } = string.Empty;
 }
 
+/// <summary>
+/// Gợi ý cho CA KẾ TIẾP của lớp theo lịch định kỳ — <c>GET /api/admin/sessions/suggest</c>.
+/// Toàn bộ giá trị do backend suy ra (lớp + lịch + phân công + syllabus của khóa).
+/// </summary>
+public sealed class SessionSuggestionDto
+{
+    public int MaLopHoc { get; init; }
+    public int MaLichHoc { get; init; }
+    public int? SoBuoi { get; init; }
+    public DateOnly NgayHoc { get; init; }
+    public TimeOnly GioBatDau { get; init; }
+    public TimeOnly GioKetThuc { get; init; }
+    public int MaPhongHoc { get; init; }
+    public string TenPhong { get; init; } = string.Empty;
+    public string? MaGiaoVienThucTe { get; init; }
+    public string? TenGiaoVienThucTe { get; init; }
+    public string? MaTroGiangThucTe { get; init; }
+    public string? TenTroGiangThucTe { get; init; }
+    public int? MaNoiDung { get; init; }
+    public string? TieuDeBaiHoc { get; init; }
+    public string? NoiDungBaiHoc { get; init; }
+    public string LoaiBuoi { get; init; } = "Buổi học";
+    public string? CanhBao { get; init; }
+}
+
 public sealed class ScheduleListItemDto
 {
     public int MaLichHoc { get; init; }
@@ -716,8 +749,6 @@ public sealed class CourseListItemDto
     public int SoBuoi { get; init; }
     public decimal? TongSoGio { get; init; }
     public decimal HocPhiCoBan { get; init; }
-    public DateOnly NgayBatDau { get; init; }
-    public DateOnly NgayKetThuc { get; init; }
     public string TrangThai { get; init; } = string.Empty;
     public int SoLop { get; init; }
 }
@@ -789,6 +820,21 @@ public sealed class EnrollmentListItemDto
     public decimal HocPhiSauGiam { get; init; }
     public string TrangThaiDangKy { get; init; } = string.Empty;
     public DateTime? NgayXepLop { get; init; }
+
+    /// <summary>Lớp dự kiến — nơi học viên tự vào khi thu đủ học phí.</summary>
+    public int? MaLopDuKien { get; init; }
+
+    /// <summary>Chuỗi hiển thị "MãLớp — TênLớp" của lớp dự kiến.</summary>
+    public string? MaLopDuKienText { get; init; }
+
+    /// <summary>Học phí còn phải thu (null = chưa có phiếu học phí).</summary>
+    public decimal? SoTienConThieuHocPhi { get; init; }
+
+    /// <summary>Trạng thái phiếu học phí (null = chưa có phiếu).</summary>
+    public string? TrangThaiHocPhi { get; init; }
+
+    /// <summary>Đã thu đủ tiền nhưng CHƯA xếp được lớp → cần admin đổi lớp dự kiến.</summary>
+    public bool DaThuDuChuaXepDuocLop { get; init; }
 }
 
 public sealed class NotificationListItemDto
@@ -928,6 +974,8 @@ public sealed class TuitionItemDto
     public int SoGiaoDich { get; init; }
     public bool QuaHan { get; init; }
     public bool ConNo { get; init; }
+    /// <summary>Phiếu đang bị ẩn khỏi sổ học phí (chỉ hiện khi lọc "Đã ẩn").</summary>
+    public bool DaAn { get; init; }
 }
 
 public sealed class ReceiptBriefDto
@@ -1102,9 +1150,19 @@ public static class WorkStatuses
 public static class TeacherTypes
 {
     public const string GiaoVien = "Giáo viên";
+
+    /// <summary>Giáo viên bản ngữ / nước ngoài — vẫn mang vai trò Giáo viên, chỉ tách màn hình quản lý.</summary>
+    public const string GiaoVienNuocNgoai = "Giáo viên nước ngoài";
+
     public const string TroGiang = "Trợ giảng";
 
-    public static readonly IReadOnlyList<string> All = [GiaoVien, TroGiang];
+    public static readonly IReadOnlyList<string> All = [GiaoVien, GiaoVienNuocNgoai, TroGiang];
+
+    /// <summary>Các loại có vai trò giảng dạy (Giáo viên + Giáo viên nước ngoài).</summary>
+    public static readonly IReadOnlyList<string> Teaching = [GiaoVien, GiaoVienNuocNgoai];
+
+    public static bool IsTeacherType(string? loaiGiaoVien)
+        => loaiGiaoVien is not null && Teaching.Contains(loaiGiaoVien);
 }
 
 #endregion
@@ -1243,6 +1301,98 @@ public sealed class PromotionListItemDto
     public string TrangThai { get; init; } = string.Empty;
     /// <summary>Đang "Hoạt động" VÀ hôm nay nằm trong [NgayBatDau, NgayKetThuc].</summary>
     public bool ConHieuLuc { get; init; }
+}
+
+#endregion
+
+#region Employees (Nhân viên học vụ / tư vấn / kế toán)
+
+/// <summary>
+/// Chức vụ nhân viên — PHẢI khớp <c>NhanVien.ChucVu</c> và tên vai trò trong bảng <c>VaiTro</c>.
+/// Chức vụ quyết định vai trò đăng nhập VÀ tiền tố mã do backend sinh.
+/// </summary>
+public static class StaffPositions
+{
+    public const string NhanVienHocVu = "Nhân viên học vụ";
+    public const string NhanVienTuVan = "Nhân viên tư vấn";
+    public const string NhanVienKeToan = "Nhân viên kế toán";
+
+    public static readonly IReadOnlyList<string> All =
+    [
+        NhanVienHocVu, NhanVienTuVan, NhanVienKeToan
+    ];
+
+    /// <summary>Nhân viên kế toán hệ thống — người ghi nhận giao dịch do học viên tự thực hiện.</summary>
+    public const string SystemAccountantCode = "NVKT001";
+}
+
+/// <summary>Một dòng trong <c>GET /api/admin/employees/list</c>.</summary>
+public sealed class EmployeeListItemDto
+{
+    public string MaNhanVien { get; init; } = string.Empty;
+    public string HoTen { get; init; } = string.Empty;
+    public string ChucVu { get; init; } = string.Empty;
+    public string? SoDienThoai { get; init; }
+    public string? Email { get; init; }
+    public DateOnly? NgayVaoLam { get; init; }
+    public string TrangThaiLamViec { get; init; } = string.Empty;
+}
+
+/// <summary>Chi tiết nhân viên — <c>GET /api/admin/employees/{maNhanVien}</c>.</summary>
+public sealed class EmployeeDetailDto
+{
+    public string MaNhanVien { get; init; } = string.Empty;
+    public string HoTen { get; init; } = string.Empty;
+    public DateOnly? NgaySinh { get; init; }
+    public string? GioiTinh { get; init; }
+    public string? SoDienThoai { get; init; }
+    public string? Email { get; init; }
+    public string? DiaChi { get; init; }
+    public string ChucVu { get; init; } = string.Empty;
+    public DateOnly? NgayVaoLam { get; init; }
+    public string TrangThaiLamViec { get; init; } = string.Empty;
+    public string TenDangNhap { get; init; } = string.Empty;
+    public string TrangThaiTaiKhoan { get; init; } = string.Empty;
+    public string TenVaiTro { get; init; } = string.Empty;
+}
+
+/// <summary>Body của <c>POST /api/admin/employees</c>.</summary>
+public sealed class CreateEmployeeRequest
+{
+    public string HoTen { get; set; } = string.Empty;
+    public DateOnly? NgaySinh { get; set; }
+    public string? GioiTinh { get; set; }
+    public string Email { get; set; } = string.Empty;
+    public string? SoDienThoai { get; set; }
+    public string? DiaChi { get; set; }
+    public string ChucVu { get; set; } = string.Empty;
+    public DateOnly? NgayVaoLam { get; set; }
+}
+
+/// <summary>Body của <c>PATCH /api/admin/employees/{maNhanVien}</c> — null = không đổi.</summary>
+public sealed class UpdateEmployeeRequest
+{
+    public string? HoTen { get; set; }
+    public DateOnly? NgaySinh { get; set; }
+    public string? GioiTinh { get; set; }
+    public string? Email { get; set; }
+    public string? SoDienThoai { get; set; }
+    public string? DiaChi { get; set; }
+    public DateOnly? NgayVaoLam { get; set; }
+    public string? TrangThaiLamViec { get; set; }
+}
+
+/// <summary>Kết quả tạo nhân viên — mật khẩu tạm chỉ hiện ĐÚNG MỘT LẦN.</summary>
+public sealed class CreateEmployeeResponse
+{
+    public string EmployeeId { get; init; } = string.Empty;
+    public string Username { get; init; } = string.Empty;
+    public string TemporaryPassword { get; init; } = string.Empty;
+    public string FullName { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string ChucVu { get; init; } = string.Empty;
+    public string Role { get; init; } = string.Empty;
+    public string Message { get; init; } = string.Empty;
 }
 
 #endregion

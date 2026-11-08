@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountProvisioningStore, AccountProvisioningStore>();
         services.AddScoped<IStudentStore, StudentStore>();
         services.AddScoped<ITeacherStore, TeacherStore>();
+        services.AddScoped<IEmployeeStore, EmployeeStore>();
 
         // ---------- Phase 4: quản lý học vụ ----------
         services.AddScoped<IReferenceStore, ReferenceStore>();

@@ -18,6 +18,7 @@ public partial class FormChiTietTaiKhoan : Form
     {
         _accountId = accountId;
         InitializeComponent();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         btnCloseDialog.Click += (_, _) => Close();
 
         cboStatus.Items.AddRange(AccountStatuses.All.ToArray());

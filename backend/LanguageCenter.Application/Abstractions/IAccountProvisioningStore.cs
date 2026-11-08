@@ -42,6 +42,27 @@ public sealed record TeacherProvisionData(
     string? ChuyenMon,
     int? SoNamKinhNghiem,
     DateOnly? NgayVaoLam,
+    string TrangThai,
+    string? GhiChuBangCap = null);
+
+/// <summary>
+/// Dữ liệu NHÂN VIÊN (học vụ / tư vấn / kế toán) đã validate, sẵn sàng ghi xuống database.
+/// <para>
+/// <paramref name="TienTo"/> quyết định dải mã: <c>NVHV</c> → NVHV001, <c>NVKT</c> → NVKT001,
+/// <c>NVTV</c> → NVTV001. Xem <c>StaffPositions.ResolvePrefix</c>.
+/// </para>
+/// </summary>
+public sealed record EmployeeProvisionData(
+    string VaiTro,
+    string TienTo,
+    string HoTen,
+    DateOnly? NgaySinh,
+    string? GioiTinh,
+    string Email,
+    string? SoDienThoai,
+    string? DiaChi,
+    string ChucVu,
+    DateOnly? NgayVaoLam,
     string TrangThai);
 
 /// <summary>Lý do tạo tài khoản thất bại.</summary>
@@ -83,4 +104,7 @@ public interface IAccountProvisioningStore
     Task<ProvisionResult> CreateStudentAsync(StudentProvisionData data, string matKhauHash, CancellationToken cancellationToken);
 
     Task<ProvisionResult> CreateTeacherAsync(TeacherProvisionData data, string matKhauHash, CancellationToken cancellationToken);
+
+    /// <summary>Tạo tài khoản + hồ sơ <c>NhanVien</c> (mã sinh theo <c>data.TienTo</c>).</summary>
+    Task<ProvisionResult> CreateEmployeeAsync(EmployeeProvisionData data, string matKhauHash, CancellationToken cancellationToken);
 }

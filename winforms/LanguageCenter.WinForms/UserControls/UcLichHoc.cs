@@ -26,6 +26,7 @@ public partial class UcLichHoc : UserControl
     private Button _btnXoaLich = null!;
     private Button _btnSuaPhong = null!;
     private Button _btnXoaPhong = null!;
+    private Button _btnXoaCa = null!;
 
     public UcLichHoc()
     {
@@ -100,6 +101,12 @@ public partial class UcLichHoc : UserControl
         _btnXoaPhong.Visible = false;
         pnlToolbar.Controls.Add(_btnXoaPhong);
 
+        // Xoá CA HỌC thực tế (tab 2) — backend chỉ cho xoá khi ca chưa có điểm danh.
+        _btnXoaCa = UiHelpers.CreateDangerButton("Xóa ca học", 130, 34);
+        _btnXoaCa.Click += async (_, _) => await XoaCaHocAsync();
+        _btnXoaCa.Visible = false;
+        pnlToolbar.Controls.Add(_btnXoaCa);
+
         DungThanhCongCu();
 
         // Tạo phòng/lịch/ca học thực hiện trên bản Web; riêng lịch và ca học đã hỗ trợ tại đây.
@@ -132,6 +139,7 @@ public partial class UcLichHoc : UserControl
         UiHelpers.DamBaoCot(dgvSchedules,
             ("MaLop", "Mã lớp", 85),
             ("TenLop", "Lớp học", 160),
+            ("TenKhoaHoc", "Khóa học", 150),
             ("TenPhong", "Phòng học", 90),
             ("ThuText", "Thứ học trong tuần", 170),
             ("KhungGio", "Khung giờ học", 120),
@@ -187,7 +195,7 @@ public partial class UcLichHoc : UserControl
             Padding = new Padding(0, 2, 4, 0)
         };
 
-        foreach (var button in new[] { btnAdd, _btnSinhCa, _btnTrangThai, _btnDiemDanh, _btnNgayLe, _btnSuaLich, _btnXoaLich, _btnSuaPhong, _btnXoaPhong })
+        foreach (var button in new[] { btnAdd, _btnSinhCa, _btnTrangThai, _btnDiemDanh, _btnNgayLe, _btnSuaLich, _btnXoaLich, _btnSuaPhong, _btnXoaPhong, _btnXoaCa })
         {
             button.Margin = new Padding(8, 0, 0, 0);
         }
@@ -201,6 +209,7 @@ public partial class UcLichHoc : UserControl
         flpHanhDong.Controls.Add(_btnXoaLich);
         flpHanhDong.Controls.Add(_btnSuaPhong);
         flpHanhDong.Controls.Add(_btnXoaPhong);
+        flpHanhDong.Controls.Add(_btnXoaCa);
         flpHanhDong.Controls.Add(_btnTrangThai);
         flpHanhDong.Controls.Add(_btnDiemDanh);
 
@@ -296,6 +305,7 @@ public partial class UcLichHoc : UserControl
         if (_btnXoaLich is not null) _btnXoaLich.Visible = _currentTab == 1;
         if (_btnSuaPhong is not null) _btnSuaPhong.Visible = _currentTab == 0;
         if (_btnXoaPhong is not null) _btnXoaPhong.Visible = _currentTab == 0;
+        if (_btnXoaCa is not null) _btnXoaCa.Visible = _currentTab == 2;
 
         btnAdd.Text = _currentTab switch
         {
@@ -430,6 +440,7 @@ public partial class UcLichHoc : UserControl
                 var rowIdx = dgvSchedules.Rows.Add(
                     s.MaLop,
                     s.TenLop,
+                    s.TenKhoaHoc,
                     s.PhongText,
                     s.ThuText,
                     s.GioText,
@@ -588,11 +599,12 @@ public partial class UcLichHoc : UserControl
         var lich = nhom.DongDau;
 
         var xacNhan = MessageBox.Show(FindForm(),
-            $"Sinh 20 buổi học (10 tuần × 2 buổi) cho lớp '{lich.TenLop}'?" + Environment.NewLine + Environment.NewLine
+            $"Sinh các buổi học theo khung của khóa cho lớp '{lich.TenLop}'?" + Environment.NewLine + Environment.NewLine
+            + "• Số buổi = Số buổi của khóa học (thường là 20)" + Environment.NewLine
             + "• Bắt đầu từ Ngày bắt đầu của lớp" + Environment.NewLine
             + "• Buổi trùng ngày lễ sẽ tự dời sang tuần sau" + Environment.NewLine
             + "• Ngày kết thúc dự kiến của lớp sẽ được cập nhật",
-            "Sinh 20 buổi học", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
+            "Sinh ca học", MessageBoxButtons.YesNo, MessageBoxIcon.Question,
             MessageBoxDefaultButton.Button1);
 
         if (xacNhan != DialogResult.Yes)
@@ -604,14 +616,39 @@ public partial class UcLichHoc : UserControl
 
         var result = await AppSession.Api.PostAsync<GenerateSessionsResponseDto>(
             "admin/sessions/generate",
-            new { maLichHoc = lich.MaLichHoc });
+            new { maLichHoc = lich.MaLichHoc, boQuaThieuNoiDung = false });
 
         UseWaitCursor = false;
+
+        // Khóa còn buổi CHƯA có nội dung → backend chặn. Cho phép xác nhận vẫn sinh.
+        var thongDiepLoi = result.Success ? string.Empty : result.ThongDiepDayDu();
+
+        if (!result.Success && thongDiepLoi.Contains("CHƯA có nội dung", StringComparison.Ordinal))
+        {
+            var vanSinh = MessageBox.Show(FindForm(),
+                thongDiepLoi + Environment.NewLine + Environment.NewLine
+                + "Vẫn sinh ca học? Các buổi thiếu nội dung sẽ để trống và bạn có thể bổ sung sau.",
+                "Khóa học thiếu nội dung bài học",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+
+            if (vanSinh != DialogResult.Yes)
+            {
+                return;
+            }
+
+            UseWaitCursor = true;
+
+            result = await AppSession.Api.PostAsync<GenerateSessionsResponseDto>(
+                "admin/sessions/generate",
+                new { maLichHoc = lich.MaLichHoc, boQuaThieuNoiDung = true });
+
+            UseWaitCursor = false;
+        }
 
         if (!result.Success || result.Data is null)
         {
             MessageBox.Show(FindForm(),
-                string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không sinh được ca học." : result.ErrorMessage,
+                string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không sinh được ca học." : result.ThongDiepDayDu(),
                 "Sinh ca học thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
@@ -621,7 +658,7 @@ public partial class UcLichHoc : UserControl
         var thongBao = new List<string>
         {
             $"Lớp: {lich.TenLop}",
-            $"Khung: 20 buổi (10 tuần × 2 buổi) · {UiHelpers.FormatDate(data.ApDungTuThucTe)} → {UiHelpers.FormatDate(data.ApDungDenThucTe)}",
+            $"Khung: {data.TongNgayKhop} buổi · {UiHelpers.FormatDate(data.ApDungTuThucTe)} → {UiHelpers.FormatDate(data.ApDungDenThucTe)}",
             string.Empty,
             $"• Tạo mới: {data.NgayTao.Count} buổi",
             $"• Đã có sẵn (bỏ qua): {data.NgayDaCo.Count} buổi",
@@ -952,7 +989,10 @@ public partial class UcLichHoc : UserControl
             dsThu.Count == 0 ? "—" : string.Join(" · ", dsThu.Select(ThuText)),
             $"{dau.GioBatDau:HH\\:mm} - {dau.GioKetThuc:HH\\:mm}",
             UiHelpers.FormatDate(dau.NgayApDungTu),
-            dong.Any(x => x.TrangThai == "Hoạt động") ? "Hoạt động" : dau.TrangThai);
+            dong.Any(x => x.TrangThai == "Hoạt động") ? "Hoạt động" : dau.TrangThai)
+        {
+            TenKhoaHoc = lop?.TenKhoaHoc ?? dau.TenKhoaHoc
+        };
     }
 
     /// <summary>Một dòng "Lịch học tuần" = 1 LỚP, gộp mọi dòng lịch của lớp đó.</summary>
@@ -969,6 +1009,9 @@ public partial class UcLichHoc : UserControl
         public string MaLop => DongDau.MaLop;
 
         public string TenLop => DongDau.TenLop;
+
+        /// <summary>Tên khóa học của lớp — hiển thị thành cột riêng cho dễ nhìn.</summary>
+        public string TenKhoaHoc { get; init; } = string.Empty;
     }
 
     private async void DgvShifts_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)
@@ -981,6 +1024,61 @@ public partial class UcLichHoc : UserControl
         {
             await ReloadAsync();
         }
+    }
+
+    /// <summary>
+    /// Xoá CA HỌC đang chọn (tab "Ca học thực tế") — <c>DELETE /api/admin/sessions/{id}</c>.
+    /// <para>
+    /// Backend chỉ cho xoá khi ca CHƯA có bản ghi điểm danh; ca đã dạy nên đổi trạng thái
+    /// "Đã hủy" thay vì xoá để giữ lịch sử.
+    /// </para>
+    /// </summary>
+    private async Task XoaCaHocAsync()
+    {
+        if (_currentTab != 2)
+        {
+            return;
+        }
+
+        if (dgvShifts.CurrentRow?.Tag is not SessionListItemDto caHoc)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một ca học trong danh sách.",
+                "Chưa chọn ca học", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var xacNhan = MessageBox.Show(FindForm(),
+            $"Xoá ca học ngày {UiHelpers.FormatDate(caHoc.NgayHoc)} "
+            + $"({caHoc.GioBatDau:HH\\:mm}–{caHoc.GioKetThuc:HH\\:mm}) của lớp '{caHoc.TenLop}'?"
+            + Environment.NewLine + Environment.NewLine
+            + "Chỉ xoá được khi ca CHƯA có điểm danh." + Environment.NewLine
+            + "Ca đã dạy nên chuyển sang trạng thái \"Đã hủy\" để giữ lịch sử.",
+            "Xác nhận xoá ca học",
+            MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+
+        if (xacNhan != DialogResult.Yes)
+        {
+            return;
+        }
+
+        UseWaitCursor = true;
+
+        var result = await AppSession.Api.DeleteAsync<SessionListItemDto>(
+            $"admin/sessions/{caHoc.MaCaHoc}");
+
+        UseWaitCursor = false;
+
+        if (!result.Success)
+        {
+            MessageBox.Show(FindForm(),
+                string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không xoá được ca học."
+                    : result.ThongDiepDayDu(),
+                "Xoá ca học thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        await ReloadAsync();
     }
 }
 

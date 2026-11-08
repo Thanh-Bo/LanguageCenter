@@ -472,7 +472,7 @@ public sealed class ReportStore : IReportStore
             .ToListAsync(cancellationToken);
 
         var soGiaoVien = phanCong
-            .Where(x => x.LoaiGiaoVien == TeacherTypes.GiaoVien)
+            .Where(x => TeacherTypes.IsTeacherType(x.LoaiGiaoVien))
             .Select(x => x.MaGiaoVien)
             .Distinct()
             .Count();

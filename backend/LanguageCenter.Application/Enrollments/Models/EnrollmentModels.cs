@@ -24,7 +24,17 @@ public sealed class CreateEnrollmentRequest
     [Range(1, int.MaxValue, ErrorMessage = "Khóa học là bắt buộc.")]
     public int MaKhoaHoc { get; set; }
 
-    /// <summary>Để trống = đăng ký khóa học trước, xếp lớp sau.</summary>
+    /// <summary>
+    /// LỚP DỰ KIẾN — BẮT BUỘC.
+    /// <para>
+    /// Server kiểm tra 4 quy tắc xếp lớp (sĩ số dự kiến, trùng giờ, độ tuổi, quá 4 buổi)
+    /// ngay khi tạo. Khi học phí được thu đủ, hệ thống tự gán <c>MaLopHoc = MaLopDuKien</c>.
+    /// </para>
+    /// </summary>
+    [Range(1, int.MaxValue, ErrorMessage = "Lớp học dự kiến là bắt buộc.")]
+    public int MaLopDuKien { get; set; }
+
+    /// <summary>Deprecated: không dùng nữa — lớp được gán tự động sau khi thu đủ học phí.</summary>
     public int? MaLopHoc { get; set; }
 
     /// <summary>Ưu đãi áp dụng — server tự kiểm tra và tự tính số tiền giảm.</summary>
@@ -48,6 +58,15 @@ public sealed class UpdateEnrollmentRequest
 
     /// <summary>Đặt <c>true</c> để BỎ ưu đãi hiện tại (số tiền giảm về 0).</summary>
     public bool? BoUuDai { get; set; }
+
+    /// <summary>
+    /// Đổi LỚP DỰ KIẾN. <c>null</c> = giữ nguyên.
+    /// <para>
+    /// Server kiểm tra lại 4 quy tắc. Nếu học phí đã thu đủ thì tự xếp lớp ngay
+    /// (đây là đường sửa khi lớp dự kiến cũ đã đầy / quá 4 buổi / trùng giờ).
+    /// </para>
+    /// </summary>
+    public int? MaLopDuKien { get; set; }
 
     [StringLength(500, ErrorMessage = "Lịch học mong muốn tối đa 500 ký tự.")]
     public string? LichHocMongMuon { get; set; }
@@ -112,6 +131,23 @@ public sealed class EnrollmentListItemDto
 
     public string? MaLop { get; init; }
 
+    /// <summary>Lớp dự kiến — nơi sẽ tự xếp vào khi thu đủ học phí.</summary>
+    public int? MaLopDuKien { get; init; }
+
+    public string? MaLopDuKienText { get; init; }
+
+    /// <summary>Học phí còn phải thu (NULL = chưa có phiếu học phí).</summary>
+    public decimal? SoTienConThieuHocPhi { get; init; }
+
+    /// <summary>Trạng thái phiếu học phí (NULL = chưa có phiếu).</summary>
+    public string? TrangThaiHocPhi { get; init; }
+
+    /// <summary>
+    /// <c>true</c> = đã thu đủ tiền nhưng CHƯA xếp được lớp
+    /// (lớp dự kiến đầy / quá 4 buổi / trùng giờ / sai tuổi) → cần admin xử lý.
+    /// </summary>
+    public bool DaThuDuChuaXepDuocLop { get; init; }
+
     public DateTime NgayDangKy { get; init; }
 
     public decimal HocPhiGoc { get; init; }
@@ -142,6 +178,10 @@ public sealed class EnrollmentDetailDto
     public int? MaLopHoc { get; init; }
 
     public string? MaLop { get; init; }
+
+    public int? MaLopDuKien { get; init; }
+
+    public string? MaLopDuKienText { get; init; }
 
     public string MaNhanVienTuVan { get; init; } = string.Empty;
 

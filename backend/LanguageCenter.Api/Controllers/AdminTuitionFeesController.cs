@@ -129,6 +129,23 @@ public sealed class AdminTuitionFeesController : ControllerBase
         => (await _paymentService.RecordAsync(id, request, BuildActor(), cancellationToken))
             .ToActionResult();
 
+    /// <summary>
+    /// Ẩn / bỏ ẩn phiếu học phí khỏi sổ.
+    /// <para>
+    /// KHÔNG xoá dữ liệu tài chính: giao dịch và biên nhận vẫn còn nguyên.
+    /// Phiếu đã ẩn không hiện trong danh sách mặc định và không tính vào báo cáo tổng.
+    /// </para>
+    /// </summary>
+    [HttpPatch("{id:int}/hide")]
+    [Authorize(Roles = WriteRoles)]
+    [ProducesResponseType(typeof(TuitionFeeDetailDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SetHiddenAsync(
+        int id,
+        [FromBody] SetTuitionHiddenRequest request,
+        CancellationToken cancellationToken)
+        => (await _tuitionFeeService.SetHiddenAsync(id, request.DaAn, cancellationToken)).ToActionResult();
+
     // ========================================================================
     // PRIVATE
     // ========================================================================

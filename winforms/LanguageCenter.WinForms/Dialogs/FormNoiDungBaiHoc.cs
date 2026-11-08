@@ -47,6 +47,7 @@ public sealed class FormNoiDungBaiHoc : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapComboKhoaHoc();
 
         _cboKhoaHoc.SelectedIndexChanged += async (_, _) =>
@@ -320,6 +321,33 @@ public sealed class FormNoiDungBaiHoc : Form
             $"Đã lưu nội dung {soLuu}/{SoBuoiCoDinh} buổi học cho khóa:\n   • {khoa.TenKhoaHoc}\n\n"
             + "Khi bấm 'Sinh ca học' ở màn Lịch học, cột Nội dung sẽ tự lấy theo đúng buổi.",
             "Lưu thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+        // Đã có ca học sinh từ trước → hỏi có cập nhật lại nội dung cho ca CHƯA DIỄN RA không.
+        var dongBo = MessageBox.Show(FindForm(),
+            "Cập nhật nội dung mới cho các CA HỌC CHƯA DIỄN RA của các lớp thuộc khóa này?\n\n"
+            + "• Ca đã dạy / đã hủy: giữ nguyên\n"
+            + "• Ca chưa diễn ra: lấy lại tiêu đề + loại buổi theo nội dung vừa lưu",
+            "Đồng bộ nội dung sang ca học",
+            MessageBoxButtons.YesNo, MessageBoxIcon.Question, MessageBoxDefaultButton.Button1);
+
+        if (dongBo == DialogResult.Yes)
+        {
+            UseWaitCursor = true;
+
+            var sync = await AppSession.Api.PostAsync<int>(
+                $"admin/sessions/sync-lesson-contents/{khoa.MaKhoaHoc}",
+                new { });
+
+            UseWaitCursor = false;
+
+            MessageBox.Show(FindForm(),
+                sync.Success
+                    ? $"Đã cập nhật nội dung cho {sync.Data} ca học chưa diễn ra."
+                    : sync.ThongDiepDayDu(),
+                sync.Success ? "Đồng bộ xong" : "Đồng bộ thất bại",
+                MessageBoxButtons.OK,
+                sync.Success ? MessageBoxIcon.Information : MessageBoxIcon.Warning);
+        }
 
         await NapNoiDungAsync();
     }

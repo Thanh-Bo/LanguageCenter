@@ -21,17 +21,23 @@ public class TuitionFeeItem
     public string PhuongThuc { get; set; } = string.Empty;
     public string SoBienNhan { get; set; } = string.Empty;
     public DateTime? NgayThanhToan { get; set; }
+    /// <summary>Phiếu đang bị ẩn khỏi sổ học phí.</summary>
+    public bool DaAn { get; set; }
 }
 
 public partial class UcHocPhi : UserControl
 {
     private const string AllOption = "— Tất cả —";
+
+    /// <summary>Mục lọc "Đã ẩn" — xem lại các phiếu đã ẩn để bỏ ẩn.</summary>
+    private const string AnOption = "Đã ẩn";
     private readonly List<TuitionFeeItem> _items = new();
     private List<PaymentDto> _payments = new();
     private int _currentTab = 0; // 0: Sổ học phí, 1: Lịch sử thanh toán, 2: Quản lý biên nhận
 
     private Button _btnTaoPhieu = null!;
     private Button _btnSuaPhieu = null!;
+    private Button _btnAnPhieu = null!;
 
     public UcHocPhi()
     {
@@ -62,6 +68,10 @@ public partial class UcHocPhi : UserControl
         _btnSuaPhieu.Click += async (_, _) => await SuaPhieuAsync();
         pnlToolbar.Controls.Add(_btnSuaPhieu);
 
+        _btnAnPhieu = UiHelpers.CreateSecondaryButton("Ẩn phiếu", 120, 34);
+        _btnAnPhieu.Click += async (_, _) => await AnPhieuAsync();
+        pnlToolbar.Controls.Add(_btnAnPhieu);
+
         pnlToolbar.Resize += (_, _) => SapXepThanhCongCu();
         SapXepThanhCongCu();
 
@@ -75,7 +85,7 @@ public partial class UcHocPhi : UserControl
     {
         cboTrangThai.Items.Clear();
         cboTrangThai.Items.Add(AllOption);
-        cboTrangThai.Items.AddRange(["Chưa thanh toán", "Thanh toán một phần", "Đã thanh toán"]);
+        cboTrangThai.Items.AddRange(["Chưa thanh toán", "Thanh toán một phần", "Đã thanh toán", AnOption]);
         cboTrangThai.SelectedIndex = 0;
 
         cboPhuongThuc.Items.Clear();
@@ -91,7 +101,12 @@ public partial class UcHocPhi : UserControl
         UseWaitCursor = true;
 
         var tuitionTask = AppSession.Api.GetAsync<PagedResult<TuitionItemDto>>(
-            QueryStringBuilder.Build("admin/tuition-fees", ("page", "1"), ("pageSize", "500")));
+            QueryStringBuilder.Build(
+                "admin/tuition-fees",
+                ("page", "1"),
+                ("pageSize", "500"),
+                // Lấy CẢ phiếu đã ẩn → lọc phía client theo mục "Đã ẩn", tránh gọi lại API.
+                ("baoGomDaAn", "true")));
         var paymentsTask = AppSession.Api.GetAsync<PagedResult<PaymentDto>>(
             QueryStringBuilder.Build("admin/payments", ("page", "1"), ("pageSize", "500")));
 
@@ -135,7 +150,8 @@ public partial class UcHocPhi : UserControl
                 TrangThaiHocPhi = d.TrangThaiHocPhi,
                 PhuongThuc = gd?.PhuongThucThanhToan ?? "— Chưa nộp —",
                 SoBienNhan = gd?.BienNhan?.SoBienNhan ?? "—",
-                NgayThanhToan = gd?.NgayThanhToan
+                NgayThanhToan = gd?.NgayThanhToan,
+                DaAn = d.DaAn
             });
         }
 
@@ -144,9 +160,12 @@ public partial class UcHocPhi : UserControl
 
     private void UpdateStats()
     {
-        var totalMustPay = _items.Sum(x => x.SoTienPhaiDong);
-        var totalCollected = _items.Sum(x => x.SoTienDaDong);
-        var totalDebt = _items.Sum(x => x.SoTienConThieu);
+        // Phiếu đã ẩn KHÔNG được tính vào tổng (khớp với báo cáo ở backend).
+        var hienThi = _items.Where(x => !x.DaAn).ToList();
+
+        var totalMustPay = hienThi.Sum(x => x.SoTienPhaiDong);
+        var totalCollected = hienThi.Sum(x => x.SoTienDaDong);
+        var totalDebt = hienThi.Sum(x => x.SoTienConThieu);
         var rate = totalMustPay > 0 ? (totalCollected / totalMustPay) * 100m : 0m;
 
         tblStats.Controls.Clear();
@@ -180,6 +199,7 @@ public partial class UcHocPhi : UserControl
         btnPrintReceipt.Text = _currentTab == 2 ? "In lại biên nhận" : "In biên lai";
         if (_btnTaoPhieu is not null) _btnTaoPhieu.Visible = _currentTab == 0;
         if (_btnSuaPhieu is not null) _btnSuaPhieu.Visible = _currentTab == 0;
+        if (_btnAnPhieu is not null) _btnAnPhieu.Visible = _currentTab == 0;
         SapXepThanhCongCu();
 
         cboTrangThai.Visible = _currentTab == 0;
@@ -192,7 +212,7 @@ public partial class UcHocPhi : UserControl
     {
         var right = pnlToolbar.Width - 4;
 
-        foreach (var button in new[] { btnPrintReceipt, btnCollectFee, _btnTaoPhieu, _btnSuaPhieu })
+        foreach (var button in new[] { btnPrintReceipt, btnCollectFee, _btnTaoPhieu, _btnAnPhieu, _btnSuaPhieu })
         {
             if (button is null || !button.Visible) continue;
 
@@ -200,6 +220,67 @@ public partial class UcHocPhi : UserControl
             button.Location = new Point(right, 3);
             right -= 8;
         }
+    }
+
+    /// <summary>
+    /// Ẩn / bỏ ẩn phiếu học phí đang chọn khỏi sổ.
+    /// <para>
+    /// Chỉ đổi CỜ ẨN — không xoá giao dịch hay biên nhận.
+    /// Phiếu đã ẩn không tính vào 4 thẻ tổng và không hiện ở danh sách mặc định.
+    /// </para>
+    /// </summary>
+    private async Task AnPhieuAsync()
+    {
+        if (dgvTuition.CurrentRow?.Tag is not TuitionFeeItem item)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một phiếu học phí cần ẩn / bỏ ẩn.",
+                "Chưa chọn phiếu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var seAn = !item.DaAn;
+
+        var hoi = MessageBox.Show(
+            FindForm(),
+            seAn
+                ? $"Ẩn phiếu #{item.MaHocPhi} của {item.HoTenHocVien} khỏi sổ học phí?\n\n"
+                  + "Dữ liệu thu tiền và biên nhận vẫn được giữ nguyên. "
+                  + "Phiếu sẽ không còn hiện trong danh sách và không tính vào tổng."
+                : $"Bỏ ẩn phiếu #{item.MaHocPhi} của {item.HoTenHocVien}?\n\n"
+                  + "Phiếu sẽ hiện lại trong sổ học phí và được tính vào tổng.",
+            seAn ? "Ẩn phiếu học phí" : "Bỏ ẩn phiếu học phí",
+            MessageBoxButtons.YesNo,
+            MessageBoxIcon.Question);
+
+        if (hoi != DialogResult.Yes)
+        {
+            return;
+        }
+
+        if (!int.TryParse(item.MaHocPhi, out var maHocPhi))
+        {
+            return;
+        }
+
+        UseWaitCursor = true;
+
+        var result = await AppSession.Api.PatchAsync<TuitionItemDto>(
+            $"admin/tuition-fees/{maHocPhi}/hide",
+            new { daAn = seAn });
+
+        UseWaitCursor = false;
+
+        if (!result.Success)
+        {
+            MessageBox.Show(FindForm(),
+                string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? "Không đổi được trạng thái ẩn của phiếu."
+                    : result.ErrorMessage,
+                "Thất bại", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
+
+        await ReloadAsync();
     }
 
     /// <summary>Tạo phiếu học phí cho các đăng ký chưa có phiếu.</summary>
@@ -288,7 +369,15 @@ public partial class UcHocPhi : UserControl
 
         if (_currentTab == 0)
         {
-            var query = _items.AsEnumerable();
+            // Mặc định ẩn các phiếu đã bị ẩn; chọn mục "Đã ẩn" để xem lại và bỏ ẩn.
+            var dangXemPhieuAn = string.Equals(status, AnOption, StringComparison.Ordinal);
+
+            if (_btnAnPhieu is not null)
+            {
+                _btnAnPhieu.Text = dangXemPhieuAn ? "Bỏ ẩn phiếu" : "Ẩn phiếu";
+            }
+
+            var query = _items.Where(x => x.DaAn == dangXemPhieuAn);
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -299,7 +388,7 @@ public partial class UcHocPhi : UserControl
                                       || x.SoBienNhan.Contains(search, StringComparison.OrdinalIgnoreCase));
             }
 
-            if (!string.IsNullOrWhiteSpace(status) && status != AllOption)
+            if (!string.IsNullOrWhiteSpace(status) && status != AllOption && !dangXemPhieuAn)
             {
                 query = query.Where(x => x.TrangThaiHocPhi == status);
             }
@@ -339,9 +428,22 @@ public partial class UcHocPhi : UserControl
 
                 if (item.SoTienConThieu > 0)
                     dgvTuition.Rows[idx].Cells["SoTienConThieu"].Style.ForeColor = Theme.Danger;
+
+                // Gắn dữ liệu để nút "Ẩn phiếu / Bỏ ẩn phiếu" biết đang thao tác phiếu nào.
+                dgvTuition.Rows[idx].Tag = item;
+
+                if (item.DaAn)
+                {
+                    dgvTuition.Rows[idx].DefaultCellStyle.ForeColor = Theme.Muted;
+                }
             }
 
-            lblSummary.Text = $"Hiển thị {list.Count} / {_items.Count} phiếu học phí học viên";
+            var tongHienThi = _items.Count - _items.Count(x => x.DaAn);
+
+            lblSummary.Text = dangXemPhieuAn
+                ? $"Hiển thị {list.Count} phiếu ĐÃ ẨN — bấm \"Bỏ ẩn phiếu\" để đưa trở lại sổ"
+                : $"Hiển thị {list.Count} / {tongHienThi} phiếu học phí học viên"
+                  + (_items.Count > tongHienThi ? $" (+{_items.Count - tongHienThi} phiếu đang ẩn)" : string.Empty);
         }
         else if (_currentTab == 1)
         {
@@ -442,8 +544,18 @@ public partial class UcHocPhi : UserControl
         }
         cboFees.SelectedIndex = 0;
 
-        var lblAmount = new Label { Text = "Số tiền thu đợt này (VNĐ):", Location = new Point(24, 120), AutoSize = true, Font = Theme.FontBold };
-        var txtAmount = new TextBox { Location = new Point(24, 144), Width = 456, Font = Theme.FontRegular, Text = $"{debtItems[0].SoTienConThieu:0}" };
+        var lblAmount = new Label { Text = "Số tiền thu (bắt buộc thu ĐỦ trong 1 lần):", Location = new Point(24, 120), AutoSize = true, Font = Theme.FontBold };
+        var txtAmount = new TextBox
+        {
+            Location = new Point(24, 144),
+            Width = 456,
+            Font = Theme.FontRegular,
+            Text = $"{debtItems[0].SoTienConThieu:0}",
+            // NGUYÊN TẮC THU MỘT LẦN: khoá cứng đúng số còn thiếu, không cho sửa.
+            ReadOnly = true,
+            TabStop = false,
+            BackColor = Theme.ContentBackground
+        };
 
         cboFees.SelectedIndexChanged += (_, _) =>
         {

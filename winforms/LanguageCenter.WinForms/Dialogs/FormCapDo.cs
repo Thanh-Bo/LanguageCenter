@@ -46,6 +46,7 @@ public sealed class FormCapDo : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapDuLieu(maChuongTrinhMacDinh);
     }
 

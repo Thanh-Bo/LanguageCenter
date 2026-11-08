@@ -5,6 +5,7 @@ using LanguageCenter.Application.Auth;
 using LanguageCenter.Application.Classes;
 using LanguageCenter.Application.Courses;
 using LanguageCenter.Application.Enrollments;
+using LanguageCenter.Application.Employees;
 using LanguageCenter.Application.Grades;
 using LanguageCenter.Application.GradeTypes;
 using LanguageCenter.Application.Levels;
@@ -39,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IAccountAdminService, AccountAdminService>();
         services.AddScoped<IStudentService, StudentService>();
         services.AddScoped<ITeacherService, TeacherService>();
+        services.AddScoped<IEmployeeService, EmployeeService>();
 
         // ---------- Phase 4: quản lý học vụ ----------
         services.AddScoped<IProgramService, ProgramService>();

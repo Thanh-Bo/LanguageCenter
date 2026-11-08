@@ -91,6 +91,7 @@ public sealed class TeacherStore : ITeacherStore
             SoNamKinhNghiem = giaoVien.SoNamKinhNghiem,
             NgayVaoLam = giaoVien.NgayVaoLam,
             TrangThai = giaoVien.TrangThai,
+            GhiChuBangCap = giaoVien.GhiChuBangCap,
             BangCaps = bangCaps,
             ChungChis = chungChis
         };
@@ -204,6 +205,11 @@ public sealed class TeacherStore : ITeacherStore
         if (changes.ChuyenMon is not null)
         {
             giaoVien.ChuyenMon = TextValue.Optional(changes.ChuyenMon);
+        }
+
+        if (changes.GhiChuBangCap is not null)
+        {
+            giaoVien.GhiChuBangCap = TextValue.Optional(changes.GhiChuBangCap);
         }
 
         if (changes.SoNamKinhNghiem is { } soNam)

@@ -322,9 +322,9 @@ public sealed class TeachingAssignmentService : ITeachingAssignmentService
     {
         var needsTeacher = AssignmentRoles.NeedsTeacherProfile(vaiTro);
 
-        if (needsTeacher && loaiGiaoVien != TeacherTypes.GiaoVien)
+        if (needsTeacher && !TeacherTypes.IsTeacherType(loaiGiaoVien))
         {
-            return $"Vai trò '{vaiTro}' yêu cầu hồ sơ loại '{TeacherTypes.GiaoVien}', " +
+            return $"Vai trò '{vaiTro}' yêu cầu hồ sơ GIÁO VIÊN (Việt hoặc nước ngoài), " +
                    $"nhưng '{maGiaoVien}' đang là '{loaiGiaoVien}'.";
         }
 

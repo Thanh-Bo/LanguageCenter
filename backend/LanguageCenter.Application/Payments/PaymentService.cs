@@ -1,5 +1,6 @@
 using LanguageCenter.Application.Abstractions;
 using LanguageCenter.Application.Common;
+using LanguageCenter.Application.Enrollments;
 using LanguageCenter.Application.Payments.Models;
 using LanguageCenter.Domain.Constants;
 
@@ -27,15 +28,18 @@ public sealed class PaymentService : IPaymentService
     private readonly IPaymentStore _paymentStore;
     private readonly IReferenceStore _referenceStore;
     private readonly ITuitionFeeStore _tuitionFeeStore;
+    private readonly IEnrollmentService _enrollmentService;
 
     public PaymentService(
         IPaymentStore paymentStore,
         IReferenceStore referenceStore,
-        ITuitionFeeStore tuitionFeeStore)
+        ITuitionFeeStore tuitionFeeStore,
+        IEnrollmentService enrollmentService)
     {
         _paymentStore = paymentStore;
         _referenceStore = referenceStore;
         _tuitionFeeStore = tuitionFeeStore;
+        _enrollmentService = enrollmentService;
     }
 
     public async Task<OperationResult<PagedResult<PaymentDto>>> ListAsync(
@@ -137,6 +141,31 @@ public sealed class PaymentService : IPaymentService
                 ["Số tiền chỉ được có tối đa 2 chữ số thập phân (DECIMAL(18,2))."]);
         }
 
+        // ---- (3b) NGUYÊN TẮC THU MỘT LẦN ----
+        // Trung tâm thu ĐỦ học phí trong một giao dịch duy nhất (không thu góp),
+        // nhờ vậy phiếu chỉ có 2 trạng thái: Chưa thanh toán / Đã thanh toán.
+        var hocPhiHienTai = await _tuitionFeeStore.GetDetailAsync(maHocPhi, cancellationToken);
+
+        if (hocPhiHienTai is null)
+        {
+            return OperationResult<PaymentDto>.NotFound($"Không tìm thấy học phí có id = {maHocPhi}.");
+        }
+
+        if (hocPhiHienTai.SoTienConThieu <= 0m)
+        {
+            return OperationResult<PaymentDto>.Conflict("Học phí này đã được thu đủ.");
+        }
+
+        if (decimal.Round(request.SoTien, 2) != decimal.Round(hocPhiHienTai.SoTienConThieu, 2))
+        {
+            return OperationResult<PaymentDto>.BadRequest(
+                "Phải thu đủ học phí trong MỘT lần thanh toán.",
+                [
+                    $"Số tiền cần thu đúng bằng số còn thiếu: {hocPhiHienTai.SoTienConThieu:N0} ₫.",
+                    $"Số tiền gửi lên: {request.SoTien:N0} ₫."
+                ]);
+        }
+
         // ---- (4) Phương thức ----
         var phuongThuc = TextValue.Required(request.PhuongThucThanhToan);
 
@@ -207,10 +236,36 @@ public sealed class PaymentService : IPaymentService
             default:
                 var created = await _paymentStore.GetDetailAsync(result.MaThanhToan, cancellationToken);
 
-                return created is null
-                    ? OperationResult<PaymentDto>.Conflict("Đã ghi thanh toán nhưng không đọc lại được giao dịch.")
-                    : OperationResult<PaymentDto>.Created(created, "Ghi nhận thanh toán thành công.");
+                if (created is null)
+                {
+                    return OperationResult<PaymentDto>.Conflict("Đã ghi thanh toán nhưng không đọc lại được giao dịch.");
+                }
+
+                // Thu đủ tiền ⇒ TỰ ĐỘNG xếp học viên vào lớp dự kiến.
+                await ThuXepLopSauThanhToanAsync(maHocPhi, cancellationToken);
+
+                return OperationResult<PaymentDto>.Created(created, "Ghi nhận thanh toán thành công.");
         }
+    }
+
+    /// <summary>
+    /// Sau khi ghi nhận thanh toán: nếu phiếu đã tất toán thì tự xếp học viên vào LỚP DỰ KIẾN.
+    /// <para>
+    /// Cố tình KHÔNG làm hỏng kết quả thanh toán khi xếp lớp thất bại (lớp đầy / quá 4 buổi /
+    /// trùng giờ / sai tuổi): tiền đã thu là sự thật, còn việc chưa xếp được lớp sẽ hiện
+    /// cảnh báo ở màn Đăng ký / Xếp lớp để admin đổi lớp dự kiến.
+    /// </para>
+    /// </summary>
+    private async Task ThuXepLopSauThanhToanAsync(int maHocPhi, CancellationToken cancellationToken)
+    {
+        var hocPhi = await _tuitionFeeStore.GetDetailAsync(maHocPhi, cancellationToken);
+
+        if (hocPhi is null)
+        {
+            return;
+        }
+
+        await _enrollmentService.TryAutoPlaceIfPaidAsync(hocPhi.MaDangKy, cancellationToken);
     }
 
     public async Task<OperationResult<PaymentDto>> PayByStudentAsync(
@@ -263,6 +318,14 @@ public sealed class PaymentService : IPaymentService
             return OperationResult<PaymentDto>.BadRequest(
                 "Số tiền vượt quá số còn thiếu.",
                 [$"Số còn thiếu của phiếu này là {hocPhi.SoTienConThieu:N0}."]);
+        }
+
+        // Nguyên tắc THU MỘT LẦN: học viên tự đóng phải đóng đúng số còn thiếu.
+        if (decimal.Round(request.SoTien, 2) != decimal.Round(hocPhi.SoTienConThieu, 2))
+        {
+            return OperationResult<PaymentDto>.BadRequest(
+                "Phải thanh toán đủ học phí trong MỘT lần.",
+                [$"Số tiền cần thanh toán: {hocPhi.SoTienConThieu:N0} ₫."]);
         }
 
         // ---- (3) Phương thức (chỉ các phương thức chuẩn của cổng mô phỏng) ----
@@ -328,9 +391,15 @@ public sealed class PaymentService : IPaymentService
             default:
                 var created = await _paymentStore.GetDetailAsync(result.MaThanhToan, cancellationToken);
 
-                return created is null
-                    ? OperationResult<PaymentDto>.Conflict("Đã ghi thanh toán nhưng không đọc lại được giao dịch.")
-                    : OperationResult<PaymentDto>.Created(created, "Thanh toán mô phỏng thành công.");
+                if (created is null)
+                {
+                    return OperationResult<PaymentDto>.Conflict("Đã ghi thanh toán nhưng không đọc lại được giao dịch.");
+                }
+
+                // Thu đủ tiền ⇒ TỰ ĐỘNG xếp học viên vào lớp dự kiến.
+                await ThuXepLopSauThanhToanAsync(maHocPhi, cancellationToken);
+
+                return OperationResult<PaymentDto>.Created(created, "Thanh toán mô phỏng thành công.");
         }
     }
 

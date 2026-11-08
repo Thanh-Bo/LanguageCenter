@@ -40,6 +40,7 @@ public sealed class FormTaiKhoan : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapDuLieu();
     }
 

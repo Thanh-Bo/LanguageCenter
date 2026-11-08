@@ -26,6 +26,8 @@ public partial class FormDangNhap : Form
         InitializeComponent();
 
         DungDangNhapNhanh();
+
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
     }
 
     /// <summary>

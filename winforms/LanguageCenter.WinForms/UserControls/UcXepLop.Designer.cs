@@ -24,7 +24,6 @@ partial class UcXepLop
 
     private TextBox txtSearchPending = null!;
     private ComboBox cboFilterCourse = null!;
-    private Button btnEnrollSelectedPending = null!;
     private Button btnTuChoiDangKy = null!;
 
     private Panel pnlGridContainer = null!;
@@ -67,7 +66,6 @@ partial class UcXepLop
 
         txtSearchPending = new TextBox();
         cboFilterCourse = new ComboBox();
-        btnEnrollSelectedPending = new Button();
         btnTuChoiDangKy = new Button();
 
         pnlGridContainer = new Panel();
@@ -212,16 +210,6 @@ partial class UcXepLop
         cboFilterCourse.Width = 240;
         cboFilterCourse.Location = new Point(315, 10);
 
-        btnEnrollSelectedPending.Text = "Xếp vào lớp mục tiêu";
-        btnEnrollSelectedPending.Size = new Size(185, 34);
-        btnEnrollSelectedPending.FlatStyle = FlatStyle.Flat;
-        btnEnrollSelectedPending.FlatAppearance.BorderSize = 0;
-        btnEnrollSelectedPending.BackColor = Color.FromArgb(30, 86, 240);
-        btnEnrollSelectedPending.ForeColor = Color.White;
-        btnEnrollSelectedPending.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
-        btnEnrollSelectedPending.Cursor = Cursors.Hand;
-        btnEnrollSelectedPending.Location = new Point(920, 9);
-
         btnTuChoiDangKy.Text = "Từ chối đăng ký";
         btnTuChoiDangKy.Size = new Size(150, 34);
         btnTuChoiDangKy.FlatStyle = FlatStyle.Flat;
@@ -238,7 +226,6 @@ partial class UcXepLop
         pnlToolbar.Controls.Add(btnRemoveFromClass);
         pnlToolbar.Controls.Add(txtSearchPending);
         pnlToolbar.Controls.Add(cboFilterCourse);
-        pnlToolbar.Controls.Add(btnEnrollSelectedPending);
         pnlToolbar.Controls.Add(btnTuChoiDangKy);
 
         // 4. GRID CONTAINER
@@ -267,6 +254,7 @@ partial class UcXepLop
         dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "KhoaHoc", HeaderText = "Khóa học đăng ký", FillWeight = 140 });
         dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayDangKy", HeaderText = "Ngày đăng ký", FillWeight = 95 });
         dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "HocPhi", HeaderText = "Học phí", FillWeight = 95 });
+        dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "LopDuKien", HeaderText = "Lớp dự kiến", FillWeight = 140 });
         dgvPending.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrangThai", HeaderText = "Trạng thái", FillWeight = 95 });
 
         pnlGridContainer.Controls.Add(dgvInClass);

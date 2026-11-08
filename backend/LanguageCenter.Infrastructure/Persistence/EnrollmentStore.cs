@@ -75,6 +75,18 @@ public sealed class EnrollmentStore : IEnrollmentStore
                 TenKhoaHoc = x.KhoaHoc.TenKhoaHoc,
                 MaLopHoc = x.MaLopHoc,
                 MaLop = x.LopHoc != null ? x.LopHoc.MaLop : null,
+                MaLopDuKien = x.MaLopDuKien,
+                MaLopDuKienText = x.MaLopDuKien != null
+                    ? _dbContext.LopHocs.Where(l => l.MaLopHoc == x.MaLopDuKien)
+                        .Select(l => l.MaLop + " — " + l.TenLop).FirstOrDefault()
+                    : null,
+                SoTienConThieuHocPhi = x.HocPhi != null ? x.HocPhi.SoTienConThieu : null,
+                TrangThaiHocPhi = x.HocPhi != null ? x.HocPhi.TrangThaiHocPhi : null,
+                DaThuDuChuaXepDuocLop =
+                    x.MaLopHoc == null
+                    && x.HocPhi != null
+                    && x.HocPhi.SoTienConThieu <= 0m
+                    && x.TrangThaiDangKy == EnrollmentStatuses.ChoXuLy,
                 NgayDangKy = x.NgayDangKy,
                 HocPhiGoc = x.HocPhiGoc,
                 SoTienGiam = x.SoTienGiam,
@@ -106,6 +118,11 @@ public sealed class EnrollmentStore : IEnrollmentStore
                 TenKhoaHoc = x.KhoaHoc.TenKhoaHoc,
                 MaLopHoc = x.MaLopHoc,
                 MaLop = x.LopHoc != null ? x.LopHoc.MaLop : null,
+                MaLopDuKien = x.MaLopDuKien,
+                MaLopDuKienText = x.MaLopDuKien != null
+                    ? _dbContext.LopHocs.Where(l => l.MaLopHoc == x.MaLopDuKien)
+                        .Select(l => l.MaLop + " — " + l.TenLop).FirstOrDefault()
+                    : null,
                 MaNhanVienTuVan = x.MaNhanVienTuVan,
                 TenNhanVienTuVan = x.NhanVienTuVan.HoTen,
                 MaUuDai = x.MaUuDai,
@@ -153,7 +170,8 @@ public sealed class EnrollmentStore : IEnrollmentStore
         {
             MaHocVien = data.MaHocVien,
             MaKhoaHoc = data.MaKhoaHoc,
-            MaLopHoc = null, // luôn tạo trước, xếp lớp sau qua AssignClassAsync
+            MaLopHoc = null, // chỉ được gán khi thu đủ học phí (tự xếp) hoặc xếp tay
+            MaLopDuKien = data.MaLopDuKien,
             MaNhanVienTuVan = data.MaNhanVienTuVan,
             MaUuDai = data.MaUuDai,
             LichHocMongMuon = data.LichHocMongMuon,
@@ -167,6 +185,30 @@ public sealed class EnrollmentStore : IEnrollmentStore
 
         _dbContext.DangKyHocs.Add(entity);
 
+        // Phiếu học phí được sinh NGAY khi tạo đăng ký, trong CÙNG transaction:
+        // trung tâm thu tiền trước khi xếp lớp nên màn Học phí phải có phiếu để thu.
+        // Gắn qua navigation để EF tự điền MaDangKy sau khi INSERT đăng ký.
+        HocPhi? hocPhi = null;
+
+        if (EnrollmentRules.TuDongTaoPhieuHocPhi)
+        {
+            var soTienPhaiDong = data.HocPhiGoc - data.SoTienGiam;
+
+            hocPhi = new HocPhi
+            {
+                DangKyHoc = entity,
+                SoTienGoc = data.HocPhiGoc,
+                SoTienGiam = data.SoTienGiam,
+                SoTienDaDong = 0m,
+                HanThanhToan = null,
+                TrangThaiHocPhi = TuitionStatuses.FromAmounts(soTienPhaiDong, 0m),
+                NgayTao = DateTime.Now
+                // SoTienPhaiDong / SoTienConThieu: computed PERSISTED — KHÔNG gán
+            };
+
+            _dbContext.HocPhis.Add(hocPhi);
+        }
+
         try
         {
             await _dbContext.SaveChangesAsync(cancellationToken);
@@ -174,6 +216,12 @@ public sealed class EnrollmentStore : IEnrollmentStore
         catch (DbUpdateException exception) when (SqlErrorHelper.IsConstraintViolation(exception))
         {
             _dbContext.Entry(entity).State = EntityState.Detached;
+
+            if (hocPhi is not null)
+            {
+                _dbContext.Entry(hocPhi).State = EntityState.Detached;
+            }
+
             return WriteResult.Conflict();
         }
 
@@ -197,6 +245,25 @@ public sealed class EnrollmentStore : IEnrollmentStore
         entity.SoTienGiam = changes.SoTienGiam;
         entity.LichHocMongMuon = changes.LichHocMongMuon;
         entity.GhiChu = changes.GhiChu;
+
+        if (changes.MaLopDuKien is { } maLopDuKien)
+        {
+            entity.MaLopDuKien = maLopDuKien;
+        }
+
+        // Phiếu học phí đi kèm phải phản ánh đúng số tiền của đăng ký.
+        // CHỈ đồng bộ khi phiếu chưa có đồng nào được thu (giữ dấu vết tài chính).
+        var hocPhi = await _dbContext.HocPhis
+            .FirstOrDefaultAsync(x => x.MaDangKy == maDangKy, cancellationToken);
+
+        if (hocPhi is not null && hocPhi.SoTienDaDong <= 0m)
+        {
+            hocPhi.SoTienGoc = entity.HocPhiGoc;
+            hocPhi.SoTienGiam = entity.SoTienGiam;
+            hocPhi.TrangThaiHocPhi = TuitionStatuses.FromAmounts(
+                entity.HocPhiGoc - entity.SoTienGiam,
+                hocPhi.SoTienDaDong);
+        }
 
         try
         {
@@ -337,6 +404,14 @@ public sealed class EnrollmentStore : IEnrollmentStore
                 hocVien.NgayNhapHoc = lopHoc.NgayBatDau;
             }
 
+            // Vào lớp = đã nhập học. CHỈ nâng từ "Đang tư vấn" → "Đang học",
+            // không ghi đè "Bảo lưu" / "Đã nghỉ" mà nhân viên đã cố ý đặt.
+            if (hocVien is not null
+                && hocVien.TrangThaiHocTap == StudentStatuses.DangTuVan)
+            {
+                hocVien.TrangThaiHocTap = StudentStatuses.DangHoc;
+            }
+
             await _dbContext.SaveChangesAsync(cancellationToken);
             await transaction.CommitAsync(cancellationToken);
 
@@ -379,17 +454,40 @@ public sealed class EnrollmentStore : IEnrollmentStore
         int maLopHoc,
         CancellationToken cancellationToken)
     {
-        var enrollment = await _dbContext.DangKyHocs
+        var maHocVien = await _dbContext.DangKyHocs
             .AsNoTracking()
             .Where(x => x.MaDangKy == maDangKy)
-            .Select(x => new { x.MaHocVien })
+            .Select(x => x.MaHocVien)
             .FirstOrDefaultAsync(cancellationToken);
 
-        if (enrollment is null)
+        if (maHocVien is null)
         {
             return null;
         }
 
+        return await BuildPlacementContextAsync(maHocVien, maLopHoc, maDangKy, cancellationToken);
+    }
+
+    public Task<PlacementContext?> GetPlacementContextForStudentAsync(
+        string maHocVien,
+        int maLopHoc,
+        int? exceptDangKyId,
+        CancellationToken cancellationToken)
+        => BuildPlacementContextAsync(maHocVien, maLopHoc, exceptDangKyId, cancellationToken);
+
+    /// <summary>
+    /// Dựng ngữ cảnh kiểm tra xếp lớp. Dùng chung cho 2 tình huống:
+    /// <list type="bullet">
+    ///   <item>Đã có đăng ký (<paramref name="maDangKyKiemTra"/>) — lúc xếp lớp / kiểm tra lại sau khi thu tiền.</item>
+    ///   <item>Chưa có đăng ký (truyền <c>null</c>) — lúc TẠO đăng ký, chỉ có học viên + lớp dự kiến.</item>
+    /// </list>
+    /// </summary>
+    private async Task<PlacementContext?> BuildPlacementContextAsync(
+        string maHocVien,
+        int maLopHoc,
+        int? maDangKyKiemTra,
+        CancellationToken cancellationToken)
+    {
         var lop = await _dbContext.LopHocs
             .AsNoTracking()
             .Where(x => x.MaLopHoc == maLopHoc)
@@ -400,6 +498,7 @@ public sealed class EnrollmentStore : IEnrollmentStore
                 x.TenLop,
                 x.NgayBatDau,
                 x.NgayKetThucDuKien,
+                x.SiSoToiDa,
                 SoBuoi = x.KhoaHoc.SoBuoi,
                 DoTuoiTu = x.KhoaHoc.CapDo.ChuongTrinh.DoTuoiTu,
                 DoTuoiDen = x.KhoaHoc.CapDo.ChuongTrinh.DoTuoiDen
@@ -413,7 +512,7 @@ public sealed class EnrollmentStore : IEnrollmentStore
 
         var ngaySinh = await _dbContext.HocViens
             .AsNoTracking()
-            .Where(x => x.MaHocVien == enrollment.MaHocVien)
+            .Where(x => x.MaHocVien == maHocVien)
             .Select(x => (DateOnly?)x.NgaySinh)
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -432,14 +531,33 @@ public sealed class EnrollmentStore : IEnrollmentStore
                      && x.NgayHoc <= today,
                 cancellationToken);
 
+        // Sĩ số: đã xếp lớp thật + đang giữ chỗ (đăng ký chờ xử lý có lớp dự kiến = lớp này).
+        var soDaXepLop = await _dbContext.DangKyHocs
+            .AsNoTracking()
+            .CountAsync(
+                x => x.MaLopHoc == maLopHoc
+                     && (x.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
+                         || x.TrangThaiDangKy == EnrollmentStatuses.HoanThanh),
+                cancellationToken);
+
+        var soGiuCho = await _dbContext.DangKyHocs
+            .AsNoTracking()
+            .CountAsync(
+                x => x.MaLopDuKien == maLopHoc
+                     && x.MaLopHoc == null
+                     && x.TrangThaiDangKy == EnrollmentStatuses.ChoXuLy
+                     && (maDangKyKiemTra == null || x.MaDangKy != maDangKyKiemTra),
+                cancellationToken);
+
         // Các lớp khác mà học viên đang theo học (để kiểm tra trùng giờ).
         var lopKhacIds = await _dbContext.DangKyHocs
             .AsNoTracking()
-            .Where(x => x.MaHocVien == enrollment.MaHocVien
+            .Where(x => x.MaHocVien == maHocVien
                         && x.MaLopHoc != null
                         && x.MaLopHoc != maLopHoc
                         && (x.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
-                            || x.TrangThaiDangKy == EnrollmentStatuses.HoanThanh))
+                            || x.TrangThaiDangKy == EnrollmentStatuses.HoanThanh)
+                        && (maDangKyKiemTra == null || x.MaDangKy != maDangKyKiemTra))
             .Select(x => x.MaLopHoc!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
@@ -533,11 +651,14 @@ public sealed class EnrollmentStore : IEnrollmentStore
             }
         }
 
-        var hocPhi = await _dbContext.HocPhis
-            .AsNoTracking()
-            .Where(x => x.MaDangKy == maDangKy)
-            .Select(x => new { x.SoTienConThieu, x.TrangThaiHocPhi })
-            .FirstOrDefaultAsync(cancellationToken);
+        // Chỉ tra phiếu học phí khi đang kiểm tra một đăng ký có thật.
+        var hocPhi = maDangKyKiemTra is { } idKiemTra
+            ? await _dbContext.HocPhis
+                .AsNoTracking()
+                .Where(x => x.MaDangKy == idKiemTra)
+                .Select(x => new { x.SoTienConThieu, x.TrangThaiHocPhi })
+                .FirstOrDefaultAsync(cancellationToken)
+            : null;
 
         return new PlacementContext(
             lop.MaLopHoc,
@@ -545,7 +666,7 @@ public sealed class EnrollmentStore : IEnrollmentStore
             lop.TenLop,
             lop.NgayBatDau,
             lop.NgayKetThucDuKien,
-            enrollment.MaHocVien,
+            maHocVien,
             ngaySinh.Value,
             lop.DoTuoiTu,
             lop.DoTuoiDen,
@@ -555,7 +676,10 @@ public sealed class EnrollmentStore : IEnrollmentStore
             slotsCu)
         {
             SoTienConThieuHocPhi = hocPhi?.SoTienConThieu,
-            TrangThaiHocPhi = hocPhi?.TrangThaiHocPhi
+            TrangThaiHocPhi = hocPhi?.TrangThaiHocPhi,
+            SiSoToiDa = lop.SiSoToiDa,
+            SoDaXepLop = soDaXepLop,
+            SoGiuCho = soGiuCho
         };
     }
 
@@ -567,6 +691,24 @@ public sealed class EnrollmentStore : IEnrollmentStore
         if (entity is null)
         {
             return WriteOutcome.NotFound;
+        }
+
+        // Phiếu học phí sinh kèm đăng ký → phải xoá trước (FK Restrict).
+        var hocPhi = await _dbContext.HocPhis
+            .FirstOrDefaultAsync(x => x.MaDangKy == maDangKy, cancellationToken);
+
+        if (hocPhi is not null)
+        {
+            // Đã thu tiền rồi thì KHÔNG xoá — giữ dấu vết tài chính.
+            var daThuTien = await _dbContext.ThanhToans
+                .AnyAsync(x => x.MaHocPhi == hocPhi.MaHocPhi, cancellationToken);
+
+            if (daThuTien)
+            {
+                return WriteOutcome.Conflict;
+            }
+
+            _dbContext.HocPhis.Remove(hocPhi);
         }
 
         _dbContext.DangKyHocs.Remove(entity);

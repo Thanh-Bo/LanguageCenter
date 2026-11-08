@@ -21,6 +21,15 @@ public class GiaoVien
 
     public string? ChuyenMon { get; set; }
 
+    /// <summary>
+    /// Bằng cấp / chứng chỉ do Admin gõ tay (văn bản tự do, không phải file đính kèm).
+    /// <para>
+    /// Bảng <c>BangCap</c> / <c>ChungChi</c> có cấu trúc chi tiết nhưng Phase 3 chưa có endpoint ghi,
+    /// nên phần này lưu dạng ghi chú cho tới khi có CRUD riêng.
+    /// </para>
+    /// </summary>
+    public string? GhiChuBangCap { get; set; }
+
     public int? SoNamKinhNghiem { get; set; }
 
     public DateOnly? NgayVaoLam { get; set; }

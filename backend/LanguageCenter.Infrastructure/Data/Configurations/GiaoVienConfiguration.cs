@@ -21,6 +21,9 @@ public sealed class GiaoVienConfiguration : IEntityTypeConfiguration<GiaoVien>
         builder.Property(x => x.LoaiGiaoVien).HasMaxLength(50).IsRequired();
         builder.Property(x => x.ChuyenMon).HasMaxLength(500);
 
+        // Bằng cấp / chứng chỉ gõ tay (văn bản tự do) — xem GiaoVien.GhiChuBangCap.
+        builder.Property(x => x.GhiChuBangCap).HasMaxLength(1000);
+
         builder.Property(x => x.TrangThai)
             .HasMaxLength(50)
             .IsRequired()

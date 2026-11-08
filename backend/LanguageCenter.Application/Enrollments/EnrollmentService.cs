@@ -132,7 +132,46 @@ public sealed class EnrollmentService : IEnrollmentService
                 [promotion.Error!]);
         }
 
-        // ---- (6) Tạo đăng ký (chưa xếp lớp) ----
+        // ---- (6) LỚP DỰ KIẾN: bắt buộc, phải thuộc đúng khóa học ----
+        if (request.MaLopDuKien <= 0)
+        {
+            return OperationResult<EnrollmentDetailDto>.BadRequest(
+                "Lớp học dự kiến là bắt buộc.",
+                ["Hãy chọn lớp học viên sẽ vào học. Học phí thu đủ sẽ tự xếp vào lớp này."]);
+        }
+
+        var lopDuKien = await _classStore.GetDetailAsync(request.MaLopDuKien, cancellationToken);
+
+        if (lopDuKien is null)
+        {
+            return OperationResult<EnrollmentDetailDto>.BadRequest(
+                "Lớp học dự kiến không tồn tại.",
+                [$"Không tìm thấy lớp có id = {request.MaLopDuKien}."]);
+        }
+
+        if (lopDuKien.MaKhoaHoc != request.MaKhoaHoc)
+        {
+            return OperationResult<EnrollmentDetailDto>.BadRequest(
+                "Lớp học không thuộc khóa học đã chọn.",
+                [$"Lớp '{lopDuKien.MaLop}' thuộc khóa có id = {lopDuKien.MaKhoaHoc}, không phải {request.MaKhoaHoc}."]);
+        }
+
+        // ---- (7) KIỂM TRA LẦN 1: 4 quy tắc xếp lớp, ngay lúc tạo đăng ký ----
+        // Báo lỗi sớm để người nhập liệu chọn lớp khác ngay, không phải chờ tới lúc thu tiền.
+        var placementErrors = await CheckPlacementRulesForStudentAsync(
+            maHocVien,
+            request.MaLopDuKien,
+            exceptDangKyId: null,
+            cancellationToken);
+
+        if (placementErrors.Count > 0)
+        {
+            return OperationResult<EnrollmentDetailDto>.BadRequest(
+                "Không thể xếp học viên vào lớp dự kiến này.",
+                placementErrors);
+        }
+
+        // ---- (8) Tạo đăng ký + phiếu học phí (CHƯA vào lớp — chờ thu tiền) ----
         var createData = new EnrollmentCreateData(
             MaHocVien: maHocVien,
             MaKhoaHoc: request.MaKhoaHoc,
@@ -141,7 +180,10 @@ public sealed class EnrollmentService : IEnrollmentService
             HocPhiGoc: course.HocPhiCoBan,
             SoTienGiam: promotion.SoTienGiam,
             LichHocMongMuon: TextValue.Optional(request.LichHocMongMuon),
-            GhiChu: TextValue.Optional(request.GhiChu));
+            GhiChu: TextValue.Optional(request.GhiChu))
+        {
+            MaLopDuKien = request.MaLopDuKien
+        };
 
         var created = await _enrollmentStore.CreateAsync(createData, cancellationToken);
 
@@ -150,34 +192,11 @@ public sealed class EnrollmentService : IEnrollmentService
             return OperationResult<EnrollmentDetailDto>.Conflict("Không thể tạo đăng ký học.");
         }
 
-        // ---- (7) Nếu client chỉ định lớp thì xếp lớp luôn ----
-        if (request.MaLopHoc is { } maLopHoc)
-        {
-            var ruleErrors = await CheckPlacementRulesAsync(created.Id, maLopHoc, cancellationToken);
-
-            if (ruleErrors.Count > 0)
-            {
-                await _enrollmentStore.DeleteAsync(created.Id, cancellationToken);
-
-                return OperationResult<EnrollmentDetailDto>.BadRequest("Không thể xếp lớp.", ruleErrors);
-            }
-
-            var assignOutcome = await _enrollmentStore.AssignClassAsync(created.Id, maLopHoc, cancellationToken);
-
-            if (assignOutcome != AssignClassOutcome.Success)
-            {
-                // Hoàn tác: xóa đăng ký vừa tạo để không để lại bản ghi mồ côi.
-                await _enrollmentStore.DeleteAsync(created.Id, cancellationToken);
-
-                return OperationResult<EnrollmentDetailDto>.BadRequest(
-                    "Không thể xếp lớp.",
-                    [DescribeAssignFailure(assignOutcome)]);
-            }
-        }
-
         var detail = await _enrollmentStore.GetDetailAsync(created.Id, cancellationToken);
 
-        return OperationResult<EnrollmentDetailDto>.Created(detail!, "Tạo đăng ký học thành công.");
+        return OperationResult<EnrollmentDetailDto>.Created(
+            detail!,
+            "Tạo đăng ký học thành công. Học phí thu đủ sẽ tự xếp vào lớp dự kiến.");
     }
 
     public async Task<OperationResult<EnrollmentDetailDto>> UpdateAsync(
@@ -192,7 +211,7 @@ public sealed class EnrollmentService : IEnrollmentService
             return OperationResult<EnrollmentDetailDto>.NotFound($"Không tìm thấy đăng ký có id = {maDangKy}.");
         }
 
-        if (request.MaUuDai is null && request.BoUuDai != true
+        if (request.MaUuDai is null && request.BoUuDai != true && request.MaLopDuKien is null
             && request.LichHocMongMuon is null && request.GhiChu is null)
         {
             return OperationResult<EnrollmentDetailDto>.BadRequest(
@@ -204,6 +223,44 @@ public sealed class EnrollmentService : IEnrollmentService
         {
             return OperationResult<EnrollmentDetailDto>.Conflict(
                 $"Không thể sửa đăng ký đang ở trạng thái '{current.TrangThaiDangKy}'.");
+        }
+
+        // ---- Đổi LỚP DỰ KIẾN: kiểm tra 4 quy tắc cho lớp mới ----
+        var doiLopDuKien = request.MaLopDuKien is { } maLopMoi && maLopMoi != current.MaLopDuKien;
+
+        if (request.MaLopDuKien is { } lopMoiId)
+        {
+            var lopMoi = await _classStore.GetDetailAsync(lopMoiId, cancellationToken);
+
+            if (lopMoi is null)
+            {
+                return OperationResult<EnrollmentDetailDto>.BadRequest(
+                    "Lớp học dự kiến không tồn tại.",
+                    [$"Không tìm thấy lớp có id = {lopMoiId}."]);
+            }
+
+            if (lopMoi.MaKhoaHoc != current.MaKhoaHoc)
+            {
+                return OperationResult<EnrollmentDetailDto>.BadRequest(
+                    "Lớp học không thuộc khóa học của đăng ký.",
+                    [$"Lớp '{lopMoi.MaLop}' thuộc khóa có id = {lopMoi.MaKhoaHoc}, không phải {current.MaKhoaHoc}."]);
+            }
+
+            if (doiLopDuKien && current.MaLopHoc is null)
+            {
+                var loiXepLop = await CheckPlacementRulesForStudentAsync(
+                    current.MaHocVien,
+                    lopMoiId,
+                    exceptDangKyId: maDangKy,
+                    cancellationToken);
+
+                if (loiXepLop.Count > 0)
+                {
+                    return OperationResult<EnrollmentDetailDto>.BadRequest(
+                        "Không thể đổi sang lớp dự kiến này.",
+                        loiXepLop);
+                }
+            }
         }
 
         // ---- Xác định ưu đãi + số tiền giảm sau khi sửa ----
@@ -228,7 +285,10 @@ public sealed class EnrollmentService : IEnrollmentService
                 : current.LichHocMongMuon,
             GhiChu: request.GhiChu is not null
                 ? TextValue.Optional(request.GhiChu)
-                : current.GhiChu);
+                : current.GhiChu)
+        {
+            MaLopDuKien = request.MaLopDuKien
+        };
 
         var outcome = await _enrollmentStore.UpdateAsync(maDangKy, updateData, cancellationToken);
 
@@ -237,6 +297,20 @@ public sealed class EnrollmentService : IEnrollmentService
             return outcome == WriteOutcome.NotFound
                 ? OperationResult<EnrollmentDetailDto>.NotFound($"Không tìm thấy đăng ký có id = {maDangKy}.")
                 : OperationResult<EnrollmentDetailDto>.Conflict("Không thể cập nhật đăng ký.");
+        }
+
+        // ---- Đã thu đủ tiền mà vừa đổi lớp dự kiến → TỰ XẾP LỚP NGAY ----
+        // Đây là "đường sửa" khi lớp dự kiến cũ đã đầy / quá 4 buổi / trùng giờ.
+        if (doiLopDuKien && current.MaLopHoc is null && request.MaLopDuKien is { } lopSauKhiSua)
+        {
+            var loiTuXep = await TryAutoPlaceAsync(maDangKy, lopSauKhiSua, cancellationToken);
+
+            if (loiTuXep is not null)
+            {
+                return OperationResult<EnrollmentDetailDto>.BadRequest(
+                    "Đã đổi lớp dự kiến nhưng CHƯA xếp được lớp.",
+                    [loiTuXep]);
+            }
         }
 
         var updated = await _enrollmentStore.GetDetailAsync(maDangKy, cancellationToken);
@@ -479,11 +553,13 @@ public sealed class EnrollmentService : IEnrollmentService
     };
 
     /// <summary>
-    /// Kiểm tra 3 quy tắc xếp lớp:
+    /// Kiểm tra 5 quy tắc xếp lớp:
     /// <list type="number">
+    ///   <item>Sĩ số: số đã xếp lớp + số đang giữ chỗ phải còn dưới sĩ số tối đa.</item>
     ///   <item>Độ tuổi học viên phải nằm trong khoảng tuổi của chương trình.</item>
     ///   <item>Không trùng thứ/giờ với lớp khác mà học viên đang học.</item>
     ///   <item>Lớp chưa đi quá số buổi cho phép (tránh vào lớp khi gần kết thúc).</item>
+    ///   <item>Học phí phải được thu ĐỦ trước khi vào lớp.</item>
     /// </list>
     /// </summary>
     private async Task<IReadOnlyList<string>> CheckPlacementRulesAsync(
@@ -493,15 +569,121 @@ public sealed class EnrollmentService : IEnrollmentService
     {
         var context = await _enrollmentStore.GetPlacementContextAsync(maDangKy, maLopHoc, cancellationToken);
 
+        return context is null ? [] : CollectPlacementErrors(context, kiemTraThanhToan: true);
+    }
+
+    /// <summary>
+    /// Kiểm tra 5 quy tắc xếp lớp theo HỌC VIÊN — dùng lúc TẠO đăng ký (chưa có MaDangKy).
+    /// <paramref name="exceptDangKyId"/> để bỏ qua chính đăng ký đang sửa.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> CheckPlacementRulesForStudentAsync(
+        string maHocVien,
+        int maLopHoc,
+        int? exceptDangKyId,
+        CancellationToken cancellationToken)
+    {
+        var context = await _enrollmentStore.GetPlacementContextForStudentAsync(
+            maHocVien,
+            maLopHoc,
+            exceptDangKyId,
+            cancellationToken);
+
         if (context is null)
         {
-            // Không đủ dữ liệu (đăng ký/lớp/học viên không tồn tại) → để store báo lỗi chính xác.
-            return [];
+            return ["Không đọc được dữ liệu học viên / lớp học để kiểm tra điều kiện xếp lớp."];
         }
 
+        // KHÔNG kiểm tra học phí ở đây: lúc TẠO đăng ký chưa có phiếu, và khi ĐỔI lớp dự kiến
+        // thì việc chưa thu tiền không phải lỗi — tiền chỉ là điều kiện để VÀO lớp thật.
+        return CollectPlacementErrors(context, kiemTraThanhToan: false);
+    }
+
+    /// <summary>
+    /// Tự xếp lớp sau khi thu đủ học phí.
+    /// <para>
+    /// Trả về <c>null</c> = KHÔNG có lỗi (hoặc chưa đủ tiền nên chưa xếp — để chờ),
+    /// trả về chuỗi = lý do không xếp được để hiển thị cho người dùng.
+    /// </para>
+    /// </summary>
+    public async Task<string?> TryAutoPlaceIfPaidAsync(
+        int maDangKy,
+        CancellationToken cancellationToken)
+    {
+        var current = await _enrollmentStore.GetDetailAsync(maDangKy, cancellationToken);
+
+        if (current is null)
+        {
+            return null;
+        }
+
+        // Đã ở trong lớp, đã huỷ/hoàn thành, hoặc không có lớp dự kiến → không làm gì.
+        if (current.MaLopHoc is not null
+            || current.TrangThaiDangKy is EnrollmentStatuses.DaHuy or EnrollmentStatuses.HoanThanh
+            || current.MaLopDuKien is not { } maLopDuKien)
+        {
+            return null;
+        }
+
+        return await TryAutoPlaceAsync(maDangKy, maLopDuKien, cancellationToken);
+    }
+
+    /// <summary>
+    /// Tự xếp lớp sau khi thu đủ học phí.
+    /// <para>
+    /// Trả về <c>null</c> = KHÔNG có lỗi (hoặc chưa đủ tiền nên chưa xếp — để chờ),
+    /// trả về chuỗi = lý do không xếp được để hiển thị cho người dùng.
+    /// </para>
+    /// </summary>
+    private async Task<string?> TryAutoPlaceAsync(
+        int maDangKy,
+        int maLopHoc,
+        CancellationToken cancellationToken)
+    {
+        var context = await _enrollmentStore.GetPlacementContextAsync(maDangKy, maLopHoc, cancellationToken);
+
+        if (context is null)
+        {
+            return "Không đọc được dữ liệu đăng ký / lớp học.";
+        }
+
+        // Chưa thu đủ → chỉ chờ, KHÔNG coi là lỗi.
+        if (context.SoTienConThieuHocPhi is not { } conThieu || conThieu > 0m)
+        {
+            return null;
+        }
+
+        var errors = CollectPlacementErrors(context, kiemTraThanhToan: true);
+
+        if (errors.Count > 0)
+        {
+            return string.Join(" ", errors);
+        }
+
+        var outcome = await _enrollmentStore.AssignClassAsync(maDangKy, maLopHoc, cancellationToken);
+
+        return outcome == AssignClassOutcome.Success ? null : DescribeAssignFailure(outcome);
+    }
+
+    /// <summary>Bộ quy tắc xếp lớp dùng chung cho mọi thời điểm kiểm tra.</summary>
+    /// <param name="kiemTraThanhToan">
+    /// <c>true</c> chỉ khi chuẩn bị VÀO LỚP THẬT (xếp lớp / tự xếp sau khi thu tiền).
+    /// Lúc tạo đăng ký hoặc đổi lớp dự kiến thì để <c>false</c> — chưa thu tiền không phải lỗi.
+    /// </param>
+    private static List<string> CollectPlacementErrors(PlacementContext context, bool kiemTraThanhToan)
+    {
         var errors = new List<string>();
 
-        // ---- (1) Độ tuổi tại ngày khai giảng của lớp ----
+        // ---- (1) Sĩ số: đã xếp lớp + đang giữ chỗ ----
+        var daChiemCho = context.SoDaXepLop + context.SoGiuCho;
+
+        if (daChiemCho >= context.SiSoToiDa)
+        {
+            errors.Add(
+                $"Lớp '{context.MaLop}' đã kín chỗ: {context.SoDaXepLop} đã xếp lớp + "
+                + $"{context.SoGiuCho} đang giữ chỗ / tối đa {context.SiSoToiDa}.");
+        }
+
+        // ---- (2) Độ tuổi tại ngày khai giảng của lớp ----
         var tuoi = TinhTuoi(context.NgaySinh, context.NgayBatDauLop);
 
         if (context.DoTuoiTu is { } tuoiTu && tuoi < tuoiTu)
@@ -518,7 +700,7 @@ public sealed class EnrollmentService : IEnrollmentService
                 $"{tuoiDen} của chương trình — không thể xếp vào lớp '{context.MaLop}'.");
         }
 
-        // ---- (2) Trùng thời gian với lớp khác ----
+        // ---- (3) Trùng thời gian với lớp khác ----
         foreach (var slot in context.LopMoiSlots)
         {
             foreach (var other in context.LopDangHocSlots)
@@ -549,16 +731,17 @@ public sealed class EnrollmentService : IEnrollmentService
             }
         }
 
-        // ---- (3) Lớp đã gần kết thúc ----
+        // ---- (4) Lớp đã gần kết thúc ----
         if (context.SoBuoiDaDienRa > EnrollmentRules.SoBuoiDaDienRaToiDa)
         {
             errors.Add(
                 $"Lớp '{context.MaLop}' đã diễn ra {context.SoBuoiDaDienRa}/{context.TongSoBuoi} buổi " +
                 $"(quá {EnrollmentRules.SoBuoiDaDienRaToiDa} buổi) — không nhận thêm học viên.");
         }
-        // ---- (4) THANH TOÁN TRƯỚC KHI VÀO HỌC ----
+
+        // ---- (5) THANH TOÁN TRƯỚC KHI VÀO HỌC ----
         // Trung tâm thu học phí TRƯỚC khi xếp lớp ⇒ hồ sơ không bao giờ phát sinh công nợ.
-        if (EnrollmentRules.BatBuocThanhToanTruocKhiXepLop)
+        if (kiemTraThanhToan && EnrollmentRules.BatBuocThanhToanTruocKhiXepLop)
         {
             if (context.SoTienConThieuHocPhi is null)
             {

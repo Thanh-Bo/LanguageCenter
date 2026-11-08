@@ -16,6 +16,7 @@ public partial class FormKetQuaMatKhau : Form
         txtUsername.Text = username;
         txtPassword.Text = temporaryPassword;
         btnClose.Click += (_, _) => Close();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
     }
 
     private void BtnCopy_Click(object? sender, EventArgs e)

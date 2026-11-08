@@ -47,11 +47,13 @@ public sealed class StudentService : IStudentService
             return OperationResult<CreateStudentResponse>.BadRequest("Dữ liệu không hợp lệ.", errors);
         }
 
-        var email = request.Email.Trim();
+        var email = (request.Email ?? string.Empty).Trim();
 
         // Kiểm tra sớm để có thông báo rõ ràng. Ràng buộc UNIQUE trong database vẫn là chốt cuối
         // và được xử lý tiếp trong store (trường hợp race condition).
-        if (await _accountStore.EmailExistsAsync(email, exceptUsername: null, cancellationToken))
+        // Học viên dưới 18 tuổi có thể bỏ trống email → backend tự sinh <mã>@trungtam.edu.vn.
+        if (email.Length > 0
+            && await _accountStore.EmailExistsAsync(email, exceptUsername: null, cancellationToken))
         {
             return OperationResult<CreateStudentResponse>.Conflict(
                 $"Email '{email}' đã được sử dụng bởi tài khoản khác.");
@@ -281,6 +283,22 @@ public sealed class StudentService : IStudentService
         else if (!TextValue.IsOldEnough(request.NgaySinh, 3, out var ageError))
         {
             errors.Add(ageError!);
+        }
+
+        // Email: BẮT BUỘC khi học viên từ 18 tuổi trở lên; dưới 18 tuổi không cần
+        // (backend tự sinh <mã học viên>@trungtam.edu.vn).
+        var emailDaNhap = (request.Email ?? string.Empty).Trim();
+
+        if (emailDaNhap.Length == 0)
+        {
+            if (TextValue.TinhTuoi(request.NgaySinh, DateOnly.FromDateTime(DateTime.Today)) >= 18)
+            {
+                errors.Add("Email: bắt buộc nhập với học viên từ 18 tuổi trở lên.");
+            }
+        }
+        else if (emailDaNhap.Length > 255)
+        {
+            errors.Add("Email: tối đa 255 ký tự.");
         }
 
         if (!TextValue.IsPlausiblePhone(request.SoDienThoai, out var phoneError))

@@ -47,6 +47,7 @@ public sealed class FormChuongTrinh : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapDuLieu();
     }
 

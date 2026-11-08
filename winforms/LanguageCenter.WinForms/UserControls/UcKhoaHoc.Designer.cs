@@ -198,7 +198,6 @@ partial class UcKhoaHoc
         dgvCourses.Columns.Add(new DataGridViewTextBoxColumn { Name = "SoBuoi", HeaderText = "Số buổi", FillWeight = 70 });
         dgvCourses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TongSoGio", HeaderText = "Thời lượng", FillWeight = 80 });
         dgvCourses.Columns.Add(new DataGridViewTextBoxColumn { Name = "HocPhiCoBan", HeaderText = "Học phí niêm yết", FillWeight = 110 });
-        dgvCourses.Columns.Add(new DataGridViewTextBoxColumn { Name = "NgayBatDau", HeaderText = "Khai giảng", FillWeight = 85 });
         dgvCourses.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrangThai", HeaderText = "Trạng thái", FillWeight = 95 });
 
         dgvLevels.Dock = DockStyle.Fill;

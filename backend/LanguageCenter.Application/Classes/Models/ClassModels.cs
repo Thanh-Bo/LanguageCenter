@@ -154,6 +154,12 @@ public sealed class ClassListItemDto
     /// <summary>Số học viên đang chiếm chỗ ("Đã xếp lớp" + "Hoàn thành").</summary>
     public int SiSoHienTai { get; init; }
 
+    /// <summary>
+    /// Số đăng ký đang GIỮ CHỖ cho lớp này (có <c>MaLopDuKien = lớp</c>, còn "Chờ xử lý").
+    /// Sĩ số thực tế dùng để chặn đăng ký là <c>SiSoHienTai + SiSoDuKien</c>.
+    /// </summary>
+    public int SiSoDuKien { get; init; }
+
     /// <summary>Số ca học đã sinh cho lớp. <c>0</c> = lớp chưa có buổi học nào.</summary>
     public int SoCaHoc { get; init; }
 
@@ -213,6 +219,9 @@ public sealed class ClassDetailDto
     public int SiSoToiDa { get; init; }
 
     public int SiSoHienTai { get; init; }
+
+    /// <summary>Số đăng ký đang giữ chỗ cho lớp (chờ thu học phí).</summary>
+    public int SiSoDuKien { get; init; }
 
     public int SoPhanCong { get; init; }
 

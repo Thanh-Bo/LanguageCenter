@@ -31,6 +31,13 @@ public sealed class CaHocConfiguration : IEntityTypeConfiguration<CaHoc>
 
         builder.Property(x => x.SoBuoi);
 
+        // Syllabus của khóa — ca học chỉ THAM CHIẾU, không khai báo navigation để tránh nhập nhằng.
+        builder.HasOne<NoiDungBaiHoc>()
+            .WithMany()
+            .HasForeignKey(x => x.MaNoiDung)
+            .HasConstraintName("FK_CaHoc_NoiDungBaiHoc")
+            .OnDelete(DeleteBehavior.Restrict); // DB: NO ACTION
+
         builder.HasOne(x => x.LopHoc)
             .WithMany(x => x.CaHocs)
             .HasForeignKey(x => x.MaLopHoc)

@@ -53,6 +53,14 @@ public sealed class DangKyHocConfiguration : IEntityTypeConfiguration<DangKyHoc>
             .HasConstraintName("FK_DangKyHoc_LopHoc")
             .OnDelete(DeleteBehavior.Restrict); // DB: NO ACTION
 
+        // Lớp DỰ KIẾN: cố tình KHÔNG khai báo navigation để không nhập nhằng với LopHoc.
+        // Dùng chung bảng LopHoc nhưng là FK riêng biệt (FK_DangKyHoc_LopDuKien).
+        builder.HasOne<LopHoc>()
+            .WithMany()
+            .HasForeignKey(x => x.MaLopDuKien)
+            .HasConstraintName("FK_DangKyHoc_LopDuKien")
+            .OnDelete(DeleteBehavior.Restrict); // DB: NO ACTION
+
         builder.HasOne(x => x.NhanVienTuVan)
             .WithMany(x => x.DangKyHocTuVans)
             .HasForeignKey(x => x.MaNhanVienTuVan)

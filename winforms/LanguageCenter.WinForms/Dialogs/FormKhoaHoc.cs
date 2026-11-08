@@ -14,8 +14,6 @@ public sealed class FormKhoaHoc : Form
     private readonly NumericUpDown _numSoBuoi = new();
     private readonly NumericUpDown _numTongGio = new();
     private readonly NumericUpDown _numHocPhi = new();
-    private readonly DateTimePicker _dtpBatDau = new();
-    private readonly DateTimePicker _dtpKetThuc = new();
     private readonly TextBox _txtNoiDung = new();
     private readonly Label _lblThongBao = new();
     private readonly Button _btnLuu = UiHelpers.CreatePrimaryButton("Lưu khóa học", 150, 36);
@@ -39,6 +37,7 @@ public sealed class FormKhoaHoc : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapDuLieu();
     }
 
@@ -60,14 +59,18 @@ public sealed class FormKhoaHoc : Form
         _numSoBuoi.Maximum = 1000;
         _numSoBuoi.Value = 24;
         _numSoBuoi.Width = 120;
-        DatTruong("Số buổi", _numSoBuoi, 176);
+        DatTruong("Số buổi *", _numSoBuoi, 176);
 
+        // Tổng số giờ KHÔNG nhập tay: luôn = Số buổi × 2 giờ/buổi.
         _numTongGio.Minimum = 0;
         _numTongGio.Maximum = 100000;
         _numTongGio.DecimalPlaces = 1;
         _numTongGio.Value = 48;
         _numTongGio.Width = 120;
-        DatTruong("Tổng số giờ", _numTongGio, 236);
+        _numTongGio.ReadOnly = true;
+        _numTongGio.Increment = 0;
+        _numTongGio.BackColor = Color.FromArgb(241, 245, 249);
+        DatTruong("Tổng số giờ (tự động = Số buổi × 2)", _numTongGio, 236);
 
         _numHocPhi.Minimum = 0;
         _numHocPhi.Maximum = 1_000_000_000;
@@ -76,14 +79,6 @@ public sealed class FormKhoaHoc : Form
         _numHocPhi.Value = 5_000_000;
         _numHocPhi.Width = 200;
         DatTruong("Học phí cơ bản (đồng)", _numHocPhi, 296);
-
-        _dtpBatDau.Format = DateTimePickerFormat.Short;
-        _dtpBatDau.Width = 320;
-        DatTruong("Ngày bắt đầu", _dtpBatDau, 356);
-
-        _dtpKetThuc.Format = DateTimePickerFormat.Short;
-        _dtpKetThuc.Width = 320;
-        DatTruong("Ngày kết thúc", _dtpKetThuc, 416);
 
         _txtNoiDung.Multiline = true;
         _txtNoiDung.ScrollBars = ScrollBars.Vertical;
@@ -94,22 +89,22 @@ public sealed class FormKhoaHoc : Form
             AutoSize = true,
             ForeColor = Theme.TextMedium,
             Font = Theme.FontSub,
-            Location = new Point(24, 476)
+            Location = new Point(24, 356)
         });
-        _txtNoiDung.Location = new Point(24, 496);
+        _txtNoiDung.Location = new Point(24, 376);
         Controls.Add(_txtNoiDung);
 
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(552, 34);
-        _lblThongBao.Location = new Point(24, 590);
+        _lblThongBao.Location = new Point(24, 478);
         _lblThongBao.ForeColor = Theme.Danger;
         _lblThongBao.Font = Theme.FontSub;
         Controls.Add(_lblThongBao);
 
-        _btnLuu.Location = new Point(304, 620);
+        _btnLuu.Location = new Point(304, 522);
         _btnLuu.Click += async (_, _) => await LuuAsync();
 
-        _btnHuy.Location = new Point(462, 620);
+        _btnHuy.Location = new Point(462, 522);
         _btnHuy.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
         Controls.Add(_btnLuu);
@@ -117,6 +112,25 @@ public sealed class FormKhoaHoc : Form
 
         AcceptButton = _btnLuu;
         CancelButton = _btnHuy;
+
+        // Tổng số giờ luôn = Số buổi × 2 (không nhập tay).
+        _numSoBuoi.ValueChanged += (_, _) => CapNhatTongSoGio();
+
+        CapNhatTongSoGio();
+    }
+
+    /// <summary>
+    /// Tổng số giờ = Số buổi × 2 (mỗi buổi 2 tiếng, cố định).
+    /// <para>
+    /// KHÔNG còn ngày bắt đầu / ngày kết thúc ở khóa học: đó là thông tin của TỪNG LỚP
+    /// (<c>LopHoc.NgayBatDau</c> / <c>NgayKetThucDuKien</c>).
+    /// </para>
+    /// </summary>
+    private void CapNhatTongSoGio()
+    {
+        var soBuoi = (int)_numSoBuoi.Value;
+
+        _numTongGio.Value = Math.Clamp(soBuoi * 2, _numTongGio.Minimum, _numTongGio.Maximum);
     }
 
     private void DatTruong(string nhan, Control control, int y)
@@ -159,8 +173,8 @@ public sealed class FormKhoaHoc : Form
         _numSoBuoi.Value = Math.Clamp(_existing.SoBuoi, 1, 1000);
         _numTongGio.Value = Math.Clamp(_existing.TongSoGio ?? 0, 0, 100000);
         _numHocPhi.Value = Math.Clamp(_existing.HocPhiCoBan, 0, 1_000_000_000);
-        _dtpBatDau.Value = _existing.NgayBatDau.ToDateTime(TimeOnly.MinValue);
-        _dtpKetThuc.Value = _existing.NgayKetThuc.ToDateTime(TimeOnly.MinValue);
+
+        CapNhatTongSoGio();
     }
 
     private async Task LuuAsync()
@@ -180,15 +194,6 @@ public sealed class FormKhoaHoc : Form
             return;
         }
 
-        var batDau = DateOnly.FromDateTime(_dtpBatDau.Value);
-        var ketThuc = DateOnly.FromDateTime(_dtpKetThuc.Value);
-
-        if (ketThuc < batDau)
-        {
-            _lblThongBao.Text = "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.";
-            return;
-        }
-
         _btnLuu.Enabled = false;
         UseWaitCursor = true;
 
@@ -203,9 +208,7 @@ public sealed class FormKhoaHoc : Form
                 noiDung = string.IsNullOrWhiteSpace(_txtNoiDung.Text) ? null : _txtNoiDung.Text.Trim(),
                 soBuoi = (int)_numSoBuoi.Value,
                 tongSoGio = _numTongGio.Value <= 0 ? (decimal?)null : _numTongGio.Value,
-                hocPhiCoBan = _numHocPhi.Value,
-                ngayBatDau = batDau.ToString("yyyy-MM-dd"),
-                ngayKetThuc = ketThuc.ToString("yyyy-MM-dd")
+                hocPhiCoBan = _numHocPhi.Value
             });
         }
         else
@@ -216,9 +219,7 @@ public sealed class FormKhoaHoc : Form
                 noiDung = string.IsNullOrWhiteSpace(_txtNoiDung.Text) ? null : _txtNoiDung.Text.Trim(),
                 soBuoi = (int)_numSoBuoi.Value,
                 tongSoGio = _numTongGio.Value <= 0 ? (decimal?)null : _numTongGio.Value,
-                hocPhiCoBan = _numHocPhi.Value,
-                ngayBatDau = batDau.ToString("yyyy-MM-dd"),
-                ngayKetThuc = ketThuc.ToString("yyyy-MM-dd")
+                hocPhiCoBan = _numHocPhi.Value
             });
         }
 

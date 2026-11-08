@@ -38,4 +38,14 @@ public interface IEnrollmentService
         int maDangKy,
         UpdateStatusRequest request,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// TỰ XẾP LỚP nếu học phí của đăng ký đã thu ĐỦ (Còn nợ = 0).
+    /// <para>
+    /// Gọi ngay sau khi ghi nhận thanh toán. Trả về <c>null</c> khi không có lỗi
+    /// (hoặc chưa đủ tiền / đã ở trong lớp), trả về chuỗi lý do khi không xếp được
+    /// (lớp đầy, quá 4 buổi, trùng giờ, sai tuổi) — đăng ký giữ nguyên "Chờ xử lý".
+    /// </para>
+    /// </summary>
+    Task<string?> TryAutoPlaceIfPaidAsync(int maDangKy, CancellationToken cancellationToken);
 }

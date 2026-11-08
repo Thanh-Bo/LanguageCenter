@@ -286,6 +286,12 @@ public partial class UcTongQuan : UserControl
             QueryStringBuilder.Build(
                 "admin/teachers", ("page", "1"), ("pageSize", "1"), ("loaiGiaoVien", TeacherTypes.GiaoVien)));
 
+        // Giáo viên nước ngoài vẫn là giáo viên → phải cộng vào tổng.
+        var giaoVienNuocNgoaiTask = AppSession.Api.GetAsync<PagedResult<TeacherListItemDto>>(
+            QueryStringBuilder.Build(
+                "admin/teachers", ("page", "1"), ("pageSize", "1"),
+                ("loaiGiaoVien", TeacherTypes.GiaoVienNuocNgoai)));
+
         var troGiangTask = AppSession.Api.GetAsync<PagedResult<TeacherListItemDto>>(
             QueryStringBuilder.Build(
                 "admin/teachers", ("page", "1"), ("pageSize", "1"), ("loaiGiaoVien", TeacherTypes.TroGiang)));
@@ -294,7 +300,7 @@ public partial class UcTongQuan : UserControl
             QueryStringBuilder.Build(
                 "admin/accounts", ("page", "1"), ("pageSize", "1"), ("status", AccountStatuses.HoatDong)));
 
-        await Task.WhenAll(overviewTask, coursesTask, giaoVienTask, troGiangTask, activeAccountsTask);
+        await Task.WhenAll(overviewTask, coursesTask, giaoVienTask, giaoVienNuocNgoaiTask, troGiangTask, activeAccountsTask);
 
         if (IsDisposed || Disposing)
         {
@@ -314,7 +320,7 @@ public partial class UcTongQuan : UserControl
         GanThe("taiKhoanHoatDong", activeAccountsTask.Result.Data?.TotalItems ?? 0, "Đang được kích hoạt");
         GanThe("hocVien", overview.TongHocVien, "Hồ sơ học viên");
         GanThe("hocVienDangHoc", overview.SoHocVienDangHoc, "Đang theo học các lớp");
-        GanThe("giaoVien", giaoVienTask.Result.Data?.TotalItems ?? overview.TongGiaoVien, "Hồ sơ giáo viên");
+        GanThe("giaoVien", (giaoVienTask.Result.Data?.TotalItems ?? 0) + (giaoVienNuocNgoaiTask.Result.Data?.TotalItems ?? 0), "Hồ sơ giáo viên");
         GanThe("troGiang", troGiangTask.Result.Data?.TotalItems ?? 0, "Hồ sơ trợ giảng");
         GanThe("lopHoc", overview.TongLopHoc, $"Trong đó {overview.SoLopDangHoc} lớp đang học");
         GanThe("lopDangHoc", overview.SoLopDangHoc, $"/ {overview.TongLopHoc} lớp");
@@ -326,7 +332,7 @@ public partial class UcTongQuan : UserControl
             ("Danh mục", "Cấp độ", overview.TongCapDo.ToString()),
             ("Danh mục", "Khóa học", overview.TongKhoaHoc.ToString()),
             ("Danh mục", "Lớp học", overview.TongLopHoc.ToString()),
-            ("Nhân sự", "Giáo viên", (giaoVienTask.Result.Data?.TotalItems ?? overview.TongGiaoVien).ToString()),
+            ("Nhân sự", "Giáo viên", ((giaoVienTask.Result.Data?.TotalItems ?? 0) + (giaoVienNuocNgoaiTask.Result.Data?.TotalItems ?? 0)).ToString()),
             ("Nhân sự", "Trợ giảng", (troGiangTask.Result.Data?.TotalItems ?? 0).ToString()),
             ("Nhân sự", "Nhân viên", overview.TongNhanVien.ToString()),
             ("Nhân sự", "Tổng tài khoản", overview.TongTaiKhoan.ToString()),

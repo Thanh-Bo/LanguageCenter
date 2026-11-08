@@ -36,6 +36,7 @@ public sealed class FormHocPhiMoi : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapDuLieu();
     }
 

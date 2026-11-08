@@ -80,7 +80,8 @@ public sealed class TuitionFeeStore : ITuitionFeeStore
                 NgayTao = x.NgayTao,
                 SoGiaoDich = x.ThanhToans.Count(
                     t => t.TrangThai == PaymentStatuses.ThanhCong
-                         && t.LoaiGiaoDich == PaymentTypes.ThuTien)
+                         && t.LoaiGiaoDich == PaymentTypes.ThuTien),
+                DaAn = x.DaAn
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -207,6 +208,9 @@ public sealed class TuitionFeeStore : ITuitionFeeStore
         var today = DateOnly.FromDateTime(DateTime.Today);
 
         var source = _dbContext.HocPhis.AsNoTracking();
+
+        // Phiếu đã ẩn không được tính vào báo cáo tổng.
+        source = source.Where(x => !x.DaAn);
 
         if (query.TuNgay is { } tuNgay)
         {
@@ -340,6 +344,12 @@ public sealed class TuitionFeeStore : ITuitionFeeStore
     {
         var source = _dbContext.HocPhis.AsNoTracking();
 
+        // Mặc định KHÔNG trả phiếu đã ẩn; chỉ hiện khi client yêu cầu rõ ràng.
+        if (query.BaoGomDaAn != true)
+        {
+            source = source.Where(x => !x.DaAn);
+        }
+
         if (!string.IsNullOrWhiteSpace(query.MaHocVien))
         {
             var maHocVien = query.MaHocVien.Trim();
@@ -419,6 +429,28 @@ public sealed class TuitionFeeStore : ITuitionFeeStore
             NgayTao = x.NgayTao,
             SoGiaoDich = x.ThanhToans.Count(
                 t => t.TrangThai == PaymentStatuses.ThanhCong
-                     && t.LoaiGiaoDich == PaymentTypes.ThuTien)
+                     && t.LoaiGiaoDich == PaymentTypes.ThuTien),
+            DaAn = x.DaAn
         });
+
+    /// <summary>Ẩn / bỏ ẩn một phiếu học phí. KHÔNG xoá dữ liệu tài chính.</summary>
+    public async Task<WriteOutcome> SetHiddenAsync(
+        int maHocPhi,
+        bool daAn,
+        CancellationToken cancellationToken)
+    {
+        var entity = await _dbContext.HocPhis
+            .FirstOrDefaultAsync(x => x.MaHocPhi == maHocPhi, cancellationToken);
+
+        if (entity is null)
+        {
+            return WriteOutcome.NotFound;
+        }
+
+        entity.DaAn = daAn;
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return WriteOutcome.Success;
+    }
 }

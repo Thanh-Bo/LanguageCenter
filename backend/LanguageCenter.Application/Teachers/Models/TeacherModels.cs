@@ -51,6 +51,10 @@ public sealed class CreateTeacherRequest
     [Range(0, 80, ErrorMessage = "Số năm kinh nghiệm phải từ 0 đến 80.")]
     public int? SoNamKinhNghiem { get; set; }
 
+    /// <summary>Bằng cấp / chứng chỉ gõ tay (văn bản tự do, không phải file).</summary>
+    [StringLength(1000, ErrorMessage = "Bằng cấp / chứng chỉ tối đa 1000 ký tự.")]
+    public string? GhiChuBangCap { get; set; }
+
     public DateOnly? NgayVaoLam { get; set; }
 }
 
@@ -79,6 +83,10 @@ public sealed class UpdateTeacherRequest
     [StringLength(500)] public string? DiaChi { get; set; }
 
     [StringLength(500)] public string? ChuyenMon { get; set; }
+
+    /// <summary>Bằng cấp / chứng chỉ gõ tay (văn bản tự do, không phải file).</summary>
+    [StringLength(1000, ErrorMessage = "Bằng cấp / chứng chỉ tối đa 1000 ký tự.")]
+    public string? GhiChuBangCap { get; set; }
 
     [Range(0, 80, ErrorMessage = "Số năm kinh nghiệm phải từ 0 đến 80.")]
     public int? SoNamKinhNghiem { get; set; }
@@ -195,6 +203,9 @@ public sealed class TeacherDetailDto
     public DateOnly? NgayVaoLam { get; init; }
 
     public string TrangThai { get; init; } = string.Empty;
+
+    /// <summary>Bằng cấp / chứng chỉ gõ tay (văn bản tự do, không phải file).</summary>
+    public string? GhiChuBangCap { get; init; }
 
     /// <summary>Chỉ đọc ở Phase 3 (chưa có CRUD Bằng cấp).</summary>
     public IReadOnlyList<BangCapDto> BangCaps { get; init; } = [];

@@ -40,6 +40,34 @@ public sealed class AdminSessionsController : ControllerBase
         => (await _sessionService.GetDetailAsync(id, cancellationToken)).ToActionResult();
 
     /// <summary>
+    /// Gợi ý thông tin cho ca kế tiếp của lớp theo lịch định kỳ:
+    /// buổi thứ mấy, ngày, giờ, phòng, giáo viên, trợ giảng, nội dung, loại buổi.
+    /// <para>
+    /// Tất cả đều SUY RA từ lớp + lịch + phân công + syllabus của khóa, nên màn hình
+    /// "Thêm ca học" chỉ cần hiển thị (read-only) thay vì bắt người dùng nhập lại.
+    /// </para>
+    /// </summary>
+    [HttpGet("suggest")]
+    [ProducesResponseType(typeof(SessionSuggestionDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> SuggestAsync(
+        [FromQuery] int maLopHoc,
+        [FromQuery] int maLichHoc,
+        CancellationToken cancellationToken)
+        => (await _sessionService.GetSuggestionAsync(maLopHoc, maLichHoc, cancellationToken)).ToActionResult();
+
+    /// <summary>
+    /// Đồng bộ NỘI DUNG bài học từ syllabus của khóa cho các ca CHƯA DIỄN RA.
+    /// Trả về số ca đã cập nhật.
+    /// </summary>
+    [HttpPost("sync-lesson-contents/{maKhoaHoc:int}")]
+    [ProducesResponseType(typeof(int), StatusCodes.Status200OK)]
+    public async Task<IActionResult> SyncLessonContentsAsync(
+        int maKhoaHoc,
+        CancellationToken cancellationToken)
+        => (await _sessionService.SyncLessonContentsAsync(maKhoaHoc, cancellationToken)).ToActionResult();
+
+    /// <summary>
     /// Tạo ca học. Kiểm tra xung đột phòng, xung đột giáo viên/trợ giảng,
     /// và chống trùng ca trong cùng ngày của một lớp.
     /// </summary>

@@ -6,27 +6,37 @@ namespace LanguageCenter.WinForms.Dialogs;
 /// <summary>
 /// Tạo đăng ký học cho học viên — <c>POST /api/admin/enrollments</c>.
 /// Học phí gốc và số tiền giảm do backend tự tính, client không gửi.
+/// <para>
+/// Form KHÔNG chọn ưu đãi (ưu đãi được xử lý ở màn hình khuyến mãi) và
+/// KHÔNG cho gõ "lịch học mong muốn": lịch học là dữ liệu SUY RA từ lớp đã chọn
+/// nên chỉ hiển thị, không gửi lên server.
+/// </para>
 /// </summary>
 public sealed class FormDangKyHoc : Form
 {
     private readonly IReadOnlyList<StudentListItemDto> _hocViens;
     private readonly IReadOnlyList<CourseListItemDto> _khoaHocs;
     private readonly IReadOnlyList<ClassListItemDto> _lopHocs;
+    private readonly IReadOnlyList<EnrollmentListItemDto> _dangKys;
 
     private readonly ComboBox _cboHocVien = UiHelpers.CreateComboBox(560);
     private readonly ComboBox _cboChuongTrinh = UiHelpers.CreateComboBox(560);
     private readonly ComboBox _cboKhoaHoc = UiHelpers.CreateComboBox(560);
     private readonly ComboBox _cboLop = UiHelpers.CreateComboBox(560);
-    private readonly ComboBox _cboUuDai = UiHelpers.CreateComboBox(560);
     private readonly TextBox _txtTimHocVien = UiHelpers.CreateTextBox(180);
-    private readonly TextBox _txtLichMongMuon = UiHelpers.CreateTextBox(560);
+    private readonly TextBox _txtLichHoc = UiHelpers.CreateTextBox(560);
     private readonly TextBox _txtGhiChu = UiHelpers.CreateTextBox(560);
     private readonly Label _lblHocPhi = new();
     private readonly Label _lblThongBao = new();
     private readonly Button _btnLuu = UiHelpers.CreatePrimaryButton("Tạo đăng ký", 150, 36);
     private readonly Button _btnHuy = UiHelpers.CreateSecondaryButton("Hủy bỏ", 110, 36);
 
-    private IReadOnlyList<PromotionListItemDto> _uuDais = Array.Empty<PromotionListItemDto>();
+    /// <summary>Không còn ai để đăng ký khóa đang chọn — hiện thay cho danh sách học viên.</summary>
+    private const string KhongConHocVien = "— Không còn học viên nào phù hợp để đăng ký khóa này —";
+
+    /// <summary>Khóa học không còn lớp nào đủ chỗ — hiện thay cho danh sách lớp.</summary>
+    private const string KhongConLop = "— Không còn lớp nào còn chỗ cho khóa này —";
+
     private bool _dangNap;
 
     public bool DataChanged { get; private set; }
@@ -35,10 +45,20 @@ public sealed class FormDangKyHoc : Form
         IReadOnlyList<StudentListItemDto> hocViens,
         IReadOnlyList<CourseListItemDto> khoaHocs,
         IReadOnlyList<ClassListItemDto> lopHocs)
+        : this(hocViens, khoaHocs, lopHocs, Array.Empty<EnrollmentListItemDto>())
+    {
+    }
+
+    public FormDangKyHoc(
+        IReadOnlyList<StudentListItemDto> hocViens,
+        IReadOnlyList<CourseListItemDto> khoaHocs,
+        IReadOnlyList<ClassListItemDto> lopHocs,
+        IReadOnlyList<EnrollmentListItemDto> dangKys)
     {
         _hocViens = hocViens;
         _khoaHocs = khoaHocs;
         _lopHocs = lopHocs;
+        _dangKys = dangKys;
 
         Text = "Tạo đăng ký học";
         StartPosition = FormStartPosition.CenterParent;
@@ -46,22 +66,22 @@ public sealed class FormDangKyHoc : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(620, 660);
+        ClientSize = new Size(620, 580);
         BackColor = Color.White;
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
 
         // ComboBox mặc định chỉ cao ~106px (≈5 dòng) nên danh sách dài trông như
-        // "không đổ hết". Mở rộng vùng xổ xuống cho học viên / khóa học / lớp / ưu đãi.
-        foreach (var cbo in new[] { _cboHocVien, _cboChuongTrinh, _cboKhoaHoc, _cboLop, _cboUuDai })
+        // "không đổ hết". Mở rộng vùng xổ xuống cho học viên / khóa học / lớp.
+        foreach (var cbo in new[] { _cboHocVien, _cboChuongTrinh, _cboKhoaHoc, _cboLop })
         {
             cbo.DropDownHeight = 320;
             cbo.IntegralHeight = false;
         }
 
         NapDuLieu();
-        Load += async (_, _) => await NapUuDaiAsync();
     }
 
     private void DungGiaoDien()
@@ -96,10 +116,15 @@ public sealed class FormDangKyHoc : Form
 
         DatTruong("Chương trình *", _cboChuongTrinh, 136);
         DatTruong("Khóa học *", _cboKhoaHoc, 196);
-        DatTruong("Lớp học (để trống nếu xếp lớp sau)", _cboLop, 256);
-        DatTruong("Ưu đãi / khuyến mãi (để trống nếu không áp dụng)", _cboUuDai, 316);
-        DatTruong("Lịch học mong muốn", _txtLichMongMuon, 376);
-        DatTruong("Ghi chú", _txtGhiChu, 436);
+        DatTruong("Lớp học dự kiến * (tự xếp khi thu đủ học phí)", _cboLop, 256);
+        DatTruong("Lịch học (tự động theo lớp đã chọn)", _txtLichHoc, 316);
+        DatTruong("Ghi chú", _txtGhiChu, 376);
+
+        // Lịch học là dữ liệu SUY RA từ lớp → khoá nhập, chỉ để xem.
+        _txtLichHoc.ReadOnly = true;
+        _txtLichHoc.TabStop = false;
+        _txtLichHoc.BackColor = Theme.ContentBackground;
+        _txtLichHoc.ForeColor = Theme.TextDark;
 
         // Học phí hiện ngay cạnh ô khóa học (không nhồi vào tên khóa học cho dài dòng).
         _cboKhoaHoc.Width = 430;
@@ -119,17 +144,20 @@ public sealed class FormDangKyHoc : Form
 
         _cboKhoaHoc.SelectedIndexChanged += (_, _) => NapLopTheoKhoaHoc();
 
+        // Đổi lớp → lịch học cập nhật ngay.
+        _cboLop.SelectedIndexChanged += (_, _) => CapNhatLichHoc();
+
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(570, 46);
-        _lblThongBao.Location = new Point(24, 508);
+        _lblThongBao.Location = new Point(24, 438);
         _lblThongBao.ForeColor = Theme.Danger;
         _lblThongBao.Font = Theme.FontSub;
         Controls.Add(_lblThongBao);
 
-        _btnLuu.Location = new Point(324, 574);
+        _btnLuu.Location = new Point(324, 504);
         _btnLuu.Click += async (_, _) => await LuuAsync();
 
-        _btnHuy.Location = new Point(482, 574);
+        _btnHuy.Location = new Point(482, 504);
         _btnHuy.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
         Controls.Add(_btnLuu);
@@ -160,29 +188,20 @@ public sealed class FormDangKyHoc : Form
         DoVaoComboChuongTrinh();
     }
 
-    /// <summary>Nạp danh sách ƯU ĐÃI còn hiệu lực từ API.</summary>
-    private async Task NapUuDaiAsync()
+    /// <summary>
+    /// Sinh nội dung ô "Lịch học" từ lớp đang chọn.
+    /// <para>
+    /// Chỉ đọc: lấy thẳng <c>ThuBuoi1 / ThuBuoi2 / GioBatDau / GioKetThuc</c> đã có
+    /// trong <see cref="ClassListItemDto"/> — không gọi thêm API.
+    /// Ví dụ: <c>Thứ 2 &amp; Thứ 4 · 18:00 – 19:30</c>.
+    /// </para>
+    /// </summary>
+    private void CapNhatLichHoc()
     {
-        var result = await AppSession.Api.GetAsync<PagedResult<PromotionListItemDto>>(
-            QueryStringBuilder.Build("admin/promotions", ("page", "1"), ("pageSize", "1000")));
+        var maLopHoc = (_cboLop.SelectedItem as LopItem)?.MaLopHoc;
 
-        _uuDais = result.Success && result.Data is not null
-            ? result.Data.Items
-            : Array.Empty<PromotionListItemDto>();
-
-        _cboUuDai.Items.Clear();
-        _cboUuDai.Items.Add(KhongUuDai);
-
-        foreach (var u in _uuDais.Where(x => x.ConHieuLuc && x.TrangThai == "Hoạt động"))
-        {
-            var moTa = u.LoaiGiamGia == "Phần trăm"
-                ? $"{u.TenUuDai} — giảm {u.GiaTriGiam:0.##}%"
-                : $"{u.TenUuDai} — giảm {u.GiaTriGiam:N0} ₫";
-
-            _cboUuDai.Items.Add(new UuDaiItem(u.MaUuDai, moTa));
-        }
-
-        _cboUuDai.SelectedIndex = 0;
+        _txtLichHoc.Text = LichHocText.TuLop(
+            maLopHoc is null ? null : _lopHocs.FirstOrDefault(l => l.MaLopHoc == maLopHoc));
     }
 
     /// <summary>Lọc nhanh combo học viên theo mã hoặc tên (gõ vào ô bên trái).</summary>
@@ -195,6 +214,19 @@ public sealed class FormDangKyHoc : Form
         _cboHocVien.Items.Clear();
 
         IEnumerable<StudentListItemDto> nguon = _hocViens;
+
+        // Ẩn học viên ĐÃ có đăng ký còn hiệu lực cho khóa đang chọn
+        // (đã ở trong lớp → "Đã xếp lớp", hoặc đang chờ xếp lớp → "Chờ xử lý"):
+        // backend cũng chặn trùng, nên không đưa ra cho người dùng chọn nữa.
+        if (MaKhoaHocDangChon is { } maKhoaHoc)
+        {
+            var daDangKy = _dangKys
+                .Where(dk => dk.MaKhoaHoc == maKhoaHoc && LaDangKyConHieuLuc(dk.TrangThaiDangKy))
+                .Select(dk => dk.MaHocVien)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            nguon = nguon.Where(h => !daDangKy.Contains(h.MaHocVien));
+        }
 
         if (!string.IsNullOrWhiteSpace(kw))
         {
@@ -210,27 +242,42 @@ public sealed class FormDangKyHoc : Form
                 $"{hv.MaHocVien} — {hv.HoTen} ({hv.TrangThaiHocTap})"));
         }
 
-        if (_cboHocVien.Items.Count > 0)
+        if (_cboHocVien.Items.Count == 0)
         {
-            var viTri = 0;
+            _cboHocVien.Items.Add(KhongConHocVien);
+            _cboHocVien.SelectedIndex = 0;
+            _dangNap = false;
+            return;
+        }
 
-            if (dangChon is not null)
+        var viTri = 0;
+
+        if (dangChon is not null)
+        {
+            for (var i = 0; i < _cboHocVien.Items.Count; i++)
             {
-                for (var i = 0; i < _cboHocVien.Items.Count; i++)
+                if (_cboHocVien.Items[i] is HocVienItem it && it.MaHocVien == dangChon)
                 {
-                    if (_cboHocVien.Items[i] is HocVienItem it && it.MaHocVien == dangChon)
-                    {
-                        viTri = i;
-                        break;
-                    }
+                    viTri = i;
+                    break;
                 }
             }
-
-            _cboHocVien.SelectedIndex = viTri;
         }
+
+        _cboHocVien.SelectedIndex = viTri;
 
         _dangNap = false;
     }
+
+    /// <summary>Khóa học đang chọn ở combo "Khóa học".</summary>
+    private int? MaKhoaHocDangChon => (_cboKhoaHoc.SelectedItem as KhoaHocItem)?.MaKhoaHoc;
+
+    /// <summary>
+    /// Đăng ký còn hiệu lực = đang ở trong lớp (<c>Đã xếp lớp</c>) hoặc đang chờ xếp lớp
+    /// (<c>Chờ xử lý</c>). Đã hủy / hoàn thành thì vẫn cho đăng ký lại.
+    /// </summary>
+    private static bool LaDangKyConHieuLuc(string? trangThaiDangKy)
+        => trangThaiDangKy is "Chờ xử lý" or "Đã xếp lớp";
 
     /// <summary>Đổ danh sách CHƯƠNG TRÌNH (lấy từ các khóa học đang có) rồi nạp khóa học theo chương trình.</summary>
     private void DoVaoComboChuongTrinh()
@@ -295,15 +342,24 @@ public sealed class FormDangKyHoc : Form
     private void NapLopTheoKhoaHoc()
     {
         _cboLop.Items.Clear();
-        _cboLop.Items.Add("— Xếp lớp sau —");
 
         if (_cboKhoaHoc.SelectedItem is KhoaHocItem khoaHoc)
         {
             _lblHocPhi.Text = $"{khoaHoc.HocPhiCoBan:N0} đ";
 
-            foreach (var lop in _lopHocs.Where(l => l.MaKhoaHoc == khoaHoc.MaKhoaHoc).OrderBy(l => l.MaLop))
+            // Chỉ hiện lớp CÒN CHỖ: đã xếp lớp + đang giữ chỗ phải nhỏ hơn sĩ số tối đa.
+            foreach (var lop in _lopHocs
+                         .Where(l => l.MaKhoaHoc == khoaHoc.MaKhoaHoc)
+                         .Where(l => l.SiSoHienTai + l.SiSoDuKien < l.SiSoToiDa)
+                         .OrderBy(l => l.MaLop))
             {
-                _cboLop.Items.Add(new LopItem(lop.MaLopHoc, $"{lop.TenLop} ({lop.SiSoHienTai}/{lop.SiSoToiDa})"));
+                _cboLop.Items.Add(new LopItem(lop.MaLopHoc,
+                    $"{lop.MaLop} — {lop.TenLop} ({lop.SiSoHienTai + lop.SiSoDuKien}/{lop.SiSoToiDa} chỗ)"));
+            }
+
+            if (_cboLop.Items.Count == 0)
+            {
+                _cboLop.Items.Add(KhongConLop);
             }
         }
         else
@@ -312,6 +368,12 @@ public sealed class FormDangKyHoc : Form
         }
 
         _cboLop.SelectedIndex = 0;
+
+        // Lớp đổi theo khóa → lịch học phải tính lại.
+        CapNhatLichHoc();
+
+        // Đổi khóa cũng đổi danh sách học viên được phép đăng ký (ẩn người đã có đăng ký khóa này).
+        LocHocVien();
     }
 
     private async Task LuuAsync()
@@ -320,7 +382,9 @@ public sealed class FormDangKyHoc : Form
 
         if (_cboHocVien.SelectedItem is not HocVienItem hocVien)
         {
-            _lblThongBao.Text = "Vui lòng chọn học viên.";
+            _lblThongBao.Text = _cboHocVien.Items.Count == 1 && _cboHocVien.Items[0] is string
+                ? "Tất cả học viên đều đã có đăng ký cho khóa này — không còn ai để đăng ký. Hãy chọn khóa khác."
+                : "Vui lòng chọn học viên.";
             return;
         }
 
@@ -331,18 +395,26 @@ public sealed class FormDangKyHoc : Form
         }
 
         var maLopHoc = (_cboLop.SelectedItem as LopItem)?.MaLopHoc;
-        var maUuDai = (_cboUuDai.SelectedItem as UuDaiItem)?.MaUuDai;
+
+        // Lớp dự kiến là BẮT BUỘC: khi thu đủ học phí hệ thống tự xếp vào lớp này.
+        if (maLopHoc is null)
+        {
+            _lblThongBao.Text = _cboLop.Items.Count == 1 && _cboLop.Items[0] is string
+                ? "Khóa này không còn lớp nào còn chỗ. Hãy mở thêm lớp hoặc chọn khóa khác."
+                : "Vui lòng chọn lớp học dự kiến — học phí thu đủ sẽ tự xếp vào lớp này.";
+            return;
+        }
 
         _btnLuu.Enabled = false;
         UseWaitCursor = true;
 
+        // KHÔNG gửi ưu đãi, KHÔNG gửi "lịch học": chỉ gửi lớp dự kiến.
+        // Backend kiểm tra 5 điều kiện xếp lớp và báo lỗi nếu lớp không phù hợp.
         var result = await AppSession.Api.PostAsync<EnrollmentListItemDto>("admin/enrollments", new
         {
             maHocVien = hocVien.MaHocVien,
             maKhoaHoc = khoaHoc.MaKhoaHoc,
-            maLopHoc,
-            maUuDai,
-            lichHocMongMuon = string.IsNullOrWhiteSpace(_txtLichMongMuon.Text) ? null : _txtLichMongMuon.Text.Trim(),
+            maLopDuKien = maLopHoc.Value,
             ghiChu = string.IsNullOrWhiteSpace(_txtGhiChu.Text) ? null : _txtGhiChu.Text.Trim()
         });
 
@@ -351,9 +423,8 @@ public sealed class FormDangKyHoc : Form
 
         if (!result.Success)
         {
-            _lblThongBao.Text = string.IsNullOrWhiteSpace(result.ErrorMessage)
-                ? "Không tạo được đăng ký học."
-                : result.ErrorMessage;
+            // Hiện đủ 5 điều kiện bị vi phạm (sĩ số / tuổi / trùng giờ / quá 4 buổi / học phí).
+            _lblThongBao.Text = result.ThongDiepDayDu();
             return;
         }
 
@@ -366,13 +437,6 @@ public sealed class FormDangKyHoc : Form
     {
         public override string ToString() => MoTa;
     }
-
-    private sealed record UuDaiItem(int MaUuDai, string MoTa)
-    {
-        public override string ToString() => MoTa;
-    }
-
-    private const string KhongUuDai = "— Không áp dụng ưu đãi —";
 
     private sealed record KhoaHocItem(int MaKhoaHoc, string MoTa, decimal HocPhiCoBan)
     {

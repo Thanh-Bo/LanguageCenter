@@ -8,6 +8,20 @@ public partial class UcPhanCongGiangDay : UserControl
 {
     private const string AllOption = "— Tất cả —";
 
+    /// <summary>
+    /// Nhãn hiển thị của trạng thái "Đang phân công" (giá trị lưu trong DB).
+    /// Đã gán nhân sự xong thì hiển thị **"Đã phân công"** cho rõ nghĩa;
+    /// dữ liệu dưới DB giữ nguyên để không phải migrate.
+    /// </summary>
+    private const string DaPhanCongText = "Đã phân công";
+
+    /// <summary>Trạng thái lưu trong DB của bản ghi phân công đang hiệu lực.</summary>
+    private const string DangPhanCongRaw = "Đang phân công";
+
+    /// <summary>Dịch trạng thái thô (DB) sang nhãn hiển thị.</summary>
+    private static string NhanTrangThai(string? trangThai)
+        => trangThai == DangPhanCongRaw ? DaPhanCongText : (trangThai ?? string.Empty);
+
     private IReadOnlyList<AssignmentListItemDto> _all = Array.Empty<AssignmentListItemDto>();
     private IReadOnlyList<ClassListItemDto> _classes = Array.Empty<ClassListItemDto>();
     private Button _btnKetThuc = null!;
@@ -74,7 +88,7 @@ public partial class UcPhanCongGiangDay : UserControl
             Location = new Point(84, 4)
         };
         _cboTrangThai.Items.Add(AllOption);
-        _cboTrangThai.Items.AddRange(["Đang phân công", "Chờ phân công", "Đã kết thúc", "Đã huỷ"]);
+        _cboTrangThai.Items.AddRange([DaPhanCongText, "Chờ phân công", "Đã kết thúc", "Đã huỷ"]);
         _cboTrangThai.SelectedIndex = 0;
         _cboTrangThai.SelectedIndexChanged += (_, _) => { if (!_dangNap) ApplyFilter(); };
         pnlToolbar.Controls.Add(_cboTrangThai);
@@ -213,7 +227,7 @@ public partial class UcPhanCongGiangDay : UserControl
 
         if (lop is not null) query = query.Where(a => a.MaLopHoc == lop.MaLopHoc);
         if (vaiTro != AllOption) query = query.Where(a => a.VaiTroPhanCong == vaiTro);
-        if (trangThai != AllOption) query = query.Where(a => a.TrangThai == trangThai);
+        if (trangThai != AllOption) query = query.Where(a => NhanTrangThai(a.TrangThai) == trangThai);
 
         if (!string.IsNullOrWhiteSpace(kw))
         {
@@ -236,7 +250,7 @@ public partial class UcPhanCongGiangDay : UserControl
                 a.LoaiGiaoVien ?? "—",
                 a.VaiTroPhanCong,
                 UiHelpers.FormatDate(a.NgayBatDau),
-                a.TrangThai,
+                NhanTrangThai(a.TrangThai),
                 a.NgayKetThuc.HasValue ? $"Đến {UiHelpers.FormatDate(a.NgayKetThuc)}" : "—"
             );
 

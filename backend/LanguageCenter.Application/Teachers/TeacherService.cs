@@ -12,6 +12,9 @@ namespace LanguageCenter.Application.Teachers;
 /// </remarks>
 public sealed class TeacherService : ITeacherService
 {
+    /// <summary>Quy tắc nghiệp vụ: giáo viên / trợ giảng phải từ đủ 18 tuổi trở lên.</summary>
+    private const int TuoiToiThieu = 18;
+
     private readonly ITeacherStore _teacherStore;
     private readonly IAccountStore _accountStore;
     private readonly IAccountProvisioningStore _provisioningStore;
@@ -83,7 +86,8 @@ public sealed class TeacherService : ITeacherService
             ChuyenMon: TextValue.Optional(request.ChuyenMon),
             SoNamKinhNghiem: request.SoNamKinhNghiem,
             NgayVaoLam: request.NgayVaoLam,
-            TrangThai: WorkStatuses.DangLamViec);
+            TrangThai: WorkStatuses.DangLamViec,
+            GhiChuBangCap: TextValue.Optional(request.GhiChuBangCap));
 
         var result = await _provisioningStore.CreateTeacherAsync(provisionData, passwordHash, cancellationToken);
 
@@ -244,9 +248,9 @@ public sealed class TeacherService : ITeacherService
         };
     }
 
-    /// <summary>"Giáo viên" → RoleNames.GiaoVien; "Trợ giảng" → RoleNames.TroGiang.</summary>
+    /// <summary>"Trợ giảng" → vai trò Trợ giảng; mọi loại giáo viên còn lại (kể cả nước ngoài) → vai trò Giáo viên.</summary>
     private static string ResolveRole(string loaiGiaoVien)
-        => loaiGiaoVien == TeacherTypes.GiaoVien ? RoleNames.GiaoVien : RoleNames.TroGiang;
+        => loaiGiaoVien == TeacherTypes.TroGiang ? RoleNames.TroGiang : RoleNames.GiaoVien;
 
     private static List<string> ValidateCreate(CreateTeacherRequest request)
     {
@@ -260,6 +264,12 @@ public sealed class TeacherService : ITeacherService
         if (request.NgaySinh is { } ngaySinh && !TextValue.IsPlausibleBirthDate(ngaySinh, out var birthDateError))
         {
             errors.Add(birthDateError!);
+        }
+
+        if (request.NgaySinh is { } ngaySinhTuoi
+            && !TextValue.IsOldEnough(ngaySinhTuoi, TuoiToiThieu, out var ageError, "Giáo viên / trợ giảng"))
+        {
+            errors.Add(ageError!);
         }
 
         if (!TextValue.IsPlausiblePhone(request.SoDienThoai, out var phoneError))
@@ -300,6 +310,12 @@ public sealed class TeacherService : ITeacherService
             errors.Add(birthDateError!);
         }
 
+        if (request.NgaySinh is { } ngaySinhTuoi
+            && !TextValue.IsOldEnough(ngaySinhTuoi, TuoiToiThieu, out var ageError, "Giáo viên / trợ giảng"))
+        {
+            errors.Add(ageError!);
+        }
+
         if (!TextValue.IsPlausiblePhone(request.SoDienThoai, out var phoneError))
         {
             errors.Add(phoneError!);
@@ -331,6 +347,7 @@ public sealed class TeacherService : ITeacherService
            && request.SoDienThoai is null
            && request.DiaChi is null
            && request.ChuyenMon is null
+           && request.GhiChuBangCap is null
            && request.SoNamKinhNghiem is null
            && request.NgayVaoLam is null
            && request.TrangThai is null;

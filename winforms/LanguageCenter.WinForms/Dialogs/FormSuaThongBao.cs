@@ -43,6 +43,7 @@ public sealed class FormSuaThongBao : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapDuLieu();
     }
 

@@ -20,7 +20,6 @@ public partial class UcBaoCao : UserControl
     // ===== BÁO CÁO THEO KỲ (thêm ở runtime để không phải sửa Designer) =====
     private Button _btnMenuPeriod = null!;
     private DataGridView _dgvPeriod = null!;
-    private DataGridView _dgvDebt = null!;
     private DateTimePicker _dtpTuNgay = null!;
     private DateTimePicker _dtpDenNgay = null!;
     private Label _lblTuNgay = null!;
@@ -115,7 +114,6 @@ public partial class UcBaoCao : UserControl
         dgvFinancial.Visible = (reportIndex == 2);
         dgvClasses.Visible = (reportIndex == 3);
         _dgvPeriod.Visible = (reportIndex == ChiSoBaoCaoTheoKy);
-        _dgvDebt.Visible = (reportIndex == ChiSoBaoCaoTheoKy);
 
         // Ô chọn khoảng ngày chỉ hiện ở báo cáo theo kỳ.
         var laBaoCaoTheoKy = reportIndex == ChiSoBaoCaoTheoKy;
@@ -144,8 +142,7 @@ public partial class UcBaoCao : UserControl
                 dgvClasses.BringToFront();
                 break;
             case ChiSoBaoCaoTheoKy:
-                lblCurrentReportTitle.Text = "Thống kê theo kỳ & công nợ";
-                _dgvDebt.BringToFront();
+                lblCurrentReportTitle.Text = "Thống kê theo kỳ";
                 _dgvPeriod.BringToFront();
                 _ = LoadPeriodReportAsync();
                 break;
@@ -200,8 +197,9 @@ public partial class UcBaoCao : UserControl
 
         _dtpTuNgay = new DateTimePicker
         {
-            Width = 115,
-            Format = DateTimePickerFormat.Short,
+            Width = 130,
+            Format = DateTimePickerFormat.Custom,
+            CustomFormat = UiHelpers.DinhDangNgay,
             Visible = false
         };
 
@@ -216,8 +214,9 @@ public partial class UcBaoCao : UserControl
 
         _dtpDenNgay = new DateTimePicker
         {
-            Width = 115,
-            Format = DateTimePickerFormat.Short,
+            Width = 130,
+            Format = DateTimePickerFormat.Custom,
+            CustomFormat = UiHelpers.DinhDangNgay,
             Visible = false
         };
 
@@ -230,29 +229,13 @@ public partial class UcBaoCao : UserControl
         pnlToolbar.Controls.Add(_lblDenNgay);
         pnlToolbar.Controls.Add(_dtpDenNgay);
 
-        // ---- Lưới chỉ số kỳ (dòng trên) ----
-        _dgvPeriod = new DataGridView { Dock = DockStyle.Top, Height = 250, Visible = false };
+        // ---- Lưới chỉ số kỳ ----
+        _dgvPeriod = new DataGridView { Dock = DockStyle.Fill, Visible = false };
         _dgvPeriod.Columns.Add(new DataGridViewTextBoxColumn { Name = "ChiSo", HeaderText = "Chỉ số trong kỳ", FillWeight = 320 });
         _dgvPeriod.Columns.Add(new DataGridViewTextBoxColumn { Name = "GiaTri", HeaderText = "Giá trị", FillWeight = 140 });
         _dgvPeriod.Columns.Add(new DataGridViewTextBoxColumn { Name = "GhiChu", HeaderText = "Ghi chú", FillWeight = 300 });
         UI.UiHelpers.StyleGrid(_dgvPeriod);
 
-        // ---- Lưới học viên còn nợ (phần còn lại) ----
-        _dgvDebt = new DataGridView { Dock = DockStyle.Fill, Visible = false };
-        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaHocVien", HeaderText = "Mã HV", FillWeight = 70 });
-        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "HoTen", HeaderText = "Họ tên", FillWeight = 150 });
-        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "SoDienThoai", HeaderText = "SĐT", FillWeight = 90 });
-        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenKhoaHoc", HeaderText = "Khóa học", FillWeight = 150 });
-        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaLop", HeaderText = "Lớp", FillWeight = 80 });
-        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "PhaiDong", HeaderText = "Phải đóng", FillWeight = 100 });
-        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "DaDong", HeaderText = "Đã đóng", FillWeight = 100 });
-        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "ConThieu", HeaderText = "Còn thiếu", FillWeight = 100 });
-        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "HanThanhToan", HeaderText = "Hạn thanh toán", FillWeight = 100 });
-        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrangThai", HeaderText = "Trạng thái", FillWeight = 110 });
-        UI.UiHelpers.StyleGrid(_dgvDebt);
-
-        // Dock: thêm lưới Fill TRƯỚC, lưới Top SAU để Top chiếm chỗ trên cùng.
-        pnlGridContainer.Controls.Add(_dgvDebt);
         pnlGridContainer.Controls.Add(_dgvPeriod);
     }
 
@@ -314,7 +297,6 @@ public partial class UcBaoCao : UserControl
         {
             lblSummary.Text = result.ErrorMessage;
             _dgvPeriod.Rows.Clear();
-            _dgvDebt.Rows.Clear();
             return;
         }
 
@@ -335,33 +317,9 @@ public partial class UcBaoCao : UserControl
         ThemChiSo("Số giáo viên giảng dạy", $"{p.SoGiaoVien} giáo viên", "Có phân công còn hiệu lực trong kỳ");
         ThemChiSo("Số trợ giảng", $"{p.SoTroGiang} trợ giảng", "Có phân công còn hiệu lực trong kỳ");
         ThemChiSo("Học viên đang học (toàn hệ thống)", $"{p.SoHocVienDangHoc} học viên", "Trạng thái học tập = Đang học");
-        ThemChiSo("Học viên còn nợ học phí", $"{p.SoHocVienConNo} học viên", "Không phụ thuộc kỳ đang chọn");
-        ThemChiSo("Tổng công nợ", $"{p.TongConNo:N0} ₫", "Tổng số tiền còn thiếu trên mọi phiếu");
 
-        _dgvDebt.Rows.Clear();
-
-        foreach (var d in p.HocVienConNo)
-        {
-            var idx = _dgvDebt.Rows.Add(
-                d.MaHocVien,
-                d.HoTen,
-                string.IsNullOrWhiteSpace(d.SoDienThoai) ? "—" : d.SoDienThoai,
-                d.TenKhoaHoc,
-                string.IsNullOrWhiteSpace(d.MaLop) ? "—" : d.MaLop,
-                $"{d.SoTienPhaiDong:N0} ₫",
-                $"{d.SoTienDaDong:N0} ₫",
-                $"{d.SoTienConThieu:N0} ₫",
-                d.HanThanhToan is { } han ? han.ToString("dd/MM/yyyy") : "—",
-                d.TrangThaiHocPhi);
-
-            _dgvDebt.Rows[idx].Cells["ConThieu"].Style.ForeColor = Theme.Danger;
-            _dgvDebt.Rows[idx].Cells["ConThieu"].Style.Font = Theme.FontBold;
-        }
-
-        lblSummary.Text = p.HocVienConNo.Count == 0
-            ? $"Kỳ {tu:dd/MM/yyyy} – {den:dd/MM/yyyy}: không có học viên nào còn nợ học phí."
-            : $"Kỳ {tu:dd/MM/yyyy} – {den:dd/MM/yyyy}: {p.SoLopHoc} lớp · {p.SoHocVien} học viên · "
-              + $"{p.SoGiaoVien} giáo viên · {p.SoTroGiang} trợ giảng · {p.SoHocVienConNo} học viên còn nợ";
+        lblSummary.Text = $"Kỳ {tu:dd/MM/yyyy} – {den:dd/MM/yyyy}: {p.SoLopHoc} lớp · {p.SoHocVien} học viên · "
+            + $"{p.SoGiaoVien} giáo viên · {p.SoTroGiang} trợ giảng";
     }
 
     /// <summary>Tải toàn bộ số liệu báo cáo từ API rồi dựng lại 4 bảng.</summary>
@@ -456,7 +414,6 @@ public partial class UcBaoCao : UserControl
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tổng doanh thu học phí", $"{daThu:N0} ₫", $"Chỉ tiêu toàn khóa: {phaiThu:N0} ₫", Theme.Primary), 0, 0);
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tỷ lệ thu học phí", $"{tyLe}%", "Tiến độ thu trên tổng phải thu", Theme.Success), 1, 0);
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Học viên đang học", $"{_overview?.SoHocVienDangHoc ?? 0} Học viên", $"{_overview?.TongLopHoc ?? 0} lớp học trên hệ thống", Theme.Purple), 2, 0);
-        tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Học viên còn nợ", $"{_finance?.SoHocVienConNo ?? 0} Học viên", $"Công nợ: {_finance?.TongConThieu ?? 0:N0} ₫", Theme.Warning), 3, 0);
     }
 
     private void LoadRevenueTable()
@@ -471,15 +428,13 @@ public partial class UcBaoCao : UserControl
                 SoLop = g.Where(x => x.MaLopHoc.HasValue).Select(x => x.MaLopHoc!.Value).Distinct().Count(),
                 SoHocVien = g.Select(x => x.MaHocVien).Distinct().Count(),
                 Tong = g.Sum(x => x.SoTienPhaiDong),
-                Thu = g.Sum(x => x.SoTienDaDong),
-                No = g.Sum(x => x.SoTienConThieu)
+                Thu = g.Sum(x => x.SoTienDaDong)
             })
             .OrderByDescending(x => x.Tong)
             .ToList();
 
         decimal sumTong = 0;
         decimal sumThu = 0;
-        decimal sumNo = 0;
         int sumLop = 0;
         int sumHV = 0;
 
@@ -487,7 +442,6 @@ public partial class UcBaoCao : UserControl
         {
             sumTong += r.Tong;
             sumThu += r.Thu;
-            sumNo += r.No;
             sumLop += r.SoLop;
             sumHV += r.SoHocVien;
 
@@ -499,11 +453,9 @@ public partial class UcBaoCao : UserControl
                 r.SoHocVien,
                 $"{r.Tong:N0} ₫",
                 $"{r.Thu:N0} ₫",
-                $"{r.No:N0} ₫",
                 $"{tyLe}%"
             );
 
-            if (r.No > 0) dgvRevenue.Rows[rowIdx].Cells["ConNo"].Style.ForeColor = Theme.Danger;
             dgvRevenue.Rows[rowIdx].Cells["TyLeThu"].Style.ForeColor = Theme.Success;
             dgvRevenue.Rows[rowIdx].Cells["TyLeThu"].Style.Font = Theme.FontBold;
         }
@@ -521,7 +473,6 @@ public partial class UcBaoCao : UserControl
             sumHV,
             $"{sumTong:N0} ₫",
             $"{sumThu:N0} ₫",
-            $"{sumNo:N0} ₫",
             $"{totalRate}%"
         );
         dgvRevenue.Rows[totalRowIdx].DefaultCellStyle.Font = Theme.FontBold;
@@ -603,10 +554,7 @@ public partial class UcBaoCao : UserControl
         var rows = new (string Muc, string KyNay, string TyLe, string GhiChu)[]
         {
             ("Tổng học phí phải thu", $"{f.TongPhaiThu:N0} ₫", "100%", $"{f.TongSoHocPhi} phiếu học phí trên hệ thống"),
-            ("Đã thực thu vào quỹ", $"{f.TongDaThu:N0} ₫", $"{tyLeThu}%", $"{f.SoDaThanhToan} phiếu đã tất toán"),
-            ("Công nợ còn lại", $"{f.TongConThieu:N0} ₫", $"{Math.Round(100 - tyLeThu, 1)}%", $"{f.SoHocVienConNo} học viên còn nợ học phí"),
-            ("Phiếu quá hạn thanh toán", $"{f.SoQuaHan} phiếu", "—", $"{f.SoChuaThanhToan} phiếu chưa thanh toán"),
-            ("Phiếu thanh toán một phần", $"{f.SoThanhToanMotPhan} phiếu", "—", "Cần thu nốt phần còn thiếu")
+            ("Đã thực thu vào quỹ", $"{f.TongDaThu:N0} ₫", $"{tyLeThu}%", $"{f.SoDaThanhToan} phiếu đã tất toán")
         };
 
         foreach (var r in rows)

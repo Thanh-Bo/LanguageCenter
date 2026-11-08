@@ -28,6 +28,15 @@ public interface ITuitionFeeService
         TuitionReportQuery query,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Ẩn / bỏ ẩn phiếu khỏi sổ học phí. KHÔNG xoá dữ liệu tài chính
+    /// (giao dịch + biên nhận vẫn còn).
+    /// </summary>
+    Task<OperationResult<TuitionFeeDetailDto>> SetHiddenAsync(
+        int maHocPhi,
+        bool daAn,
+        CancellationToken cancellationToken);
+
     // ------------------------------------------------------------------
     // HỌC VIÊN — danh tính lấy từ JWT, KHÔNG tin tham số client
     // ------------------------------------------------------------------

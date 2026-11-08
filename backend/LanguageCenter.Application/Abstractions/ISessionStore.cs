@@ -61,7 +61,24 @@ public interface ISessionStore
     /// </summary>
     Task<GenerateOutcome> GenerateSessionsAsync(
         int maLichHoc,
+        bool boQuaThieuNoiDung,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Gợi ý toàn bộ thông tin cho ca học kế tiếp của lớp theo một lịch định kỳ:
+    /// buổi thứ mấy, ngày, giờ, phòng, giáo viên, trợ giảng, nội dung, loại buổi.
+    /// <c>null</c> nếu lịch / lớp không tồn tại.
+    /// </summary>
+    Task<SessionSuggestionDto?> GetSuggestionAsync(
+        int maLopHoc,
+        int maLichHoc,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Cập nhật NỘI DUNG + LOẠI BUỔI cho các ca CHƯA DIỄN RA của mọi lớp thuộc khóa,
+    /// lấy lại từ syllabus hiện tại. Trả về số ca đã cập nhật.
+    /// </summary>
+    Task<int> SyncLessonContentsAsync(int maKhoaHoc, CancellationToken cancellationToken);
 
     Task<IReadOnlyList<SessionListItemDto>> ListByClassIdsAsync(
         IReadOnlyList<int> classIds,

@@ -24,6 +24,15 @@ public class CaHoc
 
     public string? NoiDungBaiHoc { get; set; }
 
+    /// <summary>
+    /// Tham chiếu tới dòng syllabus của KHÓA (<c>NoiDungBaiHoc</c>).
+    /// <para>
+    /// Nội dung bài học thuộc khóa học nên ca học chỉ trỏ tới, không tự nhập.
+    /// NULL với ca phát sinh ngoài khung hoặc khóa chưa nhập nội dung buổi đó.
+    /// </para>
+    /// </summary>
+    public int? MaNoiDung { get; set; }
+
     /// <summary>Buổi thứ mấy trong khóa (1..N); NULL với ca phát sinh ngoài khung.</summary>
     public int? SoBuoi { get; set; }
 

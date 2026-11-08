@@ -50,6 +50,9 @@ public sealed class CreateSessionRequest
     [Range(1, 200)]
     public int? SoBuoi { get; set; }
 
+    /// <summary>Tham chiếu dòng syllabus của khóa (để trống nếu không có).</summary>
+    public int? MaNoiDung { get; set; }
+
     [StringLength(500, ErrorMessage = "Lý do thay đổi tối đa 500 ký tự.")]
     public string? LyDoThayDoi { get; set; }
 }
@@ -88,7 +91,7 @@ public sealed class UpdateSessionRequest
 /// <summary>
 /// Body của <c>POST /api/admin/sessions/generate</c>.
 /// <para>
-/// Hệ thống sinh ĐÚNG 20 buổi (10 tuần × 2 buổi) bắt đầu từ <c>LopHoc.NgayBatDau</c>,
+/// Hệ thống sinh ĐÚNG <c>KhoaHoc.SoBuoi</c> buổi bắt đầu từ <c>LopHoc.NgayBatDau</c>,
 /// tự dời buổi trùng ngày lễ → không cần client gửi khoảng ngày.
 /// </para>
 /// </summary>
@@ -97,6 +100,58 @@ public sealed class GenerateSessionsRequest
     /// <summary>Lịch định kỳ bất kỳ của lớp cần sinh ca (hệ thống tự lấy cả 2 lịch của lớp).</summary>
     [Range(1, int.MaxValue, ErrorMessage = "Lịch học là bắt buộc.")]
     public int MaLichHoc { get; set; }
+
+    /// <summary>
+    /// <c>true</c> = vẫn sinh ca dù khóa còn buổi CHƯA có nội dung
+    /// (các buổi đó sẽ trống nội dung). Mặc định <c>false</c> → chặn và báo rõ.
+    /// </summary>
+    public bool BoQuaThieuNoiDung { get; set; }
+}
+
+/// <summary>
+/// Kết quả gợi ý khi tạo ca học từ một lịch định kỳ:
+/// toàn bộ giá trị đều SUY RA từ lớp + lịch + phân công + syllabus của khóa,
+/// nên màn hình chỉ việc hiển thị (read-only) thay vì bắt người dùng nhập lại.
+/// </summary>
+public sealed class SessionSuggestionDto
+{
+    public int MaLopHoc { get; init; }
+
+    public int MaLichHoc { get; init; }
+
+    /// <summary>Buổi thứ mấy trong khóa (NULL = lớp đã sinh đủ buổi).</summary>
+    public int? SoBuoi { get; init; }
+
+    public DateOnly NgayHoc { get; init; }
+
+    public TimeOnly GioBatDau { get; init; }
+
+    public TimeOnly GioKetThuc { get; init; }
+
+    public int MaPhongHoc { get; init; }
+
+    public string TenPhong { get; init; } = string.Empty;
+
+    public string? MaGiaoVienThucTe { get; init; }
+
+    public string? TenGiaoVienThucTe { get; init; }
+
+    public string? MaTroGiangThucTe { get; init; }
+
+    public string? TenTroGiangThucTe { get; init; }
+
+    public int? MaNoiDung { get; init; }
+
+    /// <summary>Tiêu đề nội dung bài học (từ syllabus của khóa).</summary>
+    public string? TieuDeBaiHoc { get; init; }
+
+    /// <summary>Chuỗi ghi vào <c>CaHoc.NoiDungBaiHoc</c>: "Buổi N — Tiêu đề".</summary>
+    public string? NoiDungBaiHoc { get; init; }
+
+    public string LoaiBuoi { get; init; } = "Buổi học";
+
+    /// <summary>Cảnh báo mềm (ví dụ: khóa chưa có nội dung cho buổi này).</summary>
+    public string? CanhBao { get; init; }
 }
 
 /// <summary>Tham số lọc danh sách ca học.</summary>

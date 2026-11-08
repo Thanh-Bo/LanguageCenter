@@ -68,6 +68,10 @@ public sealed class ClassStore : IClassStore
                 SiSoHienTai = x.DangKyHocs.Count(
                     d => d.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
                          || d.TrangThaiDangKy == EnrollmentStatuses.HoanThanh),
+                SiSoDuKien = _dbContext.DangKyHocs.Count(
+                    d => d.MaLopDuKien == x.MaLopHoc
+                         && d.MaLopHoc == null
+                         && d.TrangThaiDangKy == EnrollmentStatuses.ChoXuLy),
                 SoCaHoc = x.CaHocs.Count(),
                 SoPhanCong = x.PhanCongGiangDays.Count(
                     p => p.MaGiaoVien != null
@@ -114,6 +118,10 @@ public sealed class ClassStore : IClassStore
                 SiSoHienTai = x.DangKyHocs.Count(
                     d => d.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
                          || d.TrangThaiDangKy == EnrollmentStatuses.HoanThanh),
+                SiSoDuKien = _dbContext.DangKyHocs.Count(
+                    d => d.MaLopDuKien == x.MaLopHoc
+                         && d.MaLopHoc == null
+                         && d.TrangThaiDangKy == EnrollmentStatuses.ChoXuLy),
                 SoPhanCong = x.PhanCongGiangDays.Count(),
                 TrangThai = x.TrangThai
             })

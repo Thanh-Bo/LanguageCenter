@@ -36,6 +36,7 @@ public sealed class FormSinhCaHoc : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
     }
 
     private void DungGiaoDien()

@@ -42,6 +42,7 @@ public partial class FormSuaPhanCong : Form
         _phanCongHienCo = phanCongHienCo ?? Array.Empty<AssignmentListItemDto>();
 
         InitializeComponent();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
 
         Text = lop is null
             ? "Phân công giảng dạy mới — HUIT LingoHub"
@@ -224,9 +225,9 @@ public partial class FormSuaPhanCong : Form
         }
 
         // Chỉ được chọn đúng loại hồ sơ cho từng vai trò (backend cũng kiểm tra lại).
-        DoVaoCombo(cboNhanSu, "Giáo viên");
-        DoVaoCombo(_cboNuocNgoai, "Giáo viên");
-        DoVaoCombo(cboTroGiang, "Trợ giảng");
+        DoVaoCombo(cboNhanSu, TeacherTypes.GiaoVien);
+        DoVaoCombo(_cboNuocNgoai, TeacherTypes.GiaoVienNuocNgoai);
+        DoVaoCombo(cboTroGiang, TeacherTypes.TroGiang);
 
         if (_lopChiDinh is not null)
         {

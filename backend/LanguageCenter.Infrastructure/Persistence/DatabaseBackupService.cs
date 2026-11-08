@@ -84,12 +84,21 @@ public sealed class DatabaseBackupService : IDatabaseBackupService
         await using var connection = new SqlConnection(BuildMasterConnectionString());
         await connection.OpenAsync(cancellationToken);
 
+        // SQL Server EXPRESS KHÔNG hỗ trợ WITH COMPRESSION → phải dò phiên bản trước,
+        // nếu không sẽ nhận lỗi:
+        //   "BACKUP DATABASE WITH COMPRESSION is not supported on Express Edition".
+        var hoTroNen = await HoTroNenAsync(connection, cancellationToken);
+
+        var tuyChon = hoTroNen
+            ? "INIT, FORMAT, COMPRESSION, CHECKSUM, STATS = 10"
+            : "INIT, FORMAT, CHECKSUM, STATS = 10";
+
         // Đường dẫn phải nhìn từ phía SQL Server. Với SQL Server chạy cùng máy
         // (localhost\SQLEXPRESS) đường dẫn tuyệt đối của máy là hợp lệ.
         var sql = $"""
             BACKUP DATABASE [{TenDatabase}]
             TO DISK = @duongDan
-            WITH INIT, FORMAT, COMPRESSION, CHECKSUM, STATS = 10;
+            WITH {tuyChon};
             """;
 
         await using var command = new SqlCommand(sql, connection)
@@ -179,6 +188,33 @@ public sealed class DatabaseBackupService : IDatabaseBackupService
         builder.MultipleActiveResultSets = false;
 
         return builder.ConnectionString;
+    }
+
+    /// <summary>
+    /// Cho biết SQL Server đang chạy có hỗ trợ <c>WITH COMPRESSION</c> hay không.
+    /// <para>
+    /// Express / LocalDB / Developer-with-limits: KHÔNG hỗ trợ nén ở bản Express.
+    /// Dùng <c>SERVERPROPERTY('Edition')</c> vì đây là thứ duy nhất phân biệt được
+    /// Express với Standard/Enterprise mà không cần quyền cao.
+    /// </para>
+    /// </summary>
+    private static async Task<bool> HoTroNenAsync(
+        SqlConnection connection,
+        CancellationToken cancellationToken)
+    {
+        await using var command = new SqlCommand(
+            "SELECT CAST(SERVERPROPERTY('Edition') AS nvarchar(128));",
+            connection);
+
+        var edition = await command.ExecuteScalarAsync(cancellationToken) as string;
+
+        if (string.IsNullOrWhiteSpace(edition))
+        {
+            // Không đọc được → chọn phương án an toàn (không nén).
+            return false;
+        }
+
+        return !edition.Contains("Express", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string ChuanHoaThuMuc(string? thuMuc)

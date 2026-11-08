@@ -63,8 +63,6 @@ public sealed class CourseStore : ICourseStore
                 SoBuoi = x.SoBuoi,
                 TongSoGio = x.TongSoGio,
                 HocPhiCoBan = x.HocPhiCoBan,
-                NgayBatDau = x.NgayBatDau,
-                NgayKetThuc = x.NgayKetThuc,
                 TrangThai = x.TrangThai,
                 SoLop = x.LopHocs.Count()
             })
@@ -95,8 +93,6 @@ public sealed class CourseStore : ICourseStore
                 SoBuoi = x.SoBuoi,
                 TongSoGio = x.TongSoGio,
                 HocPhiCoBan = x.HocPhiCoBan,
-                NgayBatDau = x.NgayBatDau,
-                NgayKetThuc = x.NgayKetThuc,
                 TrangThai = x.TrangThai,
                 SoLop = x.LopHocs.Count(),
                 SoDangKy = x.DangKyHocs.Count()
@@ -144,8 +140,6 @@ public sealed class CourseStore : ICourseStore
             SoBuoi = request.SoBuoi,
             TongSoGio = request.TongSoGio,
             HocPhiCoBan = request.HocPhiCoBan,
-            NgayBatDau = request.NgayBatDau,
-            NgayKetThuc = request.NgayKetThuc,
             // Khóa học mới mở để tuyển sinh.
             TrangThai = CourseStatuses.DangTuyenSinh
         };
@@ -201,16 +195,6 @@ public sealed class CourseStore : ICourseStore
         if (changes.HocPhiCoBan is not null)
         {
             entity.HocPhiCoBan = changes.HocPhiCoBan.Value;
-        }
-
-        if (changes.NgayBatDau is not null)
-        {
-            entity.NgayBatDau = changes.NgayBatDau.Value;
-        }
-
-        if (changes.NgayKetThuc is not null)
-        {
-            entity.NgayKetThuc = changes.NgayKetThuc.Value;
         }
 
         try

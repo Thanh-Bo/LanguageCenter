@@ -20,6 +20,8 @@ public partial class FormSuaHocVien : Form
         InitializeComponent();
         WireEvents();
         ConfigureForCreateMode();
+        BocCucGon();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
     }
 
     /// Chế độ sửa.
@@ -30,6 +32,8 @@ public partial class FormSuaHocVien : Form
         InitializeComponent();
         WireEvents();
         ConfigureForEditMode();
+        BocCucGon();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
     }
 
     private void WireEvents()
@@ -137,7 +141,8 @@ public partial class FormSuaHocVien : Form
             HoTen = txtHoTen.Text.Trim(),
             NgaySinh = DateOnly.FromDateTime(dtpNgaySinh.Value),
             GioiTinh = NullIfEmpty(cboGioiTinh.Text),
-            Email = txtEmail.Text.Trim(),
+            // Gửi null (KHÔNG gửi chuỗi rỗng): [EmailAddress] của server coi "" là không hợp lệ.
+            Email = NullIfEmpty(txtEmail.Text),
             SoDienThoai = NullIfEmpty(txtSoDienThoai.Text),
             DiaChi = NullIfEmpty(txtDiaChi.Text),
             MucTieuHocTap = NullIfEmpty(txtMucTieuHocTap.Text),
@@ -212,7 +217,12 @@ public partial class FormSuaHocVien : Form
 
         UI.KiemTraNhap.BatBuoc(txtHoTen, "Họ tên", loi, minLength: 2);
         UI.KiemTraNhap.DoDai(txtHoTen, "Họ tên", 150, loi);
-        UI.KiemTraNhap.Email(txtEmail, "Email", loi);
+
+        // Email chỉ BẮT BUỘC với học viên từ 18 tuổi trở lên; dưới 18 tuổi có thể bỏ trống
+        // (backend tự sinh <mã học viên>@trungtam.edu.vn).
+        var laNguoiLon = UI.KiemTraNhap.TinhTuoi(dtpNgaySinh.Value) >= 18;
+        UI.KiemTraNhap.Email(txtEmail, "Email", loi, batBuoc: laNguoiLon);
+
         UI.KiemTraNhap.SoDienThoai(txtSoDienThoai, "Số điện thoại", loi);
         UI.KiemTraNhap.DoDai(txtDiaChi, "Địa chỉ", 500, loi);
         UI.KiemTraNhap.DoDai(txtTrinhDoHienTai, "Trình độ hiện tại", 200, loi);
@@ -226,7 +236,7 @@ public partial class FormSuaHocVien : Form
         // Quy tắc trung tâm: học viên phải từ 3 tuổi trở lên.
         UI.KiemTraNhap.TuoiToiThieu(dtpNgaySinh, "Ngày sinh", 3, loi);
 
-        UI.KiemTraNhap.HienThiLoi(lblMessage, loi);
+        UI.KiemTraNhap.HienThiLoiTuDong(lblMessage, loi);
 
         if (loi.Count > 0)
         {
@@ -241,7 +251,7 @@ public partial class FormSuaHocVien : Form
 
     private static string FormatError<T>(ApiResult<T> result)
         => result.Errors.Count > 0
-            ? $"{result.ErrorMessage}\n- {string.Join("\n- ", result.Errors)}"
+            ? string.Join("\n", result.Errors.Select(e => "• " + e))
             : result.ErrorMessage;
 
     private void SetBusy(bool busy)

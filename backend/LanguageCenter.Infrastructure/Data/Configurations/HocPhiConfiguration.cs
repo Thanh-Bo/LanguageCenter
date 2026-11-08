@@ -33,6 +33,9 @@ public sealed class HocPhiConfiguration : IEntityTypeConfiguration<HocPhi>
 
         builder.Property(x => x.NgayTao).HasDefaultValueSql("SYSDATETIME()");
 
+        // Ẩn phiếu khỏi sổ (vẫn giữ dữ liệu tài chính + biên nhận).
+        builder.Property(x => x.DaAn).HasDefaultValue(false);
+
         // Quan hệ 1-1: MaDangKy vừa là UNIQUE vừa là FK.
         builder.HasOne(x => x.DangKyHoc)
             .WithOne(x => x.HocPhi)

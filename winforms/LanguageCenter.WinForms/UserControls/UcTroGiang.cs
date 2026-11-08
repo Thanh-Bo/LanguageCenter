@@ -148,7 +148,7 @@ public partial class UcTroGiang : UserControl
     private async void BtnAdd_Click(object? sender, EventArgs e)
     {
         // Tab Trợ giảng: loại cố định "Trợ giảng".
-        using var dialog = new FormSuaGiaoVien(laTroGiang: true);
+        using var dialog = new FormSuaGiaoVien(TeacherTypes.TroGiang);
         dialog.ShowDialog(FindForm());
 
         if (dialog.DataChanged)
@@ -166,7 +166,7 @@ public partial class UcTroGiang : UserControl
 
         var teacherId = Convert.ToString(dgvAssistants.Rows[e.RowIndex].Cells["MaGiaoVien"].Value) ?? string.Empty;
 
-        using var dialog = new FormSuaGiaoVien(teacherId, laTroGiang: true);
+        using var dialog = new FormSuaGiaoVien(teacherId, TeacherTypes.TroGiang);
         dialog.ShowDialog(FindForm());
 
         if (dialog.DataChanged)
@@ -210,7 +210,7 @@ public partial class UcTroGiang : UserControl
             return;
         }
 
-        using var dialog = new FormSuaGiaoVien(maTroGiang, laTroGiang: true);
+        using var dialog = new FormSuaGiaoVien(maTroGiang, TeacherTypes.TroGiang);
         dialog.ShowDialog(FindForm());
 
         if (dialog.DataChanged)

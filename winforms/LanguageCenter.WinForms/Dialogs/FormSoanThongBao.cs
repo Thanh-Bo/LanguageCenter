@@ -22,6 +22,7 @@ public partial class FormSoanThongBao : Form
         cboLoai.SelectedIndex = 1;
 
         Load += async (_, _) => await LoadClassesAsync();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
     }
 
     /// <summary>

@@ -31,6 +31,7 @@ public sealed class FormTienDoLop : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         Load += async (_, _) => await TaiAsync();
     }
 

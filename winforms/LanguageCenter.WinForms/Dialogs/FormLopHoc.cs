@@ -25,7 +25,6 @@ public sealed class FormLopHoc : Form
     private readonly ComboBox _cboChuongTrinh = UiHelpers.CreateComboBox(320);
     private readonly ComboBox _cboKhoaHoc = UiHelpers.CreateComboBox(320);
     private readonly ComboBox _cboHocVu = UiHelpers.CreateComboBox(320);
-    private readonly Button _btnTaiLaiKhoaHoc = UiHelpers.CreateSecondaryButton("Tải lại DS", 110, 26);
     private readonly DateTimePicker _dtpBatDau = new();
     private readonly DateTimePicker _dtpKetThuc = new();
     private readonly NumericUpDown _numSiSo = new();
@@ -59,6 +58,7 @@ public sealed class FormLopHoc : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapDuLieu(nhanVienHocVu);
 
         // Luôn tải lại danh sách khóa học mới nhất khi mở hộp thoại — tránh combo rỗng do
@@ -149,12 +149,14 @@ public sealed class FormLopHoc : Form
             _txtMaLop.Text = "(tự động sinh khi lưu)";
         }
 
-        _btnTaiLaiKhoaHoc.Location = new Point(352, 244);
-        _btnTaiLaiKhoaHoc.Click += async (_, _) => await NapKhoaHocAsync();
-        Controls.Add(_btnTaiLaiKhoaHoc);
-
         _dtpBatDau.Format = DateTimePickerFormat.Short;
         _dtpBatDau.Width = 320;
+
+        // Tạo lớp mới: KHÔNG cho chọn ngày trong quá khứ (lớp chưa thể bắt đầu trước hôm nay).
+        if (_existing is null)
+        {
+            _dtpBatDau.MinDate = DateTime.Today;
+        }
         _dtpKetThuc.Format = DateTimePickerFormat.Short;
         _dtpKetThuc.Width = 320;
 
@@ -535,6 +537,16 @@ public sealed class FormLopHoc : Form
         var batDau = DateOnly.FromDateTime(_dtpBatDau.Value);
         var ketThuc = DateOnly.FromDateTime(_dtpKetThuc.Value);
 
+        // Ngày bắt đầu KHÔNG được ở quá khứ.
+        // Khi SỬA lớp đã chạy: chỉ chặn nếu người dùng thực sự đổi sang ngày khác.
+        var ngayBatDauDoi = _existing is null || batDau != _existing.NgayBatDau;
+
+        if (ngayBatDauDoi && batDau < DateOnly.FromDateTime(DateTime.Today))
+        {
+            _lblThongBao.Text = "Ngày bắt đầu không được ở quá khứ.";
+            return;
+        }
+
         if (ketThuc < batDau)
         {
             _lblThongBao.Text = "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.";
@@ -586,7 +598,8 @@ public sealed class FormLopHoc : Form
             {
                 tenLop,
                 maNhanVienHocVu = hocVu,
-                ngayBatDau = batDau.ToString("yyyy-MM-dd"),
+                // null = không đổi (tránh gửi lại ngày cũ của lớp đã chạy).
+                ngayBatDau = ngayBatDauDoi ? batDau.ToString("yyyy-MM-dd") : null,
                 ngayKetThucDuKien = ketThuc.ToString("yyyy-MM-dd"),
                 gioBatDau = gioBatDau.ToString("HH:mm:ss"),
                 gioKetThuc = gioKetThuc.ToString("HH:mm:ss"),

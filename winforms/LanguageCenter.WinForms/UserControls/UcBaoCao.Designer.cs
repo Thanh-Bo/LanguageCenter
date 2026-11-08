@@ -259,7 +259,6 @@ partial class UcBaoCao
         dgvRevenue.Columns.Add(new DataGridViewTextBoxColumn { Name = "SoHocVien", HeaderText = "Số HV", FillWeight = 70, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
         dgvRevenue.Columns.Add(new DataGridViewTextBoxColumn { Name = "TongHocPhi", HeaderText = "Tổng học phí", FillWeight = 130, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
         dgvRevenue.Columns.Add(new DataGridViewTextBoxColumn { Name = "DaThu", HeaderText = "Đã thực thu", FillWeight = 130, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
-        dgvRevenue.Columns.Add(new DataGridViewTextBoxColumn { Name = "ConNo", HeaderText = "Công nợ", FillWeight = 120, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleRight } });
         dgvRevenue.Columns.Add(new DataGridViewTextBoxColumn { Name = "TyLeThu", HeaderText = "Tỷ lệ", FillWeight = 70, DefaultCellStyle = new DataGridViewCellStyle { Alignment = DataGridViewContentAlignment.MiddleCenter } });
 
         // Bảng 2: Chất lượng

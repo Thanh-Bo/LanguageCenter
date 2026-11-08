@@ -15,32 +15,40 @@ public partial class FormSuaGiaoVien : Form
 {
     private readonly string? _teacherId;
     private readonly bool _isEditMode;
-    private readonly bool _laTroGiang;
+    private readonly string _loaiGiaoVien;
 
     public bool DataChanged { get; private set; }
 
-    /// Loại cố định theo tab đang mở.
-    private string LoaiGiaoVien => _laTroGiang ? TeacherTypes.TroGiang : TeacherTypes.GiaoVien;
+            /// Loại hồ sơ cố định theo tab đang mở.
+    private string LoaiGiaoVien => _loaiGiaoVien;
+
+    /// <summary>Tab Trợ giảng hay không (chỉ ảnh hưởng nhãn hiển thị).</summary>
+    private bool LaTroGiang => _loaiGiaoVien == TeacherTypes.TroGiang;
 
     /// Chế độ tạo mới.
-    public FormSuaGiaoVien(bool laTroGiang)
+    /// <param name="loaiGiaoVien">Giáo viên / Giáo viên nước ngoài / Trợ giảng.</param>
+    public FormSuaGiaoVien(string loaiGiaoVien)
     {
         _isEditMode = false;
-        _laTroGiang = laTroGiang;
+        _loaiGiaoVien = loaiGiaoVien;
         InitializeComponent();
         WireEvents();
         ConfigureForCreateMode();
+        BocCucGon();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
     }
 
     /// Chế độ sửa.
-    public FormSuaGiaoVien(string teacherId, bool laTroGiang)
+    public FormSuaGiaoVien(string teacherId, string loaiGiaoVien)
     {
         _teacherId = teacherId;
         _isEditMode = true;
-        _laTroGiang = laTroGiang;
+        _loaiGiaoVien = loaiGiaoVien;
         InitializeComponent();
         WireEvents();
         ConfigureForEditMode();
+        BocCucGon();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
     }
 
     private void WireEvents()
@@ -115,7 +123,12 @@ public partial class FormSuaGiaoVien : Form
 
         cboTrangThai.SelectedItem = teacher.TrangThai;
 
-        lblQualificationsReadonly.Text = BuildQualificationsText(teacher);
+        // Ưu tiên nội dung gõ tay; hồ sơ cũ chưa có thì lấy từ bảng BangCap / ChungChi (nếu có).
+        _txtBangCap.Text = !string.IsNullOrWhiteSpace(teacher.GhiChuBangCap)
+            ? teacher.GhiChuBangCap
+            : (teacher.BangCaps.Count == 0 && teacher.ChungChis.Count == 0
+                ? string.Empty
+                : BuildQualificationsText(teacher));
     }
 
     private static string BuildQualificationsText(TeacherDetailDto teacher)
@@ -183,7 +196,8 @@ public partial class FormSuaGiaoVien : Form
             DiaChi = NullIfEmpty(txtDiaChi.Text),
             LoaiGiaoVien = LoaiGiaoVien,
             ChuyenMon = NullIfEmpty(txtChuyenMon.Text),
-            SoNamKinhNghiem = (int)numSoNamKinhNghiem.Value
+            SoNamKinhNghiem = (int)numSoNamKinhNghiem.Value,
+            GhiChuBangCap = NullIfEmpty(_txtBangCap.Text)
         };
 
         var result = await AppSession.Api.PostAsync<CreateTeacherResponse>("admin/teachers", request);
@@ -218,6 +232,7 @@ public partial class FormSuaGiaoVien : Form
             DiaChi = NullIfEmpty(txtDiaChi.Text),
             ChuyenMon = NullIfEmpty(txtChuyenMon.Text),
             SoNamKinhNghiem = (int)numSoNamKinhNghiem.Value,
+            GhiChuBangCap = _txtBangCap.Text.Trim(),
             TrangThai = cboTrangThai.SelectedItem as string
         };
 
@@ -255,6 +270,9 @@ public partial class FormSuaGiaoVien : Form
         UI.KiemTraNhap.DoDai(txtChuyenMon, "Chuyên môn", 500, loi);
         UI.KiemTraNhap.NgaySinh(dtpNgaySinh, "Ngày sinh", loi);
 
+        // Giáo viên / trợ giảng phải từ đủ 18 tuổi trở lên.
+        UI.KiemTraNhap.TuoiToiThieu(dtpNgaySinh, "Ngày sinh", 18, loi, LoaiGiaoVien.ToLowerInvariant());
+
         // Tạo mới: bắt buộc đủ thông tin để hồ sơ dùng được ngay (lịch dạy, liên hệ).
         if (!_isEditMode)
         {
@@ -279,7 +297,7 @@ public partial class FormSuaGiaoVien : Form
             }
         }
 
-        UI.KiemTraNhap.HienThiLoi(lblMessage, loi);
+        UI.KiemTraNhap.HienThiLoiTuDong(lblMessage, loi);
 
         if (loi.Count > 0)
         {
@@ -294,7 +312,7 @@ public partial class FormSuaGiaoVien : Form
 
     private static string FormatError<T>(ApiResult<T> result)
         => result.Errors.Count > 0
-            ? $"{result.ErrorMessage}\n- {string.Join("\n- ", result.Errors)}"
+            ? string.Join("\n", result.Errors.Select(e => "• " + e))
             : result.ErrorMessage;
 
     private void SetBusy(bool busy)

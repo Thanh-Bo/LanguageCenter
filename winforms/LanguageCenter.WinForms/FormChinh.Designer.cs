@@ -19,7 +19,10 @@ partial class FormChinh
     private Button btnNavTuition = null!;
     private Button btnNavStudents = null!;
     private Button btnNavTeachers = null!;
+    private Button btnNavForeignTeachers = null!;
     private Button btnNavAssistants = null!;
+    private Button btnNavEmployees = null!;
+    private Button btnNavAccountants = null!;
     private Button btnNavNotifications = null!;
     private Button btnNavReports = null!;
     private Button btnNavAccounts = null!;
@@ -64,7 +67,10 @@ partial class FormChinh
         btnNavTuition = new Button();
         btnNavStudents = new Button();
         btnNavTeachers = new Button();
+        btnNavForeignTeachers = new Button();
         btnNavAssistants = new Button();
+        btnNavEmployees = new Button();
+        btnNavAccountants = new Button();
         btnNavNotifications = new Button();
         btnNavReports = new Button();
         btnNavAccounts = new Button();
@@ -313,7 +319,7 @@ partial class FormChinh
 
         // btnNavAccounts
         btnNavAccounts.Text = "Quản lý tài khoản";
-        btnNavAccounts.Location = new Point(0, 550);
+        btnNavAccounts.Location = new Point(0, 634);
         btnNavAccounts.Size = new Size(232, 40);
         btnNavAccounts.FlatStyle = FlatStyle.Flat;
         btnNavAccounts.FlatAppearance.BorderSize = 0;
@@ -328,7 +334,7 @@ partial class FormChinh
         // btnNavBackups
         btnNavBackups.Text = "Sao lưu & phục hồi";
         btnNavBackups.UseMnemonic = false;
-        btnNavBackups.Location = new Point(0, 592);
+        btnNavBackups.Location = new Point(0, 676);
         btnNavBackups.Size = new Size(232, 40);
         btnNavBackups.FlatStyle = FlatStyle.Flat;
         btnNavBackups.FlatAppearance.BorderSize = 0;
@@ -340,11 +346,59 @@ partial class FormChinh
         btnNavBackups.Cursor = Cursors.Hand;
         btnNavBackups.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
+        // btnNavEmployees
+        btnNavEmployees.Text = "Quản lý nhân viên học vụ";
+        btnNavEmployees.UseMnemonic = false;
+        btnNavEmployees.Location = new Point(0, 508);
+        btnNavEmployees.Size = new Size(232, 40);
+        btnNavEmployees.FlatStyle = FlatStyle.Flat;
+        btnNavEmployees.FlatAppearance.BorderSize = 0;
+        btnNavEmployees.BackColor = Color.FromArgb(15, 23, 42);
+        btnNavEmployees.ForeColor = Color.FromArgb(148, 163, 184);
+        btnNavEmployees.Font = new Font("Segoe UI", 9.5f);
+        btnNavEmployees.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavEmployees.Padding = new Padding(24, 0, 0, 4);
+        btnNavEmployees.Cursor = Cursors.Hand;
+        btnNavEmployees.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
+
+        // btnNavAccountants
+        btnNavAccountants.Text = "Quản lý kế toán";
+        btnNavAccountants.UseMnemonic = false;
+        btnNavAccountants.Location = new Point(0, 550);
+        btnNavAccountants.Size = new Size(232, 40);
+        btnNavAccountants.FlatStyle = FlatStyle.Flat;
+        btnNavAccountants.FlatAppearance.BorderSize = 0;
+        btnNavAccountants.BackColor = Color.FromArgb(15, 23, 42);
+        btnNavAccountants.ForeColor = Color.FromArgb(148, 163, 184);
+        btnNavAccountants.Font = new Font("Segoe UI", 9.5f);
+        btnNavAccountants.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavAccountants.Padding = new Padding(24, 0, 0, 4);
+        btnNavAccountants.Cursor = Cursors.Hand;
+        btnNavAccountants.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
+
+        // btnNavForeignTeachers
+        btnNavForeignTeachers.Text = "Quản lý GV nước ngoài";
+        btnNavForeignTeachers.UseMnemonic = false;
+        btnNavForeignTeachers.Location = new Point(0, 340);
+        btnNavForeignTeachers.Size = new Size(232, 40);
+        btnNavForeignTeachers.FlatStyle = FlatStyle.Flat;
+        btnNavForeignTeachers.FlatAppearance.BorderSize = 0;
+        btnNavForeignTeachers.BackColor = Color.FromArgb(15, 23, 42);
+        btnNavForeignTeachers.ForeColor = Color.FromArgb(148, 163, 184);
+        btnNavForeignTeachers.Font = new Font("Segoe UI", 9.5f);
+        btnNavForeignTeachers.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavForeignTeachers.Padding = new Padding(24, 0, 0, 4);
+        btnNavForeignTeachers.Cursor = Cursors.Hand;
+        btnNavForeignTeachers.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
+
         pnlNavList.Controls.Add(btnNavAccounts);
         pnlNavList.Controls.Add(btnNavBackups);
         pnlNavList.Controls.Add(btnNavReports);
         pnlNavList.Controls.Add(btnNavNotifications);
+        pnlNavList.Controls.Add(btnNavAccountants);
+        pnlNavList.Controls.Add(btnNavEmployees);
         pnlNavList.Controls.Add(btnNavAssistants);
+        pnlNavList.Controls.Add(btnNavForeignTeachers);
         pnlNavList.Controls.Add(btnNavTeachers);
         pnlNavList.Controls.Add(btnNavStudents);
         pnlNavList.Controls.Add(btnNavTuition);

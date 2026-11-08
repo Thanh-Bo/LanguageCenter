@@ -52,6 +52,7 @@ public sealed class FormDiemDanh : Form
         MinimumSize = new Size(640, 420);
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         Load += async (_, _) => await TaiAsync();
     }
 

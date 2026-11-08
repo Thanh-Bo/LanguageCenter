@@ -15,6 +15,7 @@ public partial class FormXepLopHocVien : Form
     {
         _targetClass = targetClass;
         InitializeComponent();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
 
         Text = $"Xếp học viên vào lớp {_targetClass.MaLop} — HUIT LingoHub";
         lblTitle.Text = $"CHỌN HỌC VIÊN XẾP VÀO LỚP: {_targetClass.TenLop} ({_targetClass.MaLop})";

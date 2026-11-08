@@ -37,10 +37,11 @@ public static class TextValue
     }
 
     /// <summary>
-    /// Kiểm tra học viên đủ tuổi tối thiểu tại thời điểm hiện tại.
-    /// <para>Quy tắc nghiệp vụ: trung tâm chỉ nhận học viên <b>từ 3 tuổi trở lên</b>.</para>
+    /// Kiểm tra đủ tuổi tối thiểu tại thời điểm hiện tại.
+    /// <para>Quy tắc nghiệp vụ: học viên <b>từ 3 tuổi trở lên</b>, nhân viên <b>từ 18 tuổi trở lên</b>.</para>
     /// </summary>
-    public static bool IsOldEnough(DateOnly ngaySinh, int tuoiToiThieu, out string? error)
+    /// <param name="doiTuong">Chủ thể trong thông báo lỗi — "Học viên" / "Nhân viên".</param>
+    public static bool IsOldEnough(DateOnly ngaySinh, int tuoiToiThieu, out string? error, string doiTuong = "Học viên")
     {
         error = null;
 
@@ -53,7 +54,7 @@ public static class TextValue
 
         if (tuoi < tuoiToiThieu)
         {
-            error = $"Học viên phải từ {tuoiToiThieu} tuổi trở lên (hiện {tuoi} tuổi, sinh {ngaySinh:dd/MM/yyyy}).";
+            error = $"{doiTuong} phải từ {tuoiToiThieu} tuổi trở lên (hiện {tuoi} tuổi, sinh {ngaySinh:dd/MM/yyyy}).";
             return false;
         }
 

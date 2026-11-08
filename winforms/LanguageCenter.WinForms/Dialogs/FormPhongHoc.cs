@@ -52,6 +52,7 @@ public sealed class FormPhongHoc : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
     }
 
     private void DungGiaoDien()

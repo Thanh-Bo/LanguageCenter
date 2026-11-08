@@ -58,6 +58,7 @@ public sealed class FormLichHoc : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapDuLieu();
         ApDungChiXemThoiGian();
 

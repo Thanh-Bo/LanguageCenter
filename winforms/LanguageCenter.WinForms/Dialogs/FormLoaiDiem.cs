@@ -49,6 +49,7 @@ public sealed class FormLoaiDiem : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapKhoaHoc(maKhoaHocMacDinh);
 
         Load += async (_, _) => await NapAsync();

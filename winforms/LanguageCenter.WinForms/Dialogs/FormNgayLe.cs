@@ -42,6 +42,7 @@ public sealed class FormNgayLe : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
 
         Load += async (_, _) => await NapAsync();
     }

@@ -58,6 +58,19 @@ public interface IEnrollmentStore
         int maDangKy,
         int maLopHoc,
         CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Như <see cref="GetPlacementContextAsync"/> nhưng kiểm tra theo HỌC VIÊN — dùng lúc
+    /// TẠO đăng ký, khi đăng ký chưa tồn tại nên chưa có <c>MaDangKy</c>.
+    /// <para>
+    /// <paramref name="exceptDangKyId"/>: bỏ qua chính đăng ký đang sửa (tránh tự tính mình).
+    /// </para>
+    /// </summary>
+    Task<PlacementContext?> GetPlacementContextForStudentAsync(
+        string maHocVien,
+        int maLopHoc,
+        int? exceptDangKyId,
+        CancellationToken cancellationToken);
 }
 
 /// <summary>Một khung lịch của lớp: thứ + giờ + khoảng ngày áp dụng.</summary>
@@ -95,6 +108,18 @@ public sealed record PlacementContext(
 
     /// <summary>Trạng thái phiếu học phí (<c>null</c> nếu chưa có phiếu).</summary>
     public string? TrangThaiHocPhi { get; init; }
+
+    /// <summary>Sĩ số tối đa của lớp.</summary>
+    public int SiSoToiDa { get; init; }
+
+    /// <summary>Số đăng ký ĐÃ xếp lớp (chiếm chỗ thật).</summary>
+    public int SoDaXepLop { get; init; }
+
+    /// <summary>
+    /// Số đăng ký đang GIỮ CHỖ cho lớp này (<c>MaLopDuKien = lớp</c>, còn "Chờ xử lý").
+    /// Không tính chính đăng ký đang được kiểm tra.
+    /// </summary>
+    public int SoGiuCho { get; init; }
 }
 
 /// <summary>Dữ liệu đã được tầng Application TÍNH SẴN (học phí, giảm giá, người tư vấn).</summary>
@@ -106,14 +131,24 @@ public sealed record EnrollmentCreateData(
     decimal HocPhiGoc,
     decimal SoTienGiam,
     string? LichHocMongMuon,
-    string? GhiChu);
+    string? GhiChu)
+{
+    /// <summary>
+    /// LỚP DỰ KIẾN — bắt buộc trong luồng mới: khi thu đủ học phí hệ thống tự xếp vào lớp này.
+    /// </summary>
+    public int? MaLopDuKien { get; init; }
+}
 
 /// <summary>Dữ liệu cập nhật đã được gộp sẵn ở tầng Application.</summary>
 public sealed record EnrollmentUpdateData(
     int? MaUuDai,
     decimal SoTienGiam,
     string? LichHocMongMuon,
-    string? GhiChu);
+    string? GhiChu)
+{
+    /// <summary>Đổi lớp dự kiến. <c>null</c> = giữ nguyên.</summary>
+    public int? MaLopDuKien { get; init; }
+}
 
 /// <summary>Kết quả của thao tác xếp lớp.</summary>
 public enum AssignClassOutcome

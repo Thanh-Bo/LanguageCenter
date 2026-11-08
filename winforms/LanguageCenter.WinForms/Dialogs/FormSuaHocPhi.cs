@@ -40,6 +40,7 @@ public sealed class FormSuaHocPhi : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
     }
 
     private void DungGiaoDien()

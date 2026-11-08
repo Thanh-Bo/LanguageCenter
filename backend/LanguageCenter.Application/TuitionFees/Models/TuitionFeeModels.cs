@@ -44,6 +44,16 @@ public sealed class UpdateTuitionFeeRequest
     public bool DongBoTuDangKy { get; set; }
 }
 
+/// <summary>
+/// Body của <c>PATCH /api/admin/tuition-fees/{id}/hide</c>.
+/// <para>Chỉ đổi CỜ ẨN — không xoá dữ liệu tài chính.</para>
+/// </summary>
+public sealed class SetTuitionHiddenRequest
+{
+    /// <summary><c>true</c> = ẩn phiếu khỏi sổ; <c>false</c> = bỏ ẩn.</summary>
+    public bool DaAn { get; set; }
+}
+
 /// <summary>Tham số lọc danh sách học phí.</summary>
 public sealed class TuitionFeeListQuery : PagedQuery
 {
@@ -58,6 +68,12 @@ public sealed class TuitionFeeListQuery : PagedQuery
 
     /// <summary><c>true</c> = chỉ lấy học phí quá hạn; <c>false</c> = chỉ lấy chưa quá hạn.</summary>
     public bool? QuaHan { get; set; }
+
+    /// <summary>
+    /// <c>true</c> = lấy CẢ phiếu đã ẩn (màn hình có ô "Hiện phiếu đã ẩn").
+    /// Mặc định <c>false</c> → bỏ qua phiếu đã ẩn.
+    /// </summary>
+    public bool? BaoGomDaAn { get; set; }
 
     /// <summary>Lọc theo <c>NgayTao</c>.</summary>
     public DateOnly? TuNgay { get; set; }
@@ -125,6 +141,9 @@ public sealed class TuitionFeeListItemDto
     /// <summary>Số giao dịch "Thành công" loại "Thu tiền" của học phí này.</summary>
     public int SoGiaoDich { get; init; }
 
+    /// <summary><c>true</c> = phiếu đang bị ẩn khỏi sổ học phí.</summary>
+    public bool DaAn { get; init; }
+
     /// <summary>
     /// SUY RA, không lưu trong database: còn thiếu tiền VÀ đã quá <c>HanThanhToan</c>.
     /// </summary>
@@ -141,6 +160,9 @@ public sealed class TuitionFeeListItemDto
 public sealed class TuitionFeeDetailDto
 {
     public int MaHocPhi { get; init; }
+
+    /// <summary><c>true</c> = phiếu đang bị ẩn khỏi sổ học phí.</summary>
+    public bool DaAn { get; init; }
 
     public int MaDangKy { get; init; }
 

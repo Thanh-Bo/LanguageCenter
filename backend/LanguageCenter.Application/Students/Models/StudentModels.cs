@@ -26,10 +26,13 @@ public sealed class CreateStudentRequest
     [StringLength(20, ErrorMessage = "Giới tính tối đa 20 ký tự.")]
     public string? GioiTinh { get; set; }
 
-    [Required(ErrorMessage = "Email là bắt buộc.")]
+    /// <summary>
+    /// Bắt buộc với học viên <b>từ 18 tuổi trở lên</b>; học viên dưới 18 tuổi có thể bỏ trống —
+    /// khi đó backend tự sinh <c>&lt;mã học viên&gt;@trungtam.edu.vn</c>.
+    /// </summary>
     [EmailAddress(ErrorMessage = "Email không hợp lệ.")]
     [StringLength(255, ErrorMessage = "Email tối đa 255 ký tự.")]
-    public string Email { get; set; } = string.Empty;
+    public string? Email { get; set; }
 
     [StringLength(20, ErrorMessage = "Số điện thoại tối đa 20 ký tự.")]
     public string? SoDienThoai { get; set; }

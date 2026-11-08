@@ -184,6 +184,32 @@ public sealed class TuitionFeeService : ITuitionFeeService
         return OperationResult<TuitionFeeDetailDto>.Ok(updated!);
     }
 
+    public async Task<OperationResult<TuitionFeeDetailDto>> SetHiddenAsync(
+        int maHocPhi,
+        bool daAn,
+        CancellationToken cancellationToken)
+    {
+        var current = await _tuitionFeeStore.GetDetailAsync(maHocPhi, cancellationToken);
+
+        if (current is null)
+        {
+            return OperationResult<TuitionFeeDetailDto>.NotFound($"Không tìm thấy học phí có id = {maHocPhi}.");
+        }
+
+        var outcome = await _tuitionFeeStore.SetHiddenAsync(maHocPhi, daAn, cancellationToken);
+
+        if (outcome != WriteOutcome.Success)
+        {
+            return outcome == WriteOutcome.NotFound
+                ? OperationResult<TuitionFeeDetailDto>.NotFound($"Không tìm thấy học phí có id = {maHocPhi}.")
+                : OperationResult<TuitionFeeDetailDto>.Conflict("Không thể đổi trạng thái ẩn của phiếu học phí.");
+        }
+
+        var updated = await _tuitionFeeStore.GetDetailAsync(maHocPhi, cancellationToken);
+
+        return OperationResult<TuitionFeeDetailDto>.Ok(updated!);
+    }
+
     public async Task<OperationResult<TuitionSummaryReportDto>> GetReportAsync(
         TuitionReportQuery query,
         CancellationToken cancellationToken)

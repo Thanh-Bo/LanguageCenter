@@ -22,4 +22,14 @@ public static class EnrollmentRules
     /// </para>
     /// </summary>
     public const bool BatBuocThanhToanTruocKhiXepLop = true;
+
+    /// <summary>
+    /// Tạo đăng ký học là TỰ ĐỘNG sinh luôn phiếu học phí (trạng thái "Chưa thanh toán",
+    /// số tiền copy từ đăng ký) trong CÙNG transaction.
+    /// <para>
+    /// Nhờ vậy màn hình Học phí có ngay phiếu để thu tiền, không phải bấm tay
+    /// "Tạo phiếu học phí" cho từng đăng ký. Đổi thành <c>false</c> nếu muốn tạo phiếu thủ công.
+    /// </para>
+    /// </summary>
+    public const bool TuDongTaoPhieuHocPhi = true;
 }

@@ -48,7 +48,7 @@ public sealed class CourseService : ICourseService
         CreateCourseRequest request,
         CancellationToken cancellationToken)
     {
-        var errors = Validate(request.SoBuoi, request.TongSoGio, request.HocPhiCoBan, request.NgayBatDau, request.NgayKetThuc);
+        var errors = Validate(request.SoBuoi, request.TongSoGio, request.HocPhiCoBan);
 
         if (errors.Count > 0)
         {
@@ -108,9 +108,7 @@ public sealed class CourseService : ICourseService
         var errors = Validate(
             request.SoBuoi ?? current.SoBuoi,
             request.TongSoGio ?? current.TongSoGio,
-            request.HocPhiCoBan ?? current.HocPhiCoBan,
-            request.NgayBatDau ?? current.NgayBatDau,
-            request.NgayKetThuc ?? current.NgayKetThuc);
+            request.HocPhiCoBan ?? current.HocPhiCoBan);
 
         if (errors.Count > 0)
         {
@@ -201,9 +199,7 @@ public sealed class CourseService : ICourseService
     private static List<string> Validate(
         int soBuoi,
         decimal? tongSoGio,
-        decimal hocPhiCoBan,
-        DateOnly ngayBatDau,
-        DateOnly ngayKetThuc)
+        decimal hocPhiCoBan)
     {
         var errors = new List<string>();
 
@@ -222,21 +218,6 @@ public sealed class CourseService : ICourseService
             errors.Add("Học phí cơ bản không được âm.");
         }
 
-        if (ngayBatDau == default)
-        {
-            errors.Add("Ngày bắt đầu là bắt buộc.");
-        }
-
-        if (ngayKetThuc == default)
-        {
-            errors.Add("Ngày kết thúc là bắt buộc.");
-        }
-
-        if (ngayBatDau != default && ngayKetThuc != default && ngayKetThuc < ngayBatDau)
-        {
-            errors.Add("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.");
-        }
-
         return errors;
     }
 
@@ -245,7 +226,5 @@ public sealed class CourseService : ICourseService
            && request.NoiDung is null
            && request.SoBuoi is null
            && request.TongSoGio is null
-           && request.HocPhiCoBan is null
-           && request.NgayBatDau is null
-           && request.NgayKetThuc is null;
+           && request.HocPhiCoBan is null;
 }

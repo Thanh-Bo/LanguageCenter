@@ -30,6 +30,12 @@ public sealed class FormCaHoc : Form
 
     public bool DataChanged { get; private set; }
 
+    /// <summary>Gợi ý do backend tính cho ca kế tiếp (buổi, ngày, GV, nội dung…).</summary>
+    private SessionSuggestionDto? _goiY;
+
+    /// <summary>Tạo mới TỪ LỊCH ĐỊNH KỲ → mọi thứ suy ra từ lớp, chỉ để xem.</summary>
+    private bool KhoaTheoLich => _existing is null && _cboLich.SelectedItem is LichItem;
+
     public FormCaHoc(
         IReadOnlyList<ClassListItemDto> classes,
         IReadOnlyList<RoomListItemDto> rooms,
@@ -54,6 +60,7 @@ public sealed class FormCaHoc : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+        UI.KiemTraNhap.BatTuNoiChieuCao(this);
         NapDuLieu();
 
         if (existing is not null) NapCaHocDangSua();
@@ -192,7 +199,14 @@ public sealed class FormCaHoc : Form
             _cboLop.Items.Add(new LopItem(c.MaLopHoc, $"{c.MaLop} — {c.TenLop}"));
         }
         if (_cboLop.Items.Count > 0) _cboLop.SelectedIndex = 0;
-        _cboLop.SelectedIndexChanged += (_, _) => NapLichCuaLop();
+        _cboLop.SelectedIndexChanged += async (_, _) =>
+        {
+            NapLichCuaLop();
+            await ApDungGoiYAsync();
+        };
+
+        // Chọn lịch định kỳ → tự điền + khoá toàn bộ thông tin của ca.
+        _cboLich.SelectedIndexChanged += async (_, _) => await ApDungGoiYAsync();
 
         _cboPhong.Items.Clear();
         foreach (var r in _rooms.OrderBy(r => r.TenPhong))
@@ -205,7 +219,7 @@ public sealed class FormCaHoc : Form
         _cboGiaoVien.Items.Add("— Không chỉ định —");
         // Giáo viên thực tế của ca phải là hồ sơ "Giáo viên" — không cho chọn trợ giảng.
         foreach (var gv in _teachers
-                     .Where(t => t.LoaiGiaoVien == TeacherTypes.GiaoVien)
+                     .Where(t => TeacherTypes.IsTeacherType(t.LoaiGiaoVien))
                      .OrderBy(t => t.MaGiaoVien))
         {
             _cboGiaoVien.Items.Add(new GiaoVienItem(gv.MaGiaoVien,
@@ -252,6 +266,96 @@ public sealed class FormCaHoc : Form
         7 => "Chủ nhật",
         _ => "—"
     };
+
+    /// <summary>
+    /// Xin backend gợi ý cho ca kế tiếp của lớp theo lịch đang chọn rồi:
+    /// <list type="bullet">
+    ///   <item>Tự điền buổi / ngày / giờ / phòng / giáo viên / trợ giảng / nội dung / loại buổi.</item>
+    ///   <item>KHOÁ các ô đó — người dùng không phải (và không được) nhập lại.</item>
+    /// </list>
+    /// Chọn "— Ca phát sinh ngoài lịch —" thì mở khoá để nhập tay (dạy bù, đổi phòng).
+    /// </summary>
+    private async Task ApDungGoiYAsync()
+    {
+        _goiY = null;
+
+        // Đang SỬA ca: luôn mở khoá để xử lý thay đổi giáo viên / phòng / giờ.
+        if (_existing is not null)
+        {
+            KhoaTheoGoiY(false);
+            return;
+        }
+
+        if (_cboLop.SelectedItem is not LopItem lop || _cboLich.SelectedItem is not LichItem lich)
+        {
+            _lblBuoi.Text = string.Empty;
+            KhoaTheoGoiY(false);
+            return;
+        }
+
+        UseWaitCursor = true;
+
+        var result = await AppSession.Api.GetAsync<SessionSuggestionDto>(
+            $"admin/sessions/suggest?maLopHoc={lop.MaLopHoc}&maLichHoc={lich.MaLichHoc}");
+
+        UseWaitCursor = false;
+
+        if (!result.Success || result.Data is null)
+        {
+            KhoaTheoGoiY(false);
+            return;
+        }
+
+        var g = result.Data;
+        _goiY = g;
+
+        _lblBuoi.Text = g.SoBuoi is { } soBuoi ? $"Buổi {soBuoi}" : string.Empty;
+
+        ChonPhong(g.MaPhongHoc);
+        ChonGiaoVien(_cboGiaoVien, g.TenGiaoVienThucTe);
+        ChonTroGiang(_cboTroGiang, g.TenTroGiangThucTe);
+
+        _dtpNgayHoc.Value = g.NgayHoc.ToDateTime(TimeOnly.MinValue);
+        _dtpBatDau.Value = DateTime.Today.Add(g.GioBatDau.ToTimeSpan());
+        _dtpKetThuc.Value = DateTime.Today.Add(g.GioKetThuc.ToTimeSpan());
+        _txtNoiDung.Text = g.NoiDungBaiHoc ?? string.Empty;
+
+        var viTriLoai = _cboLoaiBuoi.Items.IndexOf(g.LoaiBuoi);
+        _cboLoaiBuoi.SelectedIndex = viTriLoai >= 0 ? viTriLoai : 0;
+
+        _lblThongBao.Text = g.CanhBao ?? string.Empty;
+
+        KhoaTheoGoiY(true);
+    }
+
+    /// <summary>Bật/tắt khoá các ô suy ra từ lịch (phòng, giáo viên, trợ giảng, ngày, giờ, nội dung, loại buổi).</summary>
+    private void KhoaTheoGoiY(bool khoa)
+    {
+        _cboPhong.Enabled = !khoa;
+        _cboGiaoVien.Enabled = !khoa;
+        _cboTroGiang.Enabled = !khoa;
+        _dtpNgayHoc.Enabled = !khoa;
+        _dtpBatDau.Enabled = !khoa;
+        _dtpKetThuc.Enabled = !khoa;
+        _cboLoaiBuoi.Enabled = !khoa;
+
+        _txtNoiDung.ReadOnly = khoa;
+        _txtNoiDung.BackColor = khoa ? Theme.ContentBackground : Color.White;
+
+        // "Lý do thay đổi" LUÔN cho nhập — dùng để giải trình khi ca lệch kế hoạch.
+    }
+
+    private void ChonPhong(int maPhongHoc)
+    {
+        for (var i = 0; i < _cboPhong.Items.Count; i++)
+        {
+            if (_cboPhong.Items[i] is PhongItem it && it.MaPhongHoc == maPhongHoc)
+            {
+                _cboPhong.SelectedIndex = i;
+                return;
+            }
+        }
+    }
 
     private void NapCaHocDangSua()
     {
@@ -360,6 +464,9 @@ public sealed class FormCaHoc : Form
                 gioKetThuc = gioKetThuc.ToString("HH:mm:ss"),
                 noiDungBaiHoc = noiDung,
                 loaiBuoi,
+                // Ca tạo từ lịch: gửi kèm tham chiếu syllabus + số buổi do backend gợi ý.
+                maNoiDung = _goiY?.MaNoiDung,
+                soBuoi = _goiY?.SoBuoi,
                 lyDoThayDoi = lyDo
             });
         }

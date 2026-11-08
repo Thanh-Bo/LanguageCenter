@@ -12,6 +12,16 @@ public class DangKyHoc
     /// <summary>Chưa xếp lớp thì để NULL.</summary>
     public int? MaLopHoc { get; set; }
 
+    /// <summary>
+    /// LỚP DỰ KIẾN — lớp học viên sẽ vào khi đã thu đủ học phí.
+    /// <para>
+    /// Tách riêng khỏi <see cref="MaLopHoc"/> vì giai đoạn chờ thu tiền học viên CHƯA vào lớp:
+    /// lúc tạo đăng ký admin chọn lớp dự kiến (đã kiểm tra 4 quy tắc xếp lớp),
+    /// khi thu đủ tiền hệ thống tự gán <c>MaLopHoc = MaLopDuKien</c>.
+    /// </para>
+    /// </summary>
+    public int? MaLopDuKien { get; set; }
+
     public string MaNhanVienTuVan { get; set; } = null!;
 
     public int? MaUuDai { get; set; }

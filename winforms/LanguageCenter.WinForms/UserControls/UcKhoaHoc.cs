@@ -80,7 +80,6 @@ public partial class UcKhoaHoc : UserControl
             ("SoBuoi", "Số buổi", 70),
             ("TongSoGio", "Thời lượng", 80),
             ("HocPhiCoBan", "Học phí niêm yết", 110),
-            ("NgayBatDau", "Khai giảng", 85),
             ("TrangThai", "Trạng thái", 95));
 
         UI.UiHelpers.DamBaoCot(dgvLevels,
@@ -274,7 +273,6 @@ public partial class UcKhoaHoc : UserControl
                     $"{c.SoBuoi} buổi",
                     c.TongSoGio.HasValue ? $"{c.TongSoGio.Value:0.#} giờ" : "—",
                     $"{c.HocPhiCoBan:N0} ₫",
-                    UiHelpers.FormatDate(c.NgayBatDau),
                     c.TrangThai
                 );
                 dgvCourses.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(c.TrangThai);

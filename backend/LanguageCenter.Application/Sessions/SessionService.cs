@@ -292,6 +292,7 @@ public sealed class SessionService : ISessionService
     {
         var outcome = await _sessionStore.GenerateSessionsAsync(
             request.MaLichHoc,
+            request.BoQuaThieuNoiDung,
             cancellationToken);
 
         if (!outcome.ScheduleFound)
@@ -323,6 +324,28 @@ public sealed class SessionService : ISessionService
         };
 
         return OperationResult<GenerateSessionsResponse>.Ok(response);
+    }
+
+    public async Task<OperationResult<SessionSuggestionDto>> GetSuggestionAsync(
+        int maLopHoc,
+        int maLichHoc,
+        CancellationToken cancellationToken)
+    {
+        var suggestion = await _sessionStore.GetSuggestionAsync(maLopHoc, maLichHoc, cancellationToken);
+
+        return suggestion is null
+            ? OperationResult<SessionSuggestionDto>.NotFound(
+                $"Không tìm thấy lịch có id = {maLichHoc} thuộc lớp có id = {maLopHoc}.")
+            : OperationResult<SessionSuggestionDto>.Ok(suggestion);
+    }
+
+    public async Task<OperationResult<int>> SyncLessonContentsAsync(
+        int maKhoaHoc,
+        CancellationToken cancellationToken)
+    {
+        var soCaCapNhat = await _sessionStore.SyncLessonContentsAsync(maKhoaHoc, cancellationToken);
+
+        return OperationResult<int>.Ok(soCaCapNhat);
     }
 
     public async Task<OperationResult<IReadOnlyList<SessionListItemDto>>> ListForStudentAsync(
@@ -567,7 +590,7 @@ public sealed class SessionService : ISessionService
             {
                 errors.Add($"Không tìm thấy giáo viên '{code}'.");
             }
-            else if (loai != TeacherTypes.GiaoVien)
+            else if (!TeacherTypes.IsTeacherType(loai))
             {
                 errors.Add($"'{code}' là '{loai}', không thể đảm nhận vai trò giáo viên thực tế.");
             }

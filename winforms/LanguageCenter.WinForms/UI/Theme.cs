@@ -283,6 +283,71 @@ public static class UiHelpers
 
     public static string FormatDateTime(DateTime dateTime) => dateTime.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
 
+    /// <summary>Định dạng ngày hiển thị trên <see cref="DateTimePicker"/> — luôn là dd/MM/yyyy.</summary>
+    /// <remarks>
+    /// Toàn bộ ứng dụng chỉ phụ thuộc vào ĐÚNG MỘT hằng này.
+    /// Muốn đổi sang năm 2 chữ số thì sửa thành <c>"dd/MM/yy"</c> (không khuyến nghị —
+    /// dễ nhầm 1926 với 2026 trong hồ sơ nhân sự).
+    /// </remarks>
+    public const string DinhDangNgay = "dd/MM/yyyy";
+
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<Control, object> DaTheoDoiNgay = new();
+
+    /// <summary>
+    /// Ép MỌI <see cref="DateTimePicker"/> trong cây control sang <b>dd/MM/yyyy</b>.
+    /// <para>
+    /// Vì sao cần: <c>Format = DateTimePickerFormat.Short</c> lấy mẫu ngày theo
+    /// <c>CultureInfo</c> của máy. Trên máy cài en-US (hoặc có "Short date" bị tuỳ biến
+    /// trong Windows Settings) mẫu đó là <c>M/d/yyyy</c> → ngày và tháng bị đảo.
+    /// Đặt <c>CustomFormat</c> là cách DUY NHẤT không phụ thuộc locale máy.
+    /// </para>
+    /// <para>
+    /// Ô giờ (<c>Format = Time</c>) và ô đã có <c>CustomFormat</c> riêng KHÔNG bị đổi.
+    /// Đồng thời gắn <c>ControlAdded</c> để mọi ô ngày được TẠO SAU NÀY (ví dụ grid/tab
+    /// dựng động) cũng tự động đúng định dạng mà không cần gọi lại.
+    /// </para>
+    /// </summary>
+    public static void ApDungDinhDangNgay(Control goc)
+    {
+        DinhDangMotO(goc);
+        TheoDoiThem(goc);
+
+        foreach (Control con in goc.Controls)
+        {
+            ApDungDinhDangNgay(con);
+        }
+    }
+
+    /// <summary>Chỉ đổi định dạng của CHÍNH control nếu đó là ô chọn ngày.</summary>
+    private static void DinhDangMotO(Control control)
+    {
+        if (control is DateTimePicker picker
+            && picker.Format is DateTimePickerFormat.Short or DateTimePickerFormat.Long)
+        {
+            picker.Format = DateTimePickerFormat.Custom;
+            picker.CustomFormat = DinhDangNgay;
+        }
+    }
+
+    /// <summary>Gắn một lần duy nhất: control con thêm vào sau này cũng được chuẩn hoá.</summary>
+    private static void TheoDoiThem(Control cha)
+    {
+        if (DaTheoDoiNgay.TryGetValue(cha, out _))
+        {
+            return;
+        }
+
+        DaTheoDoiNgay.Add(cha, new object());
+
+        cha.ControlAdded += (_, e) =>
+        {
+            if (e.Control is Control moi)
+            {
+                ApDungDinhDangNgay(moi);
+            }
+        };
+    }
+
     public static Color StatusColor(string status) => status switch
     {
         "Hoạt động" or "Đang học" or "Đang làm việc" or "Đang mở" => Theme.Success,

@@ -1,6 +1,13 @@
 namespace LanguageCenter.Domain.Entities;
 
-/// <summary>KhoaHoc — Khóa học thuộc một cấp độ.</summary>
+/// <summary>
+/// KhoaHoc — Khóa học thuộc một cấp độ.
+/// <para>
+/// Đây là KHUÔN MẪU dùng lại cho nhiều lớp (số buổi, tổng giờ, học phí, nội dung).
+/// <b>KHÔNG có ngày bắt đầu / kết thúc</b>: ngày khai giảng và ngày kết thúc thuộc về
+/// từng LỚP cụ thể (<see cref="LopHoc.NgayBatDau"/> / <see cref="LopHoc.NgayKetThucDuKien"/>).
+/// </para>
+/// </summary>
 public class KhoaHoc
 {
     public int MaKhoaHoc { get; set; }
@@ -16,10 +23,6 @@ public class KhoaHoc
     public decimal? TongSoGio { get; set; }
 
     public decimal HocPhiCoBan { get; set; }
-
-    public DateOnly NgayBatDau { get; set; }
-
-    public DateOnly NgayKetThuc { get; set; }
 
     public string TrangThai { get; set; } = null!;
 
