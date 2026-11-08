@@ -79,13 +79,20 @@ Giao diện dùng `daHoc`, `laBuoiThi`, `laBuoiHienTai` để tô màu.
 
 Trợ giảng vẫn được điểm danh như trước (nếu là `MaTroGiangThucTe` của ca hoặc được phân công lớp).
 
-## 5b. Ngày lễ khi tạo / dời ca học
+## 5b. Kỳ nghỉ khi tạo / dời ca học
 
-`POST /api/admin/sessions` và `PATCH /api/admin/sessions/{id}` (khi có `ngayHoc`) sẽ trả `400` nếu ngày rơi vào bảng `NgayLe`:
+Bảng `NgayLe` lưu **kỳ nghỉ theo khoảng**: `Ngay` (từ ngày) → `DenNgay` (đến ngày).
+`DenNgay = NULL` nghĩa là nghỉ đúng 1 ngày. Hai kỳ nghỉ **không được chồng lấn**
+(kiểm tra ở `AcademicSetupService`).
 
-> Ngày học trùng ngày lễ: dd/MM/yyyy là 'Tên ngày lễ' — hãy chọn ngày khác.
+`POST /api/admin/sessions` và `PATCH /api/admin/sessions/{id}` (khi có `ngayHoc`) sẽ trả `400` nếu ngày rơi vào **bất kỳ ngày nào** trong một kỳ nghỉ:
 
-Ngoài ra `POST /api/admin/sessions/generate` vẫn tự dời buổi trùng lễ +7 ngày như trước.
+> Ngày học trùng ngày lễ: dd/MM/yyyy là 'Tên kỳ nghỉ' — hãy chọn ngày khác.
+
+Ngoài ra `POST /api/admin/sessions/generate` vẫn tự dời buổi trùng kỳ nghỉ +7 ngày
+(lặp lại nếu tuần sau vẫn còn trong kỳ nghỉ dài, ví dụ Tết) như trước.
+
+Quản lý kỳ nghỉ: WinForms `FormNgayLe`, hoặc web **Quản trị → Kỳ nghỉ** (`/admin/ngay-le`).
 
 ## 6. Quy tắc xếp lớp (assign-class)
 

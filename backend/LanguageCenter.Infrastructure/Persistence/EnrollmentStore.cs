@@ -495,7 +495,10 @@ public sealed class EnrollmentStore : IEnrollmentStore
                     x.GioBatDau,
                     x.GioKetThuc,
                     x.NgayApDungTu,
-                    x.NgayApDungDen)));
+                    // Ngày kết thúc phải là của CHÍNH LỚP NÀY, không phải của lớp đang xếp.
+                    // Trước đây để null → service fallback sang NgayKetThucDuKien (lớp MỚI)
+                    // nên vừa bỏ sót trùng lịch, vừa báo sai lớp.
+                    x.NgayApDungDen ?? item.NgayDen)));
             }
             else if (item.GioBatDau is { } gioBatDau && item.GioKetThuc is { } gioKetThuc)
             {
@@ -530,6 +533,12 @@ public sealed class EnrollmentStore : IEnrollmentStore
             }
         }
 
+        var hocPhi = await _dbContext.HocPhis
+            .AsNoTracking()
+            .Where(x => x.MaDangKy == maDangKy)
+            .Select(x => new { x.SoTienConThieu, x.TrangThaiHocPhi })
+            .FirstOrDefaultAsync(cancellationToken);
+
         return new PlacementContext(
             lop.MaLopHoc,
             lop.MaLop,
@@ -543,7 +552,11 @@ public sealed class EnrollmentStore : IEnrollmentStore
             soBuoiDaDienRa,
             lop.SoBuoi,
             slotsMoi,
-            slotsCu);
+            slotsCu)
+        {
+            SoTienConThieuHocPhi = hocPhi?.SoTienConThieu,
+            TrangThaiHocPhi = hocPhi?.TrangThaiHocPhi
+        };
     }
 
     public async Task<WriteOutcome> DeleteAsync(int maDangKy, CancellationToken cancellationToken)

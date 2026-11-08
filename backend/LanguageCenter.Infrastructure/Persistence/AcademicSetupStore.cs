@@ -100,6 +100,7 @@ public sealed class AcademicSetupStore : IAcademicSetupStore
             {
                 MaNgayLe = x.MaNgayLe,
                 Ngay = x.Ngay,
+                DenNgay = x.DenNgay,
                 TenNgayLe = x.TenNgayLe,
                 GhiChu = x.GhiChu
             })
@@ -113,20 +114,28 @@ public sealed class AcademicSetupStore : IAcademicSetupStore
             {
                 MaNgayLe = x.MaNgayLe,
                 Ngay = x.Ngay,
+                DenNgay = x.DenNgay,
                 TenNgayLe = x.TenNgayLe,
                 GhiChu = x.GhiChu
             })
             .FirstOrDefaultAsync(cancellationToken);
 
-    public Task<bool> HolidayDateExistsAsync(
-        DateOnly ngay,
+    public Task<bool> HolidayOverlapExistsAsync(
+        DateOnly tuNgay,
+        DateOnly? denNgay,
         int? exceptId,
         CancellationToken cancellationToken)
-        => _dbContext.NgayLes
+    {
+        var den = denNgay ?? tuNgay;
+
+        return _dbContext.NgayLes
             .AsNoTracking()
             .AnyAsync(
-                x => x.Ngay == ngay && (exceptId == null || x.MaNgayLe != exceptId),
+                x => x.Ngay <= den
+                     && (x.DenNgay ?? x.Ngay) >= tuNgay
+                     && (exceptId == null || x.MaNgayLe != exceptId),
                 cancellationToken);
+    }
 
     public async Task<WriteResult> CreateHolidayAsync(
         CreateHolidayRequest request,
@@ -135,6 +144,7 @@ public sealed class AcademicSetupStore : IAcademicSetupStore
         var entity = new NgayLe
         {
             Ngay = request.Ngay,
+            DenNgay = request.DenNgay,
             TenNgayLe = request.TenNgayLe.Trim(),
             GhiChu = TextValue.Required(request.GhiChu)
         };
@@ -170,6 +180,15 @@ public sealed class AcademicSetupStore : IAcademicSetupStore
         if (changes.Ngay is not null)
         {
             entity.Ngay = changes.Ngay.Value;
+        }
+
+        if (changes.XoaDenNgay)
+        {
+            entity.DenNgay = null;
+        }
+        else if (changes.DenNgay is not null)
+        {
+            entity.DenNgay = changes.DenNgay.Value;
         }
 
         if (changes.TenNgayLe is not null)

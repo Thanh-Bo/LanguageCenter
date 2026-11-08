@@ -62,6 +62,12 @@ const MENU_QUAN_TRI: MucMenu[] = [
     chiVaiTro: [quanTriVien, nhanVienHocVu],
   },
   {
+    nhan: 'Kỳ nghỉ',
+    duong: '/admin/ngay-le',
+    icon: 'calendarCheck',
+    chiVaiTro: [quanTriVien, nhanVienHocVu],
+  },
+  {
     nhan: 'Học phí',
     duong: '/admin/hoc-phi',
     icon: 'wallet',

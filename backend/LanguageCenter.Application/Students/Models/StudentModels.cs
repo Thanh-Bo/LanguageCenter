@@ -43,6 +43,14 @@ public sealed class CreateStudentRequest
     [StringLength(200, ErrorMessage = "Trình độ hiện tại tối đa 200 ký tự.")]
     public string? TrinhDoHienTai { get; set; }
 
+    /// <summary>Họ tên cha — OPTIONAL, tối đa 150 ký tự.</summary>
+    [StringLength(150, ErrorMessage = "Họ tên cha tối đa 150 ký tự.")]
+    public string? HoTenCha { get; set; }
+
+    /// <summary>Họ tên mẹ — OPTIONAL, tối đa 150 ký tự.</summary>
+    [StringLength(150, ErrorMessage = "Họ tên mẹ tối đa 150 ký tự.")]
+    public string? HoTenMe { get; set; }
+
     /// <summary>Phụ huynh — OPTIONAL.</summary>
     public CreateParentRequest? PhuHuynh { get; set; }
 }
@@ -108,6 +116,14 @@ public sealed class UpdateStudentRequest
 
     /// <summary>Admin only.</summary>
     public DateOnly? NgayNhapHoc { get; set; }
+
+    /// <summary>Họ tên cha. Chuỗi rỗng = xóa.</summary>
+    [StringLength(150, ErrorMessage = "Họ tên cha tối đa 150 ký tự.")]
+    public string? HoTenCha { get; set; }
+
+    /// <summary>Họ tên mẹ. Chuỗi rỗng = xóa.</summary>
+    [StringLength(150, ErrorMessage = "Họ tên mẹ tối đa 150 ký tự.")]
+    public string? HoTenMe { get; set; }
 }
 
 /// <summary>
@@ -201,6 +217,10 @@ public sealed class StudentDetailDto
     public DateTime NgayTaoHoSo { get; init; }
 
     public DateOnly? NgayNhapHoc { get; init; }
+
+    public string? HoTenCha { get; init; }
+
+    public string? HoTenMe { get; init; }
 
     public ParentDto? PhuHuynh { get; init; }
 }

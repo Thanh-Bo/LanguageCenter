@@ -44,7 +44,8 @@ public sealed class ClassStore : IClassStore
         var totalItems = await source.CountAsync(cancellationToken);
 
         var items = await source
-            .OrderBy(x => x.MaLopHoc)
+            // MỚI NHẤT LÊN ĐẦU: lớp vừa tạo có MaLopHoc lớn nhất.
+            .OrderByDescending(x => x.MaLopHoc)
             .Skip(query.Skip)
             .Take(query.Take)
             .Select(x => new ClassListItemDto
@@ -68,6 +69,10 @@ public sealed class ClassStore : IClassStore
                     d => d.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
                          || d.TrangThaiDangKy == EnrollmentStatuses.HoanThanh),
                 SoCaHoc = x.CaHocs.Count(),
+                SoPhanCong = x.PhanCongGiangDays.Count(
+                    p => p.MaGiaoVien != null
+                         && p.TrangThai != AssignmentStatuses.DaHuy
+                         && p.TrangThai != AssignmentStatuses.DaKetThuc),
                 TrangThai = x.TrangThai
             })
             .ToListAsync(cancellationToken);

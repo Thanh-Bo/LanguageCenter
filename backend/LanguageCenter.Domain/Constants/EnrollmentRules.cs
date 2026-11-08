@@ -13,4 +13,13 @@ public static class EnrollmentRules
     /// </para>
     /// </summary>
     public const int SoBuoiDaDienRaToiDa = 4;
+
+    /// <summary>
+    /// Trung tâm thu học phí TRƯỚC khi học viên vào lớp ⇒ chỉ cho xếp lớp khi
+    /// phiếu học phí đã tất toán, nhờ vậy hồ sơ không bao giờ phát sinh công nợ.
+    /// <para>
+    /// Đổi thành <c>false</c> nếu muốn cho phép xếp lớp trước rồi thu tiền sau.
+    /// </para>
+    /// </summary>
+    public const bool BatBuocThanhToanTruocKhiXepLop = true;
 }

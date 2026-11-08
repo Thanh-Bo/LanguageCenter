@@ -792,8 +792,8 @@ public sealed class SessionStore : ISessionStore
     /// <list type="number">
     ///   <item>Lấy 2 lịch định kỳ của lớp (2 thứ khác nhau) → buổi lẻ / buổi chẵn.</item>
     ///   <item>Buổi 1 bắt đầu từ <c>LopHoc.NgayBatDau</c>, mỗi tuần 2 buổi.</item>
-    ///   <item>Buổi nào rơi vào <c>NgayLe</c> thì dời +7 ngày VÀ dời toàn bộ buổi phía sau
-    ///         để luôn giữ 2 buổi/tuần.</item>
+    ///   <item>Buổi nào rơi vào KỲ NGHỈ (<c>NgayLe.Ngay … NgayLe.DenNgay</c>) thì dời +7 ngày
+    ///         VÀ dời toàn bộ buổi phía sau để luôn giữ 2 buổi/tuần.</item>
     ///   <item>Buổi thứ i lấy nội dung <c>NoiDungBaiHoc</c> có <c>SoBuoi = i</c> của khóa.</item>
     ///   <item>Cuối cùng cập nhật <c>LopHoc.NgayKetThucDuKien</c> = ngày buổi 20.</item>
     /// </list>
@@ -902,12 +902,14 @@ public sealed class SessionStore : ISessionStore
         var maLichLe = lichCuaLop.FirstOrDefault(x => x.ThuTrongTuan == thu1)?.MaLichHoc;
         var maLichChan = lichCuaLop.FirstOrDefault(x => x.ThuTrongTuan == thu2)?.MaLichHoc;
 
-        // Ngày lễ (để dời buổi).
-        var ngayLe = (await _dbContext.NgayLes
-                .AsNoTracking()
-                .Select(x => x.Ngay)
-                .ToListAsync(cancellationToken))
-            .ToHashSet();
+        // Kỳ nghỉ (để dời buổi). Mỗi dòng là 1 KHOẢNG: DenNgay = null → nghỉ 1 ngày.
+        var kyNghi = await _dbContext.NgayLes
+            .AsNoTracking()
+            .Select(x => new { x.Ngay, x.DenNgay })
+            .ToListAsync(cancellationToken);
+
+        bool LaNgayNghi(DateOnly ngay)
+            => kyNghi.Any(k => ngay >= k.Ngay && ngay <= (k.DenNgay ?? k.Ngay));
 
         // Nội dung 20 buổi của khóa (kèm loại buổi: học / thi).
         var noiDung = await _dbContext.NoiDungBaiHocs
@@ -968,8 +970,9 @@ public sealed class SessionStore : ISessionStore
 
             var ngay = ngayBuoiDau.AddDays(tuan * 7 + lechTrongTuan + soNgayDoi);
 
-            // Dời nếu trùng ngày lễ (mỗi lần +7 ngày, lặp nếu tuần sau cũng lễ).
-            while (ngayLe.Contains(ngay))
+            // Dời nếu rơi vào kỳ nghỉ (mỗi lần +7 ngày → vẫn đúng thứ;
+            // lặp nếu tuần sau vẫn còn trong kỳ nghỉ dài như Tết).
+            while (LaNgayNghi(ngay))
             {
                 ngay = ngay.AddDays(7);
                 soNgayDoi += 7;

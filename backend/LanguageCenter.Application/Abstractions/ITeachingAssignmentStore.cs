@@ -59,6 +59,16 @@ public interface ITeachingAssignmentStore
         string vaiTroPhanCong,
         CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Số LỚP KHÁC NHAU mà người này đang được phân công còn hiệu lực
+    /// (bỏ qua "Đã hủy" / "Đã kết thúc", bỏ qua khung chờ phân công).
+    /// <paramref name="exceptId"/> = bỏ qua chính phân công đang sửa.
+    /// </summary>
+    Task<int> CountActiveClassesAsync(
+        string maGiaoVien,
+        int? exceptId,
+        CancellationToken cancellationToken);
+
     Task<WriteResult> CreateAsync(CreateAssignmentRequest request, CancellationToken cancellationToken);
 
     Task<WriteOutcome> UpdateAsync(

@@ -146,17 +146,18 @@ public sealed class AcademicSetupService : IAcademicSetupService
         CreateHolidayRequest request,
         CancellationToken cancellationToken)
     {
-        var errors = ValidateHoliday(request.Ngay, request.TenNgayLe);
+        var errors = ValidateHoliday(request.Ngay, request.DenNgay, request.TenNgayLe);
 
         if (errors.Count > 0)
         {
             return OperationResult<HolidayDto>.BadRequest("Dữ liệu không hợp lệ.", errors);
         }
 
-        if (await _store.HolidayDateExistsAsync(request.Ngay, exceptId: null, cancellationToken))
+        if (await _store.HolidayOverlapExistsAsync(
+                request.Ngay, request.DenNgay, exceptId: null, cancellationToken))
         {
             return OperationResult<HolidayDto>.Conflict(
-                $"Ngày {request.Ngay:dd/MM/yyyy} đã được khai là ngày lễ.");
+                $"Khoảng {MoTaKhoang(request.Ngay, request.DenNgay)} trùng với một kỳ nghỉ đã khai.");
         }
 
         var result = await _store.CreateHolidayAsync(request, cancellationToken);
@@ -164,7 +165,7 @@ public sealed class AcademicSetupService : IAcademicSetupService
         if (!result.Succeeded)
         {
             return OperationResult<HolidayDto>.Conflict(
-                $"Ngày {request.Ngay:dd/MM/yyyy} đã được khai là ngày lễ.");
+                $"Khoảng {MoTaKhoang(request.Ngay, request.DenNgay)} trùng với một kỳ nghỉ đã khai.");
         }
 
         var created = await _store.GetHolidayAsync(result.Id, cancellationToken);
@@ -184,7 +185,8 @@ public sealed class AcademicSetupService : IAcademicSetupService
             return OperationResult<HolidayDto>.NotFound($"Không tìm thấy ngày lễ có id = {maNgayLe}.");
         }
 
-        if (request.Ngay is null && request.TenNgayLe is null && request.GhiChu is null)
+        if (request.Ngay is null && request.DenNgay is null && !request.XoaDenNgay
+            && request.TenNgayLe is null && request.GhiChu is null)
         {
             return OperationResult<HolidayDto>.BadRequest(
                 "Không có trường nào được cập nhật.",
@@ -193,18 +195,21 @@ public sealed class AcademicSetupService : IAcademicSetupService
 
         var ngay = request.Ngay ?? current.Ngay;
         var ten = request.TenNgayLe ?? current.TenNgayLe;
+        var denNgay = request.XoaDenNgay
+            ? null
+            : request.DenNgay ?? current.DenNgay;
 
-        var errors = ValidateHoliday(ngay, ten);
+        var errors = ValidateHoliday(ngay, denNgay, ten);
 
         if (errors.Count > 0)
         {
             return OperationResult<HolidayDto>.BadRequest("Dữ liệu không hợp lệ.", errors);
         }
 
-        if (await _store.HolidayDateExistsAsync(ngay, exceptId: maNgayLe, cancellationToken))
+        if (await _store.HolidayOverlapExistsAsync(ngay, denNgay, exceptId: maNgayLe, cancellationToken))
         {
             return OperationResult<HolidayDto>.Conflict(
-                $"Ngày {ngay:dd/MM/yyyy} đã được khai là ngày lễ khác.");
+                $"Khoảng {MoTaKhoang(ngay, denNgay)} trùng với một kỳ nghỉ khác.");
         }
 
         var outcome = await _store.UpdateHolidayAsync(maNgayLe, request, cancellationToken);
@@ -217,7 +222,7 @@ public sealed class AcademicSetupService : IAcademicSetupService
         if (outcome != WriteOutcome.Success)
         {
             return OperationResult<HolidayDto>.Conflict(
-                $"Ngày {ngay:dd/MM/yyyy} đã được khai là ngày lễ khác.");
+                $"Khoảng {MoTaKhoang(ngay, denNgay)} trùng với một kỳ nghỉ khác.");
         }
 
         var updated = await _store.GetHolidayAsync(maNgayLe, cancellationToken);
@@ -243,13 +248,18 @@ public sealed class AcademicSetupService : IAcademicSetupService
             : OperationResult<HolidayDto>.Conflict("Không xóa được ngày lễ.");
     }
 
-    private static List<string> ValidateHoliday(DateOnly ngay, string? tenNgayLe)
+    private static List<string> ValidateHoliday(DateOnly ngay, DateOnly? denNgay, string? tenNgayLe)
     {
         var errors = new List<string>();
 
         if (ngay == default)
         {
-            errors.Add("Ngày lễ là bắt buộc.");
+            errors.Add("Ngày bắt đầu kỳ nghỉ là bắt buộc.");
+        }
+
+        if (denNgay is { } den && den < ngay)
+        {
+            errors.Add("Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.");
         }
 
         if (string.IsNullOrWhiteSpace(tenNgayLe))
@@ -259,4 +269,10 @@ public sealed class AcademicSetupService : IAcademicSetupService
 
         return errors;
     }
+
+    /// <summary>"04/02/2027 – 18/02/2027" hoặc "01/01/2027" khi nghỉ 1 ngày.</summary>
+    private static string MoTaKhoang(DateOnly tuNgay, DateOnly? denNgay)
+        => denNgay is { } den && den != tuNgay
+            ? $"{tuNgay:dd/MM/yyyy} – {den:dd/MM/yyyy}"
+            : $"{tuNgay:dd/MM/yyyy}";
 }

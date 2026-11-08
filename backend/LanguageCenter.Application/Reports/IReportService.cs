@@ -27,4 +27,12 @@ public interface IReportService
         CancellationToken cancellationToken);
 
     Task<OperationResult<SurveyReportDto>> GetSurveyReportAsync(CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Thống kê theo THÁNG / QUÝ / NĂM / KHOẢNG TỰ CHỌN:
+    /// số lớp học, số học viên, số giáo viên, số trợ giảng + danh sách học viên còn nợ.
+    /// </summary>
+    Task<OperationResult<PeriodReportDto>> GetPeriodAsync(
+        PeriodReportQuery query,
+        CancellationToken cancellationToken);
 }

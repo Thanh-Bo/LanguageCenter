@@ -15,6 +15,7 @@ public sealed class FormNgayLe : Form
 {
     private readonly DataGridView _grid = new();
     private readonly DateTimePicker _dtpNgay = new();
+    private readonly DateTimePicker _dtpDenNgay = new();
     private readonly TextBox _txtTen = UiHelpers.CreateTextBox(320);
     private readonly TextBox _txtGhiChu = UiHelpers.CreateTextBox(320);
     private readonly Label _lblThongBao = new();
@@ -58,7 +59,7 @@ public sealed class FormNgayLe : Form
 
         Controls.Add(new Label
         {
-            Text = "Buổi học rơi vào ngày lễ sẽ tự dời sang tuần sau khi bấm 'Sinh ca học'.",
+            Text = "Kỳ nghỉ có thể kéo dài nhiều ngày (tick 'Đến ngày'). Buổi học rơi vào kỳ nghỉ sẽ tự dời sang tuần sau khi bấm 'Sinh ca học'.",
             Font = Theme.FontSub,
             ForeColor = Theme.Muted,
             AutoSize = true,
@@ -85,9 +86,10 @@ public sealed class FormNgayLe : Form
         _grid.DefaultCellStyle.SelectionBackColor = Theme.PrimaryLight;
         _grid.DefaultCellStyle.SelectionForeColor = Theme.TextDark;
 
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Ngay", HeaderText = "Ngày", FillWeight = 80 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenNgayLe", HeaderText = "Tên ngày lễ", FillWeight = 220 });
-        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "GhiChu", HeaderText = "Ghi chú", FillWeight = 240 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "Ngay", HeaderText = "Từ ngày", FillWeight = 70 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "DenNgay", HeaderText = "Đến ngày", FillWeight = 70 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenNgayLe", HeaderText = "Tên kỳ nghỉ", FillWeight = 180 });
+        _grid.Columns.Add(new DataGridViewTextBoxColumn { Name = "GhiChu", HeaderText = "Ghi chú", FillWeight = 220 });
 
         _grid.SelectionChanged += (_, _) => ChonDong();
         Controls.Add(_grid);
@@ -97,7 +99,7 @@ public sealed class FormNgayLe : Form
 
         Controls.Add(new Label
         {
-            Text = "Ngày *",
+            Text = "Từ ngày *",
             AutoSize = true,
             ForeColor = Theme.TextMedium,
             Font = Theme.FontSub,
@@ -105,21 +107,38 @@ public sealed class FormNgayLe : Form
         });
 
         _dtpNgay.Format = DateTimePickerFormat.Short;
-        _dtpNgay.Width = 150;
+        _dtpNgay.Width = 140;
         _dtpNgay.Location = new Point(24, y + 20);
         Controls.Add(_dtpNgay);
 
         Controls.Add(new Label
         {
-            Text = "Tên ngày lễ *",
+            Text = "Đến ngày (tick để bật)",
             AutoSize = true,
             ForeColor = Theme.TextMedium,
             Font = Theme.FontSub,
-            Location = new Point(196, y)
+            Location = new Point(180, y)
         });
 
-        _txtTen.Location = new Point(196, y + 20);
-        _txtTen.PlaceholderText = "Ví dụ: Tết Dương lịch, Quốc khánh 2/9...";
+        _dtpDenNgay.Format = DateTimePickerFormat.Short;
+        _dtpDenNgay.Width = 140;
+        _dtpDenNgay.ShowCheckBox = true;
+        _dtpDenNgay.Checked = false;
+        _dtpDenNgay.Location = new Point(180, y + 20);
+        Controls.Add(_dtpDenNgay);
+
+        Controls.Add(new Label
+        {
+            Text = "Tên kỳ nghỉ *",
+            AutoSize = true,
+            ForeColor = Theme.TextMedium,
+            Font = Theme.FontSub,
+            Location = new Point(336, y)
+        });
+
+        _txtTen.Width = 280;
+        _txtTen.Location = new Point(336, y + 20);
+        _txtTen.PlaceholderText = "Ví dụ: Tết Nguyên đán, Quốc khánh 2/9...";
         Controls.Add(_txtTen);
 
         Controls.Add(new Label
@@ -128,10 +147,11 @@ public sealed class FormNgayLe : Form
             AutoSize = true,
             ForeColor = Theme.TextMedium,
             Font = Theme.FontSub,
-            Location = new Point(536, y)
+            Location = new Point(636, y)
         });
 
-        _txtGhiChu.Location = new Point(536, y + 20);
+        _txtGhiChu.Width = 240;
+        _txtGhiChu.Location = new Point(636, y + 20);
         _txtGhiChu.PlaceholderText = "Trung tâm nghỉ toàn bộ";
         Controls.Add(_txtGhiChu);
 
@@ -190,13 +210,14 @@ public sealed class FormNgayLe : Form
         {
             var rowIdx = _grid.Rows.Add(
                 h.Ngay.ToString("dd/MM/yyyy"),
+                h.DenNgay is { } den ? den.ToString("dd/MM/yyyy") : "—",
                 h.TenNgayLe,
                 string.IsNullOrWhiteSpace(h.GhiChu) ? "—" : h.GhiChu);
 
             _grid.Rows[rowIdx].Tag = h;
         }
 
-        _lblDem.Text = $"Tổng {_items.Count} ngày lễ trong hệ thống.";
+        _lblDem.Text = $"Tổng {_items.Count} kỳ nghỉ trong hệ thống.";
         _lblDem.ForeColor = Theme.Muted;
 
         if (_grid.Rows.Count > 0)
@@ -219,19 +240,49 @@ public sealed class FormNgayLe : Form
 
         _dangChon = h;
         _dtpNgay.Value = h.Ngay.ToDateTime(TimeOnly.MinValue);
+
+        if (h.DenNgay is { } den)
+        {
+            _dtpDenNgay.Value = den.ToDateTime(TimeOnly.MinValue);
+            _dtpDenNgay.Checked = true;
+        }
+        else
+        {
+            _dtpDenNgay.Value = h.Ngay.ToDateTime(TimeOnly.MinValue);
+            _dtpDenNgay.Checked = false;
+        }
+
         _txtTen.Text = h.TenNgayLe;
         _txtGhiChu.Text = h.GhiChu ?? string.Empty;
         _lblThongBao.Text = string.Empty;
     }
 
-    private bool KiemTraHopLe(out DateOnly ngay, out string ten)
+    private bool KiemTraHopLe(out DateOnly ngay, out DateOnly? denNgay, out string ten)
     {
         ngay = DateOnly.FromDateTime(_dtpNgay.Value);
+        denNgay = _dtpDenNgay.Checked
+            ? DateOnly.FromDateTime(_dtpDenNgay.Value)
+            : null;
         ten = _txtTen.Text.Trim();
+
+        if (denNgay is { } den)
+        {
+            if (den < ngay)
+            {
+                _lblThongBao.Text = "Ngày kết thúc phải lớn hơn hoặc bằng ngày bắt đầu.";
+                return false;
+            }
+
+            // Nghỉ đúng 1 ngày thì gửi null cho gọn.
+            if (den == ngay)
+            {
+                denNgay = null;
+            }
+        }
 
         if (ten.Length == 0)
         {
-            _lblThongBao.Text = "Vui lòng nhập tên ngày lễ.";
+            _lblThongBao.Text = "Vui lòng nhập tên kỳ nghỉ.";
             return false;
         }
 
@@ -240,7 +291,7 @@ public sealed class FormNgayLe : Form
 
     private async Task ThemAsync()
     {
-        if (!KiemTraHopLe(out var ngay, out var ten))
+        if (!KiemTraHopLe(out var ngay, out var denNgay, out var ten))
         {
             return;
         }
@@ -250,6 +301,7 @@ public sealed class FormNgayLe : Form
         var result = await AppSession.Api.PostAsync<HolidayDto>("admin/holidays", new
         {
             ngay = ngay.ToString("yyyy-MM-dd"),
+            denNgay = denNgay?.ToString("yyyy-MM-dd"),
             tenNgayLe = ten,
             ghiChu = _txtGhiChu.Text.Trim()
         });
@@ -274,7 +326,7 @@ public sealed class FormNgayLe : Form
             return;
         }
 
-        if (!KiemTraHopLe(out var ngay, out var ten))
+        if (!KiemTraHopLe(out var ngay, out var denNgay, out var ten))
         {
             return;
         }
@@ -286,6 +338,8 @@ public sealed class FormNgayLe : Form
             new
             {
                 ngay = ngay.ToString("yyyy-MM-dd"),
+                denNgay = denNgay?.ToString("yyyy-MM-dd"),
+                xoaDenNgay = denNgay is null,
                 tenNgayLe = ten,
                 ghiChu = _txtGhiChu.Text.Trim()
             });
@@ -311,7 +365,9 @@ public sealed class FormNgayLe : Form
         }
 
         var xacNhan = MessageBox.Show(FindForm(),
-            $"Xóa ngày lễ {_dangChon.Ngay:dd/MM/yyyy} — {_dangChon.TenNgayLe}?",
+            $"Xóa kỳ nghỉ {_dangChon.Ngay:dd/MM/yyyy}"
+            + (_dangChon.DenNgay is { } d ? $" – {d:dd/MM/yyyy}" : string.Empty)
+            + $" — {_dangChon.TenNgayLe}?",
             "Xác nhận xóa", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
 
         if (xacNhan != DialogResult.Yes)

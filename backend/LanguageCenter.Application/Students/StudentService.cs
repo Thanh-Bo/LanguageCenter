@@ -57,6 +57,15 @@ public sealed class StudentService : IStudentService
                 $"Email '{email}' đã được sử dụng bởi tài khoản khác.");
         }
 
+        // Số điện thoại (nếu có) không được trùng với bất kỳ hồ sơ nào khác.
+        if (TextValue.Optional(request.SoDienThoai) is { } soDienThoai
+            && await _studentStore.PhoneExistsAsync(soDienThoai, exceptMaHocVien: null, cancellationToken))
+        {
+            return OperationResult<CreateStudentResponse>.Conflict(
+                $"Số điện thoại '{soDienThoai}' đã được dùng cho hồ sơ khác.",
+                ["Mỗi số điện thoại chỉ gắn với một hồ sơ (học viên / phụ huynh / giáo viên)."]);
+        }
+
         // Mật khẩu mặc định của trung tâm ("111111") — chỉ lưu dạng hash, không log plain text.
         var temporaryPassword = _temporaryPasswordGenerator.Generate();
         var passwordHash = _passwordHasherService.HashPassword(temporaryPassword);
@@ -72,7 +81,9 @@ public sealed class StudentService : IStudentService
             MucTieuHocTap: TextValue.Optional(request.MucTieuHocTap),
             TrinhDoHienTai: TextValue.Optional(request.TrinhDoHienTai),
             TrangThaiHocTap: StudentStatuses.DangTuVan,
-            PhuHuynh: MapParent(request.PhuHuynh));
+            PhuHuynh: MapParent(request.PhuHuynh),
+            HoTenCha: TextValue.Optional(request.HoTenCha),
+            HoTenMe: TextValue.Optional(request.HoTenMe));
 
         var result = await _provisioningStore.CreateStudentAsync(provisionData, passwordHash, cancellationToken);
 
@@ -150,6 +161,15 @@ public sealed class StudentService : IStudentService
             return OperationResult<StudentDetailDto>.BadRequest(
                 "Không có trường nào được cập nhật.",
                 ["Hãy gửi ít nhất một trường cần thay đổi."]);
+        }
+
+        // SĐT mới (nếu có) không được trùng hồ sơ khác — bỏ qua chính học viên này.
+        if (TextValue.Optional(request.SoDienThoai) is { } soDienThoai
+            && await _studentStore.PhoneExistsAsync(soDienThoai, code, cancellationToken))
+        {
+            return OperationResult<StudentDetailDto>.Conflict(
+                $"Số điện thoại '{soDienThoai}' đã được dùng cho hồ sơ khác.",
+                ["Mỗi số điện thoại chỉ gắn với một hồ sơ (học viên / phụ huynh / giáo viên)."]);
         }
 
         var outcome = await _studentStore.UpdateAsync(code, request, cancellationToken);
@@ -258,6 +278,10 @@ public sealed class StudentService : IStudentService
         {
             errors.Add(birthDateError!);
         }
+        else if (!TextValue.IsOldEnough(request.NgaySinh, 3, out var ageError))
+        {
+            errors.Add(ageError!);
+        }
 
         if (!TextValue.IsPlausiblePhone(request.SoDienThoai, out var phoneError))
         {
@@ -306,6 +330,10 @@ public sealed class StudentService : IStudentService
         {
             errors.Add(birthDateError!);
         }
+        else if (request.NgaySinh is { } ngaySinh2 && !TextValue.IsOldEnough(ngaySinh2, 3, out var ageError))
+        {
+            errors.Add(ageError!);
+        }
 
         if (!TextValue.IsPlausiblePhone(request.SoDienThoai, out var phoneError))
         {
@@ -335,7 +363,9 @@ public sealed class StudentService : IStudentService
            && request.MucTieuHocTap is null
            && request.TrinhDoHienTai is null
            && request.TrangThaiHocTap is null
-           && request.NgayNhapHoc is null;
+           && request.NgayNhapHoc is null
+           && request.HoTenCha is null
+           && request.HoTenMe is null;
 
     private static OperationResult<CreateStudentResponse> MapProvisionFailure(ProvisionResult result, string email)
         => result.FailureReason switch

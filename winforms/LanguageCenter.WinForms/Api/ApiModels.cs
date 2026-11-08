@@ -126,6 +126,8 @@ public sealed class CreateStudentRequest
     public string? DiaChi { get; set; }
     public string? MucTieuHocTap { get; set; }
     public string? TrinhDoHienTai { get; set; }
+    public string? HoTenCha { get; set; }
+    public string? HoTenMe { get; set; }
     public CreateParentRequest? PhuHuynh { get; set; }
 }
 
@@ -141,6 +143,8 @@ public sealed class UpdateStudentRequest
     public string? TrinhDoHienTai { get; set; }
     public string? TrangThaiHocTap { get; set; }
     public DateOnly? NgayNhapHoc { get; set; }
+    public string? HoTenCha { get; set; }
+    public string? HoTenMe { get; set; }
 }
 
 public sealed class CreateStudentResponse
@@ -179,6 +183,8 @@ public sealed class StudentDetailDto
     public string TrangThaiHocTap { get; init; } = string.Empty;
     public DateTime NgayTaoHoSo { get; init; }
     public DateOnly? NgayNhapHoc { get; init; }
+    public string? HoTenCha { get; init; }
+    public string? HoTenMe { get; init; }
     public ParentDto? PhuHuynh { get; init; }
 }
 
@@ -593,6 +599,8 @@ public sealed class ClassListItemDto
     public int SiSoToiDa { get; init; }
     public int SiSoHienTai { get; init; }
     public int SoCaHoc { get; init; }
+    /// <summary>Số phân công giảng dạy đang hiệu lực. 0 = lớp CHƯA phân công giáo viên.</summary>
+    public int SoPhanCong { get; init; }
     /// <summary>Giờ bắt đầu buổi học mặc định của lớp (NULL = chưa xác định).</summary>
     public TimeOnly? GioBatDau { get; init; }
     /// <summary>Giờ kết thúc buổi học mặc định của lớp (NULL = chưa xác định).</summary>
@@ -715,6 +723,8 @@ public sealed class HolidayDto
 {
     public int MaNgayLe { get; init; }
     public DateOnly Ngay { get; init; }
+    /// <summary>Ngày kết thúc kỳ nghỉ — null = nghỉ đúng 1 ngày.</summary>
+    public DateOnly? DenNgay { get; init; }
     public string TenNgayLe { get; init; } = string.Empty;
     public string? GhiChu { get; init; }
 }
@@ -784,9 +794,40 @@ public sealed class NotificationListItemDto
     public string PhamVi { get; init; } = string.Empty;
 }
 
-public sealed class AssignmentListItemDto
+/// <summary>Một học viên còn nợ học phí.</summary>
+public sealed class DebtorRowDto
 {
-    public int MaPhanCong { get; init; }
+    public int MaHocPhi { get; init; }
+    public int MaDangKy { get; init; }
+    public string MaHocVien { get; init; } = string.Empty;
+    public string HoTen { get; init; } = string.Empty;
+    public string? SoDienThoai { get; init; }
+    public string TenKhoaHoc { get; init; } = string.Empty;
+    public string? MaLop { get; init; }
+    public decimal SoTienPhaiDong { get; init; }
+    public decimal SoTienDaDong { get; init; }
+    public decimal SoTienConThieu { get; init; }
+    public DateOnly? HanThanhToan { get; init; }
+    public string TrangThaiHocPhi { get; init; } = string.Empty;
+}
+
+/// <summary>Kết quả GET /api/admin/reports/period — thống kê theo kỳ + công nợ.</summary>
+public sealed class PeriodReportDto
+{
+    public DateOnly TuNgay { get; init; }
+    public DateOnly DenNgay { get; init; }
+    public int SoLopHoc { get; init; }
+    public int SoHocVien { get; init; }
+    public int SoGiaoVien { get; init; }
+    public int SoTroGiang { get; init; }
+    public int SoHocVienDangHoc { get; init; }
+    public int SoHocVienConNo { get; init; }
+    public decimal TongConNo { get; init; }
+    public IReadOnlyList<DebtorRowDto> HocVienConNo { get; init; } = Array.Empty<DebtorRowDto>();
+}
+
+public sealed class AssignmentListItemDto
+{    public int MaPhanCong { get; init; }
     public int MaLopHoc { get; init; }
     public string MaLop { get; init; } = string.Empty;
     public string TenLop { get; init; } = string.Empty;

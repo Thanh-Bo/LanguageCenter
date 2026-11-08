@@ -147,16 +147,36 @@ public partial class UcPhanCongGiangDay : UserControl
     {
         _dangNap = true;
 
-        var dangChon = cboLopHoc.SelectedItem?.ToString() ?? AllOption;
+        var dangChon = (cboLopHoc.SelectedItem as LopLoc)?.MaLopHoc;
 
         cboLopHoc.Items.Clear();
         cboLopHoc.Items.Add(AllOption);
-        foreach (var c in _classes.OrderBy(c => c.MaLop)) cboLopHoc.Items.Add(c.TenLop);
 
-        var viTri = cboLopHoc.Items.IndexOf(dangChon);
-        cboLopHoc.SelectedIndex = viTri >= 0 ? viTri : 0;
+        foreach (var c in _classes.OrderByDescending(c => c.MaLopHoc))
+        {
+            cboLopHoc.Items.Add(new LopLoc(c.MaLopHoc, c.TenLop));
+        }
+
+        if (dangChon is null)
+        {
+            cboLopHoc.SelectedIndex = 0;
+        }
+        else
+        {
+            var viTri = cboLopHoc.Items.Cast<object>()
+                .Select((item, i) => (item, i))
+                .FirstOrDefault(t => t.item is LopLoc l && l.MaLopHoc == dangChon.Value).i;
+
+            cboLopHoc.SelectedIndex = viTri > 0 ? viTri : 0;
+        }
 
         _dangNap = false;
+    }
+
+    /// <summary>Mục lọc "lớp" — hiển thị tên nhưng so sánh bằng MÃ lớp.</summary>
+    private sealed record LopLoc(int MaLopHoc, string TenLop)
+    {
+        public override string ToString() => TenLop;
     }
 
     public void LoadAssignments()
@@ -167,12 +187,12 @@ public partial class UcPhanCongGiangDay : UserControl
     private void ApplyFilter()
     {
         var kw = txtSearch.Text.Trim();
-        var lop = cboLopHoc.SelectedItem?.ToString() ?? AllOption;
+        var lop = cboLopHoc.SelectedItem as LopLoc;
         var vaiTro = cboVaiTro.SelectedItem?.ToString() ?? AllOption;
 
         var query = _all.AsEnumerable();
 
-        if (lop != AllOption) query = query.Where(a => a.TenLop == lop);
+        if (lop is not null) query = query.Where(a => a.MaLopHoc == lop.MaLopHoc);
         if (vaiTro != AllOption) query = query.Where(a => a.VaiTroPhanCong == vaiTro);
 
         if (!string.IsNullOrWhiteSpace(kw))

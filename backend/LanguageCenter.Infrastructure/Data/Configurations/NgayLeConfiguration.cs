@@ -15,11 +15,14 @@ public sealed class NgayLeConfiguration : IEntityTypeConfiguration<NgayLe>
 
         builder.Property(x => x.Ngay).IsRequired();
 
+        builder.Property(x => x.DenNgay);
+
         builder.Property(x => x.TenNgayLe).HasMaxLength(100).IsRequired();
         builder.Property(x => x.GhiChu).HasMaxLength(200);
 
+        // Kỳ nghỉ giờ là KHOẢNG ngày → không dùng UNIQUE(Ngay) nữa.
+        // Việc chặn chồng lấn do AcademicSetupService đảm nhận.
         builder.HasIndex(x => x.Ngay)
-            .IsUnique()
-            .HasDatabaseName("UQ_NgayLe_Ngay");
+            .HasDatabaseName("IX_NgayLe_Ngay");
     }
 }

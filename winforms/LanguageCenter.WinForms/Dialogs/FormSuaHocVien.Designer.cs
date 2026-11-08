@@ -23,6 +23,10 @@ partial class FormSuaHocVien
     private TextBox txtTrinhDoHienTai = null!;
     private Label lblMucTieu = null!;
     private TextBox txtMucTieuHocTap = null!;
+    private Label lblHoTenCha = null!;
+    private TextBox txtHoTenCha = null!;
+    private Label lblHoTenMe = null!;
+    private TextBox txtHoTenMe = null!;
 
     private GroupBox grpStatus = null!;
     private Label lblTrangThai = null!;
@@ -64,6 +68,10 @@ partial class FormSuaHocVien
         txtTrinhDoHienTai = new TextBox { Width = 460, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 272) };
         lblMucTieu = new Label { Text = "Mục tiêu học tập", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 308) };
         txtMucTieuHocTap = new TextBox { Width = 460, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 328) };
+        lblHoTenCha = new Label { Text = "Họ tên cha", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 364) };
+        txtHoTenCha = new TextBox { Width = 220, Font = new Font("Segoe UI", 9.5f), Location = new Point(16, 384) };
+        lblHoTenMe = new Label { Text = "Họ tên mẹ", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(250, 364) };
+        txtHoTenMe = new TextBox { Width = 210, Font = new Font("Segoe UI", 9.5f), Location = new Point(250, 384) };
 
         grpStatus = new GroupBox();
         lblTrangThai = new Label { Text = "Trạng thái học tập", AutoSize = true, Font = new Font("Segoe UI", 9.5f), ForeColor = Color.FromArgb(100, 116, 139), Location = new Point(16, 26) };
@@ -104,33 +112,34 @@ partial class FormSuaHocVien
         grpInfo.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         grpInfo.ForeColor = Color.FromArgb(15, 23, 42);
         grpInfo.Location = new Point(20, 16);
-        grpInfo.Size = new Size(500, 370);
+        grpInfo.Size = new Size(500, 420);
 
         grpInfo.Controls.AddRange(new Control[]
         {
             lblHoTen, txtHoTen, lblNgaySinh, dtpNgaySinh, lblGioiTinh, cboGioiTinh,
             lblEmail, txtEmail, lblSoDienThoai, txtSoDienThoai, lblDiaChi, txtDiaChi,
-            lblTrinhDo, txtTrinhDoHienTai, lblMucTieu, txtMucTieuHocTap
+            lblTrinhDo, txtTrinhDoHienTai, lblMucTieu, txtMucTieuHocTap,
+            lblHoTenCha, txtHoTenCha, lblHoTenMe, txtHoTenMe
         });
 
         // grpStatus
         grpStatus.Text = "Trạng thái học tập (Quản trị viên)";
         grpStatus.Font = new Font("Segoe UI", 9.5f, FontStyle.Bold);
         grpStatus.ForeColor = Color.FromArgb(15, 23, 42);
-        grpStatus.Location = new Point(20, 396);
+        grpStatus.Location = new Point(20, 446);
         grpStatus.Size = new Size(500, 90);
         grpStatus.Controls.AddRange(new Control[] { lblTrangThai, cboTrangThaiHocTap, chkNgayNhapHoc, dtpNgayNhapHoc });
 
         // message + buttons
-        lblMessage.Location = new Point(20, 490);
+        lblMessage.Location = new Point(20, 540);
         lblMessage.Size = new Size(500, 92);
         lblMessage.Font = new Font("Segoe UI", 9.5f);
         lblMessage.ForeColor = Color.FromArgb(239, 68, 68);
 
-        btnSave.Location = new Point(20, 592);
+        btnSave.Location = new Point(20, 642);
         btnSave.Click += BtnSave_Click;
 
-        btnCancel.Location = new Point(170, 592);
+        btnCancel.Location = new Point(170, 642);
 
         Controls.Add(btnCancel);
         Controls.Add(btnSave);
@@ -140,7 +149,7 @@ partial class FormSuaHocVien
 
         AutoScaleDimensions = new SizeF(96F, 96F);
         AutoScaleMode = AutoScaleMode.Dpi;
-        ClientSize = new Size(560, 650);
+        ClientSize = new Size(560, 700);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;

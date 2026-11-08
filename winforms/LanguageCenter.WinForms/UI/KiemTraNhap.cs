@@ -164,8 +164,33 @@ public static class KiemTraNhap
         return true;
     }
 
-    /// <summary>ComboBox bắt buộc chọn (dùng cho DropDownList).</summary>
-    public static bool ChonBatBuoc(ComboBox comboBox, string tenTruong, List<string> loi)
+    /// <summary>
+    /// Tuổi tối thiểu tại hôm nay — dùng cho quy tắc "học viên phải từ 3 tuổi trở lên".
+    /// Ngày sinh không hợp lệ (tương lai / &lt; 1900) đã được <see cref="NgaySinh"/> báo.
+    /// </summary>
+    public static bool TuoiToiThieu(DateTimePicker picker, string tenTruong, int tuoiToiThieu, List<string> loi)
+    {
+        var ngaySinh = picker.Value.Date;
+        var moc = DateTime.Today;
+
+        var tuoi = moc.Year - ngaySinh.Year;
+
+        if (moc < ngaySinh.AddYears(tuoi))
+        {
+            tuoi--;
+        }
+
+        if (tuoi < tuoiToiThieu)
+        {
+            DanhDauLoi(picker);
+            loi.Add($"{tenTruong}: học viên phải từ {tuoiToiThieu} tuổi trở lên (hiện {tuoi} tuổi).");
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>ComboBox bắt buộc chọn (dùng cho DropDownList).</summary>    public static bool ChonBatBuoc(ComboBox comboBox, string tenTruong, List<string> loi)
     {
         if (string.IsNullOrWhiteSpace(comboBox.Text))
         {

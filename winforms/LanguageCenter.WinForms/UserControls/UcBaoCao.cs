@@ -12,6 +12,21 @@ public partial class UcBaoCao : UserControl
     private IReadOnlyList<AcademicReportDto> _academics = Array.Empty<AcademicReportDto>();
     private FinanceReportDto? _finance;
     private ReportOverviewDto? _overview;
+    private PeriodReportDto? _period;
+
+    /// <summary>Đã nạp báo cáo học tập của từng lớp chưa (chỉ nạp khi mở tab Chất lượng).</summary>
+    private bool _hocTapDaNap;
+
+    // ===== BÁO CÁO THEO KỲ (thêm ở runtime để không phải sửa Designer) =====
+    private Button _btnMenuPeriod = null!;
+    private DataGridView _dgvPeriod = null!;
+    private DataGridView _dgvDebt = null!;
+    private DateTimePicker _dtpTuNgay = null!;
+    private DateTimePicker _dtpDenNgay = null!;
+    private Label _lblTuNgay = null!;
+    private Label _lblDenNgay = null!;
+
+    private const int ChiSoBaoCaoTheoKy = 4;
 
     public UcBaoCao()
     {
@@ -27,7 +42,17 @@ public partial class UcBaoCao : UserControl
         btnMenuFinancial.Click += (_, _) => SwitchReport(2);
         btnMenuClasses.Click += (_, _) => SwitchReport(3);
 
-        cboPeriod.SelectedIndexChanged += (_, _) => ReloadData();
+        DungKhuVucBaoCaoTheoKy();
+
+        cboPeriod.SelectedIndexChanged += (_, _) =>
+        {
+            // Danh sách preset kỳ chỉ áp cho báo cáo theo kỳ.
+            if (_currentReportIndex == ChiSoBaoCaoTheoKy)
+            {
+                ApDungPresetKy();
+                ReloadData();
+            }
+        };
         btnRefresh.Click += (_, _) => ReloadData();
         btnExportExcel.Click += BtnExportExcel_Click;
         btnPrint.Click += BtnPrint_Click;
@@ -41,6 +66,17 @@ public partial class UcBaoCao : UserControl
             btnRefresh.Location = new Point(btnExportExcel.Left - btnRefresh.Width - 6, 9);
             cboPeriod.Location = new Point(btnRefresh.Left - cboPeriod.Width - 8, 10);
             lblPeriod.Location = new Point(cboPeriod.Left - lblPeriod.Width - 4, 14);
+
+            // Hai ô ngày nằm BÊN TRÁI nhãn "Kỳ:" — tự co giãn theo bề rộng cửa sổ.
+            var x = lblPeriod.Left - 8;
+
+            _dtpDenNgay.Location = new Point(x - _dtpDenNgay.Width, 10);
+            x = _dtpDenNgay.Left - 4;
+            _lblDenNgay.Location = new Point(x - _lblDenNgay.Width, 14);
+            x = _lblDenNgay.Left - 8;
+            _dtpTuNgay.Location = new Point(x - _dtpTuNgay.Width, 10);
+            x = _dtpTuNgay.Left - 4;
+            _lblTuNgay.Location = new Point(x - _lblTuNgay.Width, 14);
         };
 
         pnlSideMenu.Paint += (s, e) =>
@@ -63,7 +99,7 @@ public partial class UcBaoCao : UserControl
     {
         _currentReportIndex = reportIndex;
 
-        var buttons = new[] { btnMenuRevenue, btnMenuQuality, btnMenuFinancial, btnMenuClasses };
+        var buttons = new[] { btnMenuRevenue, btnMenuQuality, btnMenuFinancial, btnMenuClasses, _btnMenuPeriod };
         for (int i = 0; i < buttons.Length; i++)
         {
             var btn = buttons[i];
@@ -78,6 +114,15 @@ public partial class UcBaoCao : UserControl
         dgvQuality.Visible = (reportIndex == 1);
         dgvFinancial.Visible = (reportIndex == 2);
         dgvClasses.Visible = (reportIndex == 3);
+        _dgvPeriod.Visible = (reportIndex == ChiSoBaoCaoTheoKy);
+        _dgvDebt.Visible = (reportIndex == ChiSoBaoCaoTheoKy);
+
+        // Ô chọn khoảng ngày chỉ hiện ở báo cáo theo kỳ.
+        var laBaoCaoTheoKy = reportIndex == ChiSoBaoCaoTheoKy;
+        _dtpTuNgay.Visible = laBaoCaoTheoKy;
+        _dtpDenNgay.Visible = laBaoCaoTheoKy;
+        _lblTuNgay.Visible = laBaoCaoTheoKy;
+        _lblDenNgay.Visible = laBaoCaoTheoKy;
 
         switch (reportIndex)
         {
@@ -88,6 +133,7 @@ public partial class UcBaoCao : UserControl
             case 1:
                 lblCurrentReportTitle.Text = "Chất lượng đào tạo & Đầu ra";
                 dgvQuality.BringToFront();
+                _ = NapHocTapNeuCanAsync();
                 break;
             case 2:
                 lblCurrentReportTitle.Text = "Tổng quan tài chính";
@@ -97,12 +143,225 @@ public partial class UcBaoCao : UserControl
                 lblCurrentReportTitle.Text = "Thống kê sĩ số lớp học";
                 dgvClasses.BringToFront();
                 break;
+            case ChiSoBaoCaoTheoKy:
+                lblCurrentReportTitle.Text = "Thống kê theo kỳ & công nợ";
+                _dgvDebt.BringToFront();
+                _dgvPeriod.BringToFront();
+                _ = LoadPeriodReportAsync();
+                break;
         }
     }
 
     public void ReloadData()
     {
+        if (_currentReportIndex == ChiSoBaoCaoTheoKy)
+        {
+            _ = LoadPeriodReportAsync();
+            return;
+        }
+
+        _hocTapDaNap = false;
         _ = ReloadAsync();
+    }
+
+    // ========================================================================
+    // BÁO CÁO THEO KỲ (tháng / quý / năm / khoảng tự chọn)
+    // ========================================================================
+
+    /// <summary>Dựng nút menu + 2 lưới + 2 ô chọn ngày ở runtime.</summary>
+    private void DungKhuVucBaoCaoTheoKy()
+    {
+        _btnMenuPeriod = new Button
+        {
+            Text = "Thống kê theo kỳ",
+            Location = new Point(10, 238),
+            Size = new Size(208, 44),
+            FlatStyle = FlatStyle.Flat,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(14, 0, 0, 4),
+            Cursor = Cursors.Hand,
+            Font = new Font("Segoe UI", 9.5f),
+            BackColor = Color.White,
+            ForeColor = Color.FromArgb(15, 23, 42)
+        };
+        _btnMenuPeriod.FlatAppearance.BorderSize = 1;
+        _btnMenuPeriod.FlatAppearance.BorderColor = Color.FromArgb(226, 232, 240);
+        _btnMenuPeriod.Click += (_, _) => SwitchReport(ChiSoBaoCaoTheoKy);
+        pnlSideMenu.Controls.Add(_btnMenuPeriod);
+
+        _lblTuNgay = new Label
+        {
+            Text = "Từ",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(15, 23, 42),
+            Visible = false
+        };
+
+        _dtpTuNgay = new DateTimePicker
+        {
+            Width = 115,
+            Format = DateTimePickerFormat.Short,
+            Visible = false
+        };
+
+        _lblDenNgay = new Label
+        {
+            Text = "đến",
+            AutoSize = true,
+            Font = new Font("Segoe UI", 9.5f, FontStyle.Bold),
+            ForeColor = Color.FromArgb(15, 23, 42),
+            Visible = false
+        };
+
+        _dtpDenNgay = new DateTimePicker
+        {
+            Width = 115,
+            Format = DateTimePickerFormat.Short,
+            Visible = false
+        };
+
+        var homNay = DateTime.Today;
+        _dtpTuNgay.Value = new DateTime(homNay.Year, homNay.Month, 1);
+        _dtpDenNgay.Value = homNay;
+
+        pnlToolbar.Controls.Add(_lblTuNgay);
+        pnlToolbar.Controls.Add(_dtpTuNgay);
+        pnlToolbar.Controls.Add(_lblDenNgay);
+        pnlToolbar.Controls.Add(_dtpDenNgay);
+
+        // ---- Lưới chỉ số kỳ (dòng trên) ----
+        _dgvPeriod = new DataGridView { Dock = DockStyle.Top, Height = 250, Visible = false };
+        _dgvPeriod.Columns.Add(new DataGridViewTextBoxColumn { Name = "ChiSo", HeaderText = "Chỉ số trong kỳ", FillWeight = 320 });
+        _dgvPeriod.Columns.Add(new DataGridViewTextBoxColumn { Name = "GiaTri", HeaderText = "Giá trị", FillWeight = 140 });
+        _dgvPeriod.Columns.Add(new DataGridViewTextBoxColumn { Name = "GhiChu", HeaderText = "Ghi chú", FillWeight = 300 });
+        UI.UiHelpers.StyleGrid(_dgvPeriod);
+
+        // ---- Lưới học viên còn nợ (phần còn lại) ----
+        _dgvDebt = new DataGridView { Dock = DockStyle.Fill, Visible = false };
+        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaHocVien", HeaderText = "Mã HV", FillWeight = 70 });
+        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "HoTen", HeaderText = "Họ tên", FillWeight = 150 });
+        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "SoDienThoai", HeaderText = "SĐT", FillWeight = 90 });
+        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "TenKhoaHoc", HeaderText = "Khóa học", FillWeight = 150 });
+        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "MaLop", HeaderText = "Lớp", FillWeight = 80 });
+        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "PhaiDong", HeaderText = "Phải đóng", FillWeight = 100 });
+        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "DaDong", HeaderText = "Đã đóng", FillWeight = 100 });
+        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "ConThieu", HeaderText = "Còn thiếu", FillWeight = 100 });
+        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "HanThanhToan", HeaderText = "Hạn thanh toán", FillWeight = 100 });
+        _dgvDebt.Columns.Add(new DataGridViewTextBoxColumn { Name = "TrangThai", HeaderText = "Trạng thái", FillWeight = 110 });
+        UI.UiHelpers.StyleGrid(_dgvDebt);
+
+        // Dock: thêm lưới Fill TRƯỚC, lưới Top SAU để Top chiếm chỗ trên cùng.
+        pnlGridContainer.Controls.Add(_dgvDebt);
+        pnlGridContainer.Controls.Add(_dgvPeriod);
+    }
+
+    /// <summary>Đổi preset "Kỳ" thành khoảng ngày cụ thể.</summary>
+    private void ApDungPresetKy()
+    {
+        var homNay = DateTime.Today;
+        var luaChon = cboPeriod.SelectedItem?.ToString() ?? "Tháng này";
+
+        (DateTime tu, DateTime den) = luaChon switch
+        {
+            "Tháng trước" => (
+                new DateTime(homNay.Year, homNay.Month, 1).AddMonths(-1),
+                new DateTime(homNay.Year, homNay.Month, 1).AddDays(-1)),
+            "Quý này" => (
+                new DateTime(homNay.Year, ((homNay.Month - 1) / 3) * 3 + 1, 1),
+                new DateTime(homNay.Year, ((homNay.Month - 1) / 3) * 3 + 1, 1).AddMonths(3).AddDays(-1)),
+            "Quý trước" => (
+                new DateTime(homNay.Year, ((homNay.Month - 1) / 3) * 3 + 1, 1).AddMonths(-3),
+                new DateTime(homNay.Year, ((homNay.Month - 1) / 3) * 3 + 1, 1).AddDays(-1)),
+            "Năm nay" => (new DateTime(homNay.Year, 1, 1), new DateTime(homNay.Year, 12, 31)),
+            "Năm trước" => (new DateTime(homNay.Year - 1, 1, 1), new DateTime(homNay.Year - 1, 12, 31)),
+            "6 tháng gần đây" => (new DateTime(homNay.Year, homNay.Month, 1).AddMonths(-5), homNay),
+            _ => (new DateTime(homNay.Year, homNay.Month, 1), homNay)   // Tháng này
+        };
+
+        _dtpTuNgay.Value = tu;
+        _dtpDenNgay.Value = den;
+    }
+
+    /// <summary>Gọi API thống kê theo kỳ và đổ 2 lưới.</summary>
+    private async Task LoadPeriodReportAsync()
+    {
+        if (IsDisposed || Disposing)
+        {
+            return;
+        }
+
+        lblSummary.Text = "Đang tổng hợp số liệu theo kỳ...";
+        UseWaitCursor = true;
+
+        var tu = DateOnly.FromDateTime(_dtpTuNgay.Value);
+        var den = DateOnly.FromDateTime(_dtpDenNgay.Value);
+
+        var result = await AppSession.Api.GetAsync<PeriodReportDto>(
+            QueryStringBuilder.Build(
+                "admin/reports/period",
+                ("tuNgay", tu.ToString("yyyy-MM-dd")),
+                ("denNgay", den.ToString("yyyy-MM-dd"))));
+
+        UseWaitCursor = false;
+
+        if (IsDisposed || Disposing)
+        {
+            return;
+        }
+
+        if (!result.Success || result.Data is null)
+        {
+            lblSummary.Text = result.ErrorMessage;
+            _dgvPeriod.Rows.Clear();
+            _dgvDebt.Rows.Clear();
+            return;
+        }
+
+        _period = result.Data;
+        var p = result.Data;
+
+        _dgvPeriod.Rows.Clear();
+
+        void ThemChiSo(string chiSo, string giaTri, string ghiChu)
+        {
+            var idx = _dgvPeriod.Rows.Add(chiSo, giaTri, ghiChu);
+            _dgvPeriod.Rows[idx].Cells["GiaTri"].Style.Font = Theme.FontBold;
+            _dgvPeriod.Rows[idx].Cells["GiaTri"].Style.ForeColor = Theme.PrimaryDark;
+        }
+
+        ThemChiSo("Số lớp học trong kỳ", $"{p.SoLopHoc} lớp", "Lớp có thời gian học giao với kỳ");
+        ThemChiSo("Số học viên đang theo học", $"{p.SoHocVien} học viên", "Học viên đã xếp lớp trong kỳ");
+        ThemChiSo("Số giáo viên giảng dạy", $"{p.SoGiaoVien} giáo viên", "Có phân công còn hiệu lực trong kỳ");
+        ThemChiSo("Số trợ giảng", $"{p.SoTroGiang} trợ giảng", "Có phân công còn hiệu lực trong kỳ");
+        ThemChiSo("Học viên đang học (toàn hệ thống)", $"{p.SoHocVienDangHoc} học viên", "Trạng thái học tập = Đang học");
+        ThemChiSo("Học viên còn nợ học phí", $"{p.SoHocVienConNo} học viên", "Không phụ thuộc kỳ đang chọn");
+        ThemChiSo("Tổng công nợ", $"{p.TongConNo:N0} ₫", "Tổng số tiền còn thiếu trên mọi phiếu");
+
+        _dgvDebt.Rows.Clear();
+
+        foreach (var d in p.HocVienConNo)
+        {
+            var idx = _dgvDebt.Rows.Add(
+                d.MaHocVien,
+                d.HoTen,
+                string.IsNullOrWhiteSpace(d.SoDienThoai) ? "—" : d.SoDienThoai,
+                d.TenKhoaHoc,
+                string.IsNullOrWhiteSpace(d.MaLop) ? "—" : d.MaLop,
+                $"{d.SoTienPhaiDong:N0} ₫",
+                $"{d.SoTienDaDong:N0} ₫",
+                $"{d.SoTienConThieu:N0} ₫",
+                d.HanThanhToan is { } han ? han.ToString("dd/MM/yyyy") : "—",
+                d.TrangThaiHocPhi);
+
+            _dgvDebt.Rows[idx].Cells["ConThieu"].Style.ForeColor = Theme.Danger;
+            _dgvDebt.Rows[idx].Cells["ConThieu"].Style.Font = Theme.FontBold;
+        }
+
+        lblSummary.Text = p.HocVienConNo.Count == 0
+            ? $"Kỳ {tu:dd/MM/yyyy} – {den:dd/MM/yyyy}: không có học viên nào còn nợ học phí."
+            : $"Kỳ {tu:dd/MM/yyyy} – {den:dd/MM/yyyy}: {p.SoLopHoc} lớp · {p.SoHocVien} học viên · "
+              + $"{p.SoGiaoVien} giáo viên · {p.SoTroGiang} trợ giảng · {p.SoHocVienConNo} học viên còn nợ";
     }
 
     /// <summary>Tải toàn bộ số liệu báo cáo từ API rồi dựng lại 4 bảng.</summary>
@@ -125,19 +384,14 @@ public partial class UcBaoCao : UserControl
         _finance = financeTask.Result.Data;
         _overview = overviewTask.Result.Data;
 
-        // Bảng chất lượng đào tạo: tổng hợp báo cáo học tập của từng lớp
-        var dsHocTap = new List<AcademicReportDto>();
-        foreach (var c in _classes)
+        // Bảng "Chất lượng đào tạo" KHÔNG nạp ở đây nữa: trước đây vòng lặp gọi
+        // admin/reports/academic cho TỪNG lớp ngay khi mở trang (N+1 request, rất chậm).
+        // Giờ chỉ nạp khi người dùng thực sự mở tab đó (xem NapHocTapNeuCanAsync).
+        if (_hocTapDaNap)
         {
-            var r = await AppSession.Api.GetAsync<AcademicReportDto>(
-                QueryStringBuilder.Build("admin/reports/academic", ("maLopHoc", c.MaLopHoc.ToString())));
-
-            if (r.Success && r.Data is not null)
-            {
-                dsHocTap.Add(r.Data);
-            }
+            _hocTapDaNap = false;
+            _academics = Array.Empty<AcademicReportDto>();
         }
-        _academics = dsHocTap;
 
         UseWaitCursor = false;
 
@@ -148,6 +402,48 @@ public partial class UcBaoCao : UserControl
         LoadClassesStatsTable();
 
         lblSummary.Text = $"Dữ liệu báo cáo tổng hợp từ API HUIT LingoHub — Cập nhật lúc {DateTime.Now:HH:mm dd/MM/yyyy}";
+    }
+
+    /// <summary>
+    /// Nạp báo cáo học tập của từng lớp — CHỈ chạy khi người dùng mở tab
+    /// "Chất lượng đào tạo" (trước đây chạy sẵn nên mở trang rất chậm).
+    /// </summary>
+    private async Task NapHocTapNeuCanAsync()
+    {
+        if (_hocTapDaNap || _classes.Count == 0 || IsDisposed || Disposing)
+        {
+            return;
+        }
+
+        lblSummary.Text = "Đang tổng hợp báo cáo học tập từng lớp...";
+        UseWaitCursor = true;
+
+        var dsHocTap = new List<AcademicReportDto>();
+
+        foreach (var c in _classes)
+        {
+            var r = await AppSession.Api.GetAsync<AcademicReportDto>(
+                QueryStringBuilder.Build("admin/reports/academic", ("maLopHoc", c.MaLopHoc.ToString())));
+
+            if (r.Success && r.Data is not null)
+            {
+                dsHocTap.Add(r.Data);
+            }
+        }
+
+        UseWaitCursor = false;
+
+        if (IsDisposed || Disposing)
+        {
+            return;
+        }
+
+        _academics = dsHocTap;
+        _hocTapDaNap = true;
+
+        LoadQualityTable();
+
+        lblSummary.Text = $"Đã tổng hợp báo cáo học tập của {_academics.Count} lớp.";
     }
 
     private void InitStats()

@@ -50,10 +50,24 @@ public partial class UcXepLop : UserControl
 
         pnlToolbar.Resize += (_, _) => AlignToolbarButtons();
 
+        // Sửa lỗi "chữ Lớp học mục tiêu bị che": các nhãn trong pnlHeader đặt toạ độ
+        // cố định nên ở DPI ≠ 100% hoặc cửa sổ hẹp, combobox/label đè lên nhau.
+        // Căn lại theo bề rộng thực tế mỗi lần panel đổi kích thước.
+        pnlHeader.Resize += (_, _) => SapXepHeader();
+        lblSelectClass.SizeChanged += (_, _) => SapXepHeader();
+        lblCapacityBadge.SizeChanged += (_, _) => SapXepHeader();
+        lblClassDetails.SizeChanged += (_, _) => SapXepHeader();
+
+        // Nhãn mô tả lớp dài → cho phép cắt bằng "…" thay vì tràn ra ngoài panel.
+        lblClassDetails.AutoSize = false;
+        lblClassDetails.AutoEllipsis = true;
+        lblClassDetails.Height = 22;
+
         btnOpenEnrollDialog.Visible = true; // Tạo đăng ký học trực tiếp trên WinForms
 
         SwitchTab(0);
         Load += async (_, _) => await ReloadAsync();
+        Load += (_, _) => SapXepHeader();
     }
 
     /// <summary>Tải danh sách lớp + đăng ký học từ API.</summary>
@@ -95,6 +109,44 @@ public partial class UcXepLop : UserControl
         btnOpenEnrollDialog.Location = new Point(btnRemoveFromClass.Left - 12 - btnOpenEnrollDialog.Width, 9);
         btnEnrollSelectedPending.Location = new Point(right - btnEnrollSelectedPending.Width, 9);
         btnTuChoiDangKy.Location = new Point(btnEnrollSelectedPending.Left - 12 - btnTuChoiDangKy.Width, 9);
+    }
+
+    /// <summary>
+    /// Căn lại các phần tử trong pnlHeader theo bề rộng thực tế:
+    /// nhãn "Lớp học mục tiêu" → combo (ngay sau nhãn) → badge sĩ số (sát phải).
+    /// Trước đây toạ độ là hằng số nên chữ bị combo đè lên.
+    /// </summary>
+    private void SapXepHeader()
+    {
+        if (pnlHeader is null || lblSelectClass is null)
+        {
+            return;
+        }
+
+        const int lep = 20;
+
+        lblSelectClass.Location = new Point(lep, 16);
+
+        var comboLeft = lblSelectClass.Right + 10;
+        var comboWidth = Math.Min(420, Math.Max(180, pnlHeader.ClientSize.Width - comboLeft - 20));
+
+        cboTargetClass.Location = new Point(comboLeft, 13);
+        cboTargetClass.Width = comboWidth;
+
+        btnRefresh.Location = new Point(cboTargetClass.Right + 10, 12);
+
+        // Badge sĩ số: ưu tiên bên phải nút Làm mới, nếu không đủ chỗ thì xuống dòng dưới.
+        var badgeX = pnlHeader.ClientSize.Width - lblCapacityBadge.Width - lep;
+
+        if (badgeX < btnRefresh.Right + 10)
+        {
+            badgeX = Math.Max(lep, btnRefresh.Right + 10);
+        }
+
+        lblCapacityBadge.Location = new Point(badgeX, 18);
+
+        lblClassDetails.Location = new Point(lep, 56);
+        lblClassDetails.Width = Math.Max(120, pnlHeader.ClientSize.Width - lep * 2);
     }
 
     private void InitFilterOptions()
@@ -234,7 +286,9 @@ public partial class UcXepLop : UserControl
         if (isInClassTab)
         {
             dgvInClass.BringToFront();
-            lblSummary.Text = $"Đang hiển thị {dgvInClass.Rows.Count} học viên trong lớp {_currentClass?.TenLop ?? "mục tiêu"}. Sĩ số tối đa: {_currentClass?.SiSoToiDa ?? 0} học viên.";
+            lblSummary.Text = _currentClass is null
+                ? "Chưa chọn lớp học mục tiêu — hãy chọn lớp ở thanh phía trên."
+                : $"Đang hiển thị {dgvInClass.Rows.Count} học viên trong lớp {_currentClass.TenLop}. Sĩ số tối đa: {_currentClass.SiSoToiDa} học viên.";
         }
         else
         {

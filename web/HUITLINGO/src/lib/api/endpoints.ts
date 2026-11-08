@@ -11,6 +11,7 @@ import type {
   FinanceReport,
   GradeItem,
   HoSoCaNhan,
+  Holiday,
   LoginResponse,
   MySurvey,
   NotificationItem,
@@ -198,6 +199,28 @@ export const baoCaoApi = {
   diemDanh: (maLopHoc: number, q: Query = {}) =>
     http.get<AttendanceReport>(`/admin/reports/attendance${qs({ maLopHoc, ...q })}`),
   khaoSat: () => http.get<SurveyReport>('/admin/reports/surveys'),
+}
+
+// ===== KỲ NGHỈ / NGÀY LỄ =====
+export const ngayLeApi = {
+  danhSach: () => http.get<Holiday[]>('/admin/holidays'),
+  them: (body: {
+    ngay: string
+    denNgay?: string | null
+    tenNgayLe: string
+    ghiChu?: string | null
+  }) => http.post<Holiday>('/admin/holidays', body),
+  capNhat: (
+    maNgayLe: number,
+    body: {
+      ngay?: string
+      denNgay?: string | null
+      xoaDenNgay?: boolean
+      tenNgayLe?: string
+      ghiChu?: string | null
+    },
+  ) => http.patch<Holiday>(`/admin/holidays/${maNgayLe}`, body),
+  xoa: (maNgayLe: number) => http.delete<void>(`/admin/holidays/${maNgayLe}`),
 }
 
 // ===== GIÁO VIÊN =====

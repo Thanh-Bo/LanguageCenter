@@ -44,6 +44,8 @@ public sealed class StudentStore : IStudentStore
             TrangThaiHocTap = hocVien.TrangThaiHocTap,
             NgayTaoHoSo = hocVien.NgayTaoHoSo,
             NgayNhapHoc = hocVien.NgayNhapHoc,
+            HoTenCha = hocVien.HoTenCha,
+            HoTenMe = hocVien.HoTenMe,
             PhuHuynh = hocVien.PhuHuynh is null
                 ? null
                 : new ParentDto
@@ -85,7 +87,9 @@ public sealed class StudentStore : IStudentStore
         var totalItems = await source.CountAsync(cancellationToken);
 
         var items = await source
-            .OrderBy(hocVien => hocVien.MaHocVien)
+            // MỚI NHẤT LÊN ĐẦU: học viên vừa thêm có mã lớn nhất → phải đứng đầu trang 1
+            // (trước đây OrderBy tăng dần đẩy hồ sơ mới xuống trang cuối, rất khó tìm).
+            .OrderByDescending(hocVien => hocVien.MaHocVien)
             .Skip(query.Skip)
             .Take(query.Take)
             .Select(hocVien => new StudentListItemDto
@@ -221,6 +225,16 @@ public sealed class StudentStore : IStudentStore
             hocVien.NgayNhapHoc = ngayNhapHoc;
         }
 
+        if (changes.HoTenCha is not null)
+        {
+            hocVien.HoTenCha = TextValue.Optional(changes.HoTenCha);
+        }
+
+        if (changes.HoTenMe is not null)
+        {
+            hocVien.HoTenMe = TextValue.Optional(changes.HoTenMe);
+        }
+
         if (changes.Email is not null)
         {
             var email = changes.Email.Trim();
@@ -254,6 +268,40 @@ public sealed class StudentStore : IStudentStore
         }
 
         return WriteOutcome.Success;
+    }
+
+    public async Task<bool> PhoneExistsAsync(
+        string soDienThoai,
+        string? exceptMaHocVien,
+        CancellationToken cancellationToken)
+    {
+        var phone = soDienThoai.Trim();
+
+        var trungHocVien = await _dbContext.HocViens
+            .AsNoTracking()
+            .AnyAsync(
+                x => x.SoDienThoai == phone
+                     && (exceptMaHocVien == null || x.MaHocVien != exceptMaHocVien),
+                cancellationToken);
+
+        if (trungHocVien)
+        {
+            return true;
+        }
+
+        // Phụ huynh & giáo viên dùng chung một không gian số điện thoại.
+        var trungPhuHuynh = await _dbContext.PhuHuynhs
+            .AsNoTracking()
+            .AnyAsync(x => x.SoDienThoai == phone, cancellationToken);
+
+        if (trungPhuHuynh)
+        {
+            return true;
+        }
+
+        return await _dbContext.GiaoViens
+            .AsNoTracking()
+            .AnyAsync(x => x.SoDienThoai == phone, cancellationToken);
     }
 
     private static bool IsUniqueViolation(Exception exception)

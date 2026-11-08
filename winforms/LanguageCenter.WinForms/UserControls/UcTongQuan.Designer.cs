@@ -617,13 +617,13 @@ partial class UcTongQuan
         lblNoticeTag3.Size = new Size(78, 22);
         lblNoticeTag3.Location = new Point(12, 10);
 
-        lblNoticeTitle3.Text = "Hệ thống sao lưu tự động an toàn";
+        lblNoticeTitle3.Text = "Sao lưu dữ liệu theo yêu cầu";
         lblNoticeTitle3.Font = new Font("Segoe UI", 9.2f, FontStyle.Bold);
         lblNoticeTitle3.ForeColor = Color.FromArgb(15, 23, 42);
         lblNoticeTitle3.AutoSize = true;
         lblNoticeTitle3.Location = new Point(98, 11);
 
-        lblNoticeDetail3.Text = "Cơ sở dữ liệu đám mây đã hoàn tất sao lưu 24/7 lúc 03:00. Dữ liệu mã hóa hoàn toàn.";
+        lblNoticeDetail3.Text = "Vào menu 'Sao lưu & phục hồi' để tạo bản sao lưu (.bak) hoặc phục hồi dữ liệu. Hệ thống KHÔNG tự động sao lưu.";
         lblNoticeDetail3.Font = new Font("Segoe UI", 8.2f);
         lblNoticeDetail3.ForeColor = Color.FromArgb(100, 116, 139);
         lblNoticeDetail3.Location = new Point(12, 36);

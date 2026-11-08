@@ -57,12 +57,16 @@ public sealed class SaveLessonContentsRequest
 // NGÀY LỄ
 // ============================================================================
 
-/// <summary>Một ngày lễ / ngày nghỉ của trung tâm.</summary>
+/// <summary>Một kỳ nghỉ của trung tâm (1 dòng có thể kéo dài nhiều ngày).</summary>
 public sealed class HolidayDto
 {
     public int MaNgayLe { get; init; }
 
+    /// <summary>Ngày bắt đầu.</summary>
     public DateOnly Ngay { get; init; }
+
+    /// <summary>Ngày kết thúc — <c>null</c> nghĩa là nghỉ đúng 1 ngày.</summary>
+    public DateOnly? DenNgay { get; init; }
 
     public string TenNgayLe { get; init; } = string.Empty;
 
@@ -72,8 +76,11 @@ public sealed class HolidayDto
 /// <summary>Body của <c>POST /api/admin/holidays</c>.</summary>
 public sealed class CreateHolidayRequest
 {
-    [Required(ErrorMessage = "Ngày lễ là bắt buộc.")]
+    [Required(ErrorMessage = "Ngày bắt đầu kỳ nghỉ là bắt buộc.")]
     public DateOnly Ngay { get; set; }
+
+    /// <summary>Bỏ trống = nghỉ đúng 1 ngày tại <see cref="Ngay"/>.</summary>
+    public DateOnly? DenNgay { get; set; }
 
     [Required(ErrorMessage = "Tên ngày lễ là bắt buộc.")]
     [StringLength(100, MinimumLength = 1, ErrorMessage = "Tên ngày lễ tối đa 100 ký tự.")]
@@ -87,6 +94,12 @@ public sealed class CreateHolidayRequest
 public sealed class UpdateHolidayRequest
 {
     public DateOnly? Ngay { get; set; }
+
+    /// <summary>Ngày kết thúc mới. Gửi kèm <see cref="XoaDenNgay"/> = true để bỏ mốc kết thúc.</summary>
+    public DateOnly? DenNgay { get; set; }
+
+    /// <summary>true = xoá ngày kết thúc (kỳ nghỉ quay về đúng 1 ngày).</summary>
+    public bool XoaDenNgay { get; set; }
 
     [StringLength(100, MinimumLength = 1, ErrorMessage = "Tên ngày lễ tối đa 100 ký tự.")]
     public string? TenNgayLe { get; set; }

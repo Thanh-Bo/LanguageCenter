@@ -13,6 +13,9 @@ public partial class FormSuaPhanCong : Form
     private IReadOnlyList<ClassListItemDto> _classes = Array.Empty<ClassListItemDto>();
     private IReadOnlyList<TeacherListItemDto> _teachers = Array.Empty<TeacherListItemDto>();
 
+    /// <summary>Các lớp ĐÃ có phân công còn hiệu lực — dùng để ẩn khỏi ô chọn khi tạo mới.</summary>
+    private readonly HashSet<int> _lopDaPhanCong = new();
+
     /// <summary>Phân công đã có của lớp đang thao tác (dùng khi gắn người vào khung có sẵn).</summary>
     private IReadOnlyList<AssignmentListItemDto> _phanCongHienCo = Array.Empty<AssignmentListItemDto>();
 
@@ -162,18 +165,39 @@ public partial class FormSuaPhanCong : Form
         UseWaitCursor = true;
 
         var classesTask = AppSession.Api.GetAsync<PagedResult<ClassListItemDto>>(
-            QueryStringBuilder.Build("admin/classes", ("page", "1"), ("pageSize", "500")));
+            QueryStringBuilder.Build("admin/classes", ("page", "1"), ("pageSize", "1000")));
         var teachersTask = AppSession.Api.GetAsync<PagedResult<TeacherListItemDto>>(
-            QueryStringBuilder.Build("admin/teachers", ("page", "1"), ("pageSize", "500")));
+            QueryStringBuilder.Build("admin/teachers", ("page", "1"), ("pageSize", "1000")));
+        var assignmentsTask = AppSession.Api.GetAsync<PagedResult<AssignmentListItemDto>>(
+            QueryStringBuilder.Build("admin/teaching-assignments", ("page", "1"), ("pageSize", "1000")));
 
-        await Task.WhenAll(classesTask, teachersTask);
+        await Task.WhenAll(classesTask, teachersTask, assignmentsTask);
 
         UseWaitCursor = false;
         btnSave.Enabled = true;
 
-        _classes = (classesTask.Result.Data?.Items ?? Array.Empty<ClassListItemDto>())
-            .OrderBy(c => c.MaLop)
+        // Ghi nhớ lớp đã có người phụ trách để lọc danh sách lớp cần phân công.
+        _lopDaPhanCong.Clear();
+
+        foreach (var pc in assignmentsTask.Result.Data?.Items ?? Array.Empty<AssignmentListItemDto>())
+        {
+            if (!string.IsNullOrWhiteSpace(pc.MaGiaoVien)
+                && pc.TrangThai != "Đã hủy"
+                && pc.TrangThai != "Đã kết thúc")
+            {
+                _lopDaPhanCong.Add(pc.MaLopHoc);
+            }
+        }
+
+        var tatCaLop = (classesTask.Result.Data?.Items ?? Array.Empty<ClassListItemDto>())
+            .OrderByDescending(c => c.MaLopHoc)
             .ToList();
+
+        // Tạo phân công MỚI từ đầu → chỉ hiện lớp CHƯA có giáo viên.
+        // Mở từ một dòng phân công có sẵn → giữ nguyên lớp đang thao tác.
+        _classes = _lopChiDinh is null
+            ? tatCaLop.Where(c => !_lopDaPhanCong.Contains(c.MaLopHoc)).ToList()
+            : tatCaLop;
 
         _teachers = (teachersTask.Result.Data?.Items ?? Array.Empty<TeacherListItemDto>())
             .OrderBy(t => t.MaGiaoVien)

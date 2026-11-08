@@ -25,7 +25,9 @@ public sealed record StudentProvisionData(
     string? MucTieuHocTap,
     string? TrinhDoHienTai,
     string TrangThaiHocTap,
-    ParentProvisionData? PhuHuynh);
+    ParentProvisionData? PhuHuynh,
+    string? HoTenCha = null,
+    string? HoTenMe = null);
 
 /// <summary>Dữ liệu giáo viên/trợ giảng đã validate, sẵn sàng ghi xuống database.</summary>
 public sealed record TeacherProvisionData(

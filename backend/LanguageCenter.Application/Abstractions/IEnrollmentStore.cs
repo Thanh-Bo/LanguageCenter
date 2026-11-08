@@ -84,7 +84,18 @@ public sealed record PlacementContext(
     int SoBuoiDaDienRa,
     int TongSoBuoi,
     IReadOnlyList<ClassScheduleSlot> LopMoiSlots,
-    IReadOnlyList<ClassScheduleSlot> LopDangHocSlots);
+    IReadOnlyList<ClassScheduleSlot> LopDangHocSlots)
+{
+    /// <summary>
+    /// Số tiền CÒN THIẾU của phiếu học phí gắn với đăng ký này.
+    /// <c>null</c> = CHƯA có phiếu học phí.
+    /// Dùng để chặn xếp lớp khi chưa thanh toán đủ (trung tâm thu tiền trước khi vào học).
+    /// </summary>
+    public decimal? SoTienConThieuHocPhi { get; init; }
+
+    /// <summary>Trạng thái phiếu học phí (<c>null</c> nếu chưa có phiếu).</summary>
+    public string? TrangThaiHocPhi { get; init; }
+}
 
 /// <summary>Dữ liệu đã được tầng Application TÍNH SẴN (học phí, giảm giá, người tư vấn).</summary>
 public sealed record EnrollmentCreateData(

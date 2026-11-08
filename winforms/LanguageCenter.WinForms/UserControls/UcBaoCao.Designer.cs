@@ -207,7 +207,7 @@ partial class UcBaoCao
         cboPeriod.DropDownStyle = ComboBoxStyle.DropDownList;
         cboPeriod.Width = 145;
         cboPeriod.Location = new Point(390, 10);
-        cboPeriod.Items.AddRange(new object[] { "Kỳ hiện hành", "Quý 4/2026", "Năm 2026", "Toàn bộ dữ liệu" });
+        cboPeriod.Items.AddRange(new object[] { "Tháng này", "Tháng trước", "Quý này", "Quý trước", "Năm nay", "Năm trước", "6 tháng gần đây" });
 
         btnRefresh.Text = "Làm mới";
         btnRefresh.Size = new Size(100, 32);

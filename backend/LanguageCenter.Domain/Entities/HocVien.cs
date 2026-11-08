@@ -21,6 +21,12 @@ public class HocVien
 
     public string? MoiQuanHePhuHuynh { get; set; }
 
+    /// <summary>Họ tên CHA (nhập trực tiếp, không phụ thuộc bảng PhuHuynh).</summary>
+    public string? HoTenCha { get; set; }
+
+    /// <summary>Họ tên MẸ (nhập trực tiếp, không phụ thuộc bảng PhuHuynh).</summary>
+    public string? HoTenMe { get; set; }
+
     public string? MucTieuHocTap { get; set; }
 
     public string? TrinhDoHienTai { get; set; }

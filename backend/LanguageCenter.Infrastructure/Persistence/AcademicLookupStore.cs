@@ -174,7 +174,7 @@ public sealed class AcademicLookupStore : IAcademicLookupStore
     public Task<string?> GetHolidayNameAsync(DateOnly ngay, CancellationToken cancellationToken)
         => _dbContext.NgayLes
             .AsNoTracking()
-            .Where(x => x.Ngay == ngay)
+            .Where(x => x.Ngay <= ngay && (x.DenNgay ?? x.Ngay) >= ngay)
             .Select(x => (string?)x.TenNgayLe)
             .FirstOrDefaultAsync(cancellationToken);
 

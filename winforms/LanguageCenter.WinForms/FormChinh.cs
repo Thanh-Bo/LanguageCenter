@@ -18,7 +18,8 @@ public enum NavItem
     Assistants,
     Notifications,
     Reports,
-    Accounts
+    Accounts,
+    Backups
 }
 
 public partial class FormChinh : Form
@@ -58,6 +59,7 @@ public partial class FormChinh : Form
         btnNavNotifications.Click += (_, _) => NavigateTo(NavItem.Notifications);
         btnNavReports.Click += (_, _) => NavigateTo(NavItem.Reports);
         btnNavAccounts.Click += (_, _) => NavigateTo(NavItem.Accounts);
+        btnNavBackups.Click += (_, _) => NavigateTo(NavItem.Backups);
 
         pnlHeader.Paint += (_, e) =>
         {
@@ -192,7 +194,8 @@ public partial class FormChinh : Form
             (btnNavAssistants, NavItem.Assistants),
             (btnNavNotifications, NavItem.Notifications),
             (btnNavReports, NavItem.Reports),
-            (btnNavAccounts, NavItem.Accounts)
+            (btnNavAccounts, NavItem.Accounts),
+            (btnNavBackups, NavItem.Backups)
         };
 
         int top = 4;
@@ -222,6 +225,12 @@ public partial class FormChinh : Form
         // Giáo viên / Trợ giảng: bản WinForms chỉ có màn hình quản trị (mọi API là /api/admin/*)
         // → mọi trang đều 403. Không mở phân hệ nào, hiện thông báo hướng dẫn thay vì màn trống.
         if (role == RoleNames.GiaoVien || role == RoleNames.TroGiang)
+        {
+            return false;
+        }
+
+        // Sao lưu / phục hồi database: CHỈ Quản trị viên (đã trả true ở trên).
+        if (item == NavItem.Backups)
         {
             return false;
         }
@@ -273,6 +282,7 @@ public partial class FormChinh : Form
             NavItem.Notifications => new UcThongBao(),
             NavItem.Reports => new UcBaoCao(),
             NavItem.Accounts => new UcTaiKhoan(),
+            NavItem.Backups => new UcSaoLuu(),
             _ => new UcTongQuan(this)
         };
 
@@ -292,6 +302,7 @@ public partial class FormChinh : Form
             NavItem.Notifications => "Quản lý thông báo & tin tức nội bộ",
             NavItem.Reports => "Báo cáo thống kê & tài chính",
             NavItem.Accounts => "Quản lý tài khoản hệ thống",
+            NavItem.Backups => "Sao lưu & phục hồi cơ sở dữ liệu",
             _ => string.Empty
         };
 
@@ -316,6 +327,7 @@ public partial class FormChinh : Form
         ResetNavButton(btnNavNotifications);
         ResetNavButton(btnNavReports);
         ResetNavButton(btnNavAccounts);
+        ResetNavButton(btnNavBackups);
 
         var active = item switch
         {
@@ -333,6 +345,7 @@ public partial class FormChinh : Form
             NavItem.Notifications => btnNavNotifications,
             NavItem.Reports => btnNavReports,
             NavItem.Accounts => btnNavAccounts,
+            NavItem.Backups => btnNavBackups,
             _ => btnNavDashboard
         };
 

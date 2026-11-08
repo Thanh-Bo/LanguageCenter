@@ -38,9 +38,14 @@ public interface IAcademicSetupStore
 
     Task<WriteOutcome> DeleteHolidayAsync(int maNgayLe, CancellationToken cancellationToken);
 
-    /// <summary>Ngày này đã có ngày lễ khác chưa (UNIQUE theo Ngay).</summary>
-    Task<bool> HolidayDateExistsAsync(
-        DateOnly ngay,
+    /// <summary>
+    /// Khoảng <paramref name="tuNgay"/> … <paramref name="denNgay"/> có CHỒNG LẤN
+    /// với kỳ nghỉ nào khác không (bỏ qua <paramref name="exceptId"/>).
+    /// <para><paramref name="denNgay"/> = null nghĩa là kỳ nghỉ 1 ngày.</para>
+    /// </summary>
+    Task<bool> HolidayOverlapExistsAsync(
+        DateOnly tuNgay,
+        DateOnly? denNgay,
         int? exceptId,
         CancellationToken cancellationToken);
 }

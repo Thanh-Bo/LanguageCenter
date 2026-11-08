@@ -556,6 +556,22 @@ public sealed class EnrollmentService : IEnrollmentService
                 $"Lớp '{context.MaLop}' đã diễn ra {context.SoBuoiDaDienRa}/{context.TongSoBuoi} buổi " +
                 $"(quá {EnrollmentRules.SoBuoiDaDienRaToiDa} buổi) — không nhận thêm học viên.");
         }
+        // ---- (4) THANH TOÁN TRƯỚC KHI VÀO HỌC ----
+        // Trung tâm thu học phí TRƯỚC khi xếp lớp ⇒ hồ sơ không bao giờ phát sinh công nợ.
+        if (EnrollmentRules.BatBuocThanhToanTruocKhiXepLop)
+        {
+            if (context.SoTienConThieuHocPhi is null)
+            {
+                errors.Add(
+                    $"Chưa có phiếu học phí cho đăng ký này — hãy tạo và thu tiền trước khi xếp vào lớp '{context.MaLop}'.");
+            }
+            else if (context.SoTienConThieuHocPhi > 0m)
+            {
+                errors.Add(
+                    $"Học phí còn thiếu {context.SoTienConThieuHocPhi:N0} ₫ "
+                    + $"(trạng thái: {context.TrangThaiHocPhi}) — phải thanh toán đủ trước khi vào lớp '{context.MaLop}'.");
+            }
+        }
 
         return errors.Distinct().ToList();
     }

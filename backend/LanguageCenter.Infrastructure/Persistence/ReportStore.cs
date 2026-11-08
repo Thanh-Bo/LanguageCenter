@@ -431,6 +431,100 @@ public sealed class ReportStore : IReportStore
     }
 
     // ========================================================================
+    // THỐNG KÊ THEO KỲ
+    // ========================================================================
+
+    public async Task<PeriodReportDto> GetPeriodReportAsync(
+        DateOnly tuNgay,
+        DateOnly denNgay,
+        CancellationToken cancellationToken)
+    {
+        // (1) Số lớp có khoảng ngày giao với kỳ.
+        var soLopHoc = await _dbContext.LopHocs
+            .AsNoTracking()
+            .CountAsync(
+                x => x.TrangThai != ClassStatuses.DaHuy
+                     && x.NgayBatDau <= denNgay
+                     && x.NgayKetThucDuKien >= tuNgay,
+                cancellationToken);
+
+        // (2) Số học viên đang theo học ít nhất một lớp trong kỳ.
+        var soHocVien = await _dbContext.DangKyHocs
+            .AsNoTracking()
+            .Where(x => x.MaLopHoc != null
+                        && (x.TrangThaiDangKy == EnrollmentStatuses.DaXepLop
+                            || x.TrangThaiDangKy == EnrollmentStatuses.HoanThanh)
+                        && x.LopHoc!.NgayBatDau <= denNgay
+                        && x.LopHoc!.NgayKetThucDuKien >= tuNgay)
+            .Select(x => x.MaHocVien)
+            .Distinct()
+            .CountAsync(cancellationToken);
+
+        // (3) Giáo viên / trợ giảng có phân công còn hiệu lực trong kỳ.
+        var phanCong = await _dbContext.PhanCongGiangDays
+            .AsNoTracking()
+            .Where(x => x.MaGiaoVien != null
+                        && x.TrangThai != AssignmentStatuses.DaHuy
+                        && x.NgayBatDau <= denNgay
+                        && (x.NgayKetThuc ?? denNgay) >= tuNgay)
+            .Select(x => new { x.MaGiaoVien, x.GiaoVien!.LoaiGiaoVien })
+            .Distinct()
+            .ToListAsync(cancellationToken);
+
+        var soGiaoVien = phanCong
+            .Where(x => x.LoaiGiaoVien == TeacherTypes.GiaoVien)
+            .Select(x => x.MaGiaoVien)
+            .Distinct()
+            .Count();
+
+        var soTroGiang = phanCong
+            .Where(x => x.LoaiGiaoVien == TeacherTypes.TroGiang)
+            .Select(x => x.MaGiaoVien)
+            .Distinct()
+            .Count();
+
+        var soHocVienDangHoc = await _dbContext.HocViens
+            .AsNoTracking()
+            .CountAsync(x => x.TrangThaiHocTap == StudentStatuses.DangHoc, cancellationToken);
+
+        // (4) Công nợ: mọi phiếu học phí còn thiếu tiền.
+        var conNo = await _dbContext.HocPhis
+            .AsNoTracking()
+            .Where(x => x.SoTienConThieu > 0)
+            .OrderByDescending(x => x.SoTienConThieu)
+            .Select(x => new DebtorRowDto
+            {
+                MaHocPhi = x.MaHocPhi,
+                MaDangKy = x.MaDangKy,
+                MaHocVien = x.DangKyHoc.MaHocVien,
+                HoTen = x.DangKyHoc.HocVien.HoTen,
+                SoDienThoai = x.DangKyHoc.HocVien.SoDienThoai,
+                TenKhoaHoc = x.DangKyHoc.KhoaHoc.TenKhoaHoc,
+                MaLop = x.DangKyHoc.LopHoc != null ? x.DangKyHoc.LopHoc.MaLop : null,
+                SoTienPhaiDong = x.SoTienPhaiDong,
+                SoTienDaDong = x.SoTienDaDong,
+                SoTienConThieu = x.SoTienConThieu,
+                HanThanhToan = x.HanThanhToan,
+                TrangThaiHocPhi = x.TrangThaiHocPhi
+            })
+            .ToListAsync(cancellationToken);
+
+        return new PeriodReportDto
+        {
+            TuNgay = tuNgay,
+            DenNgay = denNgay,
+            SoLopHoc = soLopHoc,
+            SoHocVien = soHocVien,
+            SoGiaoVien = soGiaoVien,
+            SoTroGiang = soTroGiang,
+            SoHocVienDangHoc = soHocVienDangHoc,
+            SoHocVienConNo = conNo.Select(x => x.MaHocVien).Distinct().Count(),
+            TongConNo = conNo.Sum(x => x.SoTienConThieu),
+            HocVienConNo = conNo
+        };
+    }
+
+    // ========================================================================
     // PRIVATE HELPERS
     // ========================================================================
 

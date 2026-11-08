@@ -157,6 +157,13 @@ public sealed class ClassListItemDto
     /// <summary>Số ca học đã sinh cho lớp. <c>0</c> = lớp chưa có buổi học nào.</summary>
     public int SoCaHoc { get; init; }
 
+    /// <summary>
+    /// Số phân công giảng dạy ĐANG HIỆU LỰC của lớp
+    /// (không tính "Đã hủy" / "Đã kết thúc" và không tính khung chờ phân công).
+    /// <c>0</c> = lớp chưa phân công giáo viên nào.
+    /// </summary>
+    public int SoPhanCong { get; init; }
+
     public string TrangThai { get; init; } = string.Empty;
 }
 

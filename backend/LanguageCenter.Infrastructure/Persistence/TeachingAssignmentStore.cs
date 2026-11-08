@@ -284,6 +284,24 @@ public sealed class TeachingAssignmentStore : ITeachingAssignmentStore
                      && x.TrangThai == AssignmentStatuses.ChoPhanCong,
                 cancellationToken);
 
+    public async Task<int> CountActiveClassesAsync(
+        string maGiaoVien,
+        int? exceptId,
+        CancellationToken cancellationToken)
+    {
+        var code = maGiaoVien.Trim();
+
+        return await _dbContext.PhanCongGiangDays
+            .AsNoTracking()
+            .Where(x => x.MaGiaoVien == code
+                        && x.TrangThai != AssignmentStatuses.DaHuy
+                        && x.TrangThai != AssignmentStatuses.DaKetThuc
+                        && (exceptId == null || x.MaPhanCong != exceptId))
+            .Select(x => x.MaLopHoc)
+            .Distinct()
+            .CountAsync(cancellationToken);
+    }
+
     public async Task<WriteResult> CreateAsync(
         CreateAssignmentRequest request,
         CancellationToken cancellationToken)

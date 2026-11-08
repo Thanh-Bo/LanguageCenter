@@ -6,6 +6,16 @@ static class Program
     [STAThread]
     static void Main()
     {
+        // Đặt culture vi-VN TRƯỚC khi tạo control nào.
+        // Nếu không, DateTimePicker (Format = Short) sẽ lấy locale của Windows
+        // (máy cài en-US sẽ hiển thị MM/dd/yyyy → "ngày bị ngược").
+        var viVn = new System.Globalization.CultureInfo("vi-VN");
+        System.Globalization.CultureInfo.DefaultThreadCurrentCulture = viVn;
+        System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = viVn;
+        Thread.CurrentThread.CurrentCulture = viVn;
+        Thread.CurrentThread.CurrentUICulture = viVn;
+        Application.CurrentCulture = viVn;
+
         // To customize application configuration such as set high DPI settings or default font,
         // see https://aka.ms/applicationconfiguration.
         ApplicationConfiguration.Initialize();

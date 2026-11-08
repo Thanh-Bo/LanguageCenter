@@ -23,4 +23,10 @@ public interface IStudentStore
     /// Nếu <c>Email</c> thay đổi thì cập nhật cả <c>HocVien.Email</c> và <c>TaiKhoan.Email</c>.
     /// </summary>
     Task<WriteOutcome> UpdateAsync(string maHocVien, UpdateStudentRequest changes, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Số điện thoại đã được dùng bởi hồ sơ khác chưa (học viên / phụ huynh / giáo viên).
+    /// <paramref name="exceptMaHocVien"/> = bỏ qua chính học viên đang sửa.
+    /// </summary>
+    Task<bool> PhoneExistsAsync(string soDienThoai, string? exceptMaHocVien, CancellationToken cancellationToken);
 }

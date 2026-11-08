@@ -20,13 +20,19 @@ public sealed class PagedResult<T>
 }
 
 /// <summary>
-/// Query phân trang có TỰ CHUẨN HOÁ: <c>page &gt;= 1</c> và <c>1 &lt;= pageSize &lt;= 100</c>.
+/// Query phân trang có TỰ CHUẨN HOÁ: <c>page &gt;= 1</c> và <c>1 &lt;= pageSize &lt;= 1000</c>.
 /// Nhờ vậy service và store không cần kiểm tra lại giá trị client gửi lên.
+/// <para>
+/// GIỚI HẠN CŨ là 100 — WinForms gửi <c>pageSize=500</c> nên bị CẮT ÂM THẦM còn 100,
+/// khiến combo học viên / lớp học thiếu dữ liệu và mọi thống kê bị sai.
+/// </para>
 /// </summary>
 public class PagedQuery
 {
     public const int DefaultPageSize = 20;
-    public const int MaxPageSize = 100;
+
+    /// <summary>Trần kích thước trang. Đủ lớn cho các màn hình Windows Forms nạp "toàn bộ" để lọc phía client.</summary>
+    public const int MaxPageSize = 1000;
 
     private int _page = 1;
     private int _pageSize = DefaultPageSize;

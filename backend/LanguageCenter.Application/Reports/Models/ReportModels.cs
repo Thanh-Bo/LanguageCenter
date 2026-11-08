@@ -33,6 +33,95 @@ public sealed class AttendanceReportQuery
 }
 
 // ============================================================================
+// THỐNG KÊ THEO KỲ
+// ============================================================================
+
+/// <summary>Tham số thống kê theo khoảng ngày (mặc định: tháng hiện tại).</summary>
+public sealed class PeriodReportQuery
+{
+    public DateOnly? TuNgay { get; set; }
+
+    public DateOnly? DenNgay { get; set; }
+
+    /// <summary>
+    /// Quy đổi khoảng ngày; bỏ trống cả hai = tháng hiện tại,
+    /// chỉ có <c>TuNgay</c> = từ ngày đó đến hôm nay.
+    /// </summary>
+    public (DateOnly Tu, DateOnly Den) ChuanHoa()
+    {
+        var homNay = DateOnly.FromDateTime(DateTime.Today);
+
+        var tu = TuNgay ?? (DenNgay is { } den0
+            ? new DateOnly(den0.Year, den0.Month, 1)
+            : new DateOnly(homNay.Year, homNay.Month, 1));
+
+        var den = DenNgay ?? (TuNgay is null
+            ? new DateOnly(homNay.Year, homNay.Month, DateTime.DaysInMonth(homNay.Year, homNay.Month))
+            : homNay);
+
+        return tu > den ? (den, tu) : (tu, den);
+    }
+}
+
+/// <summary>Kết quả thống kê một kỳ: quy mô đào tạo + công nợ.</summary>
+public sealed class PeriodReportDto
+{
+    public DateOnly TuNgay { get; init; }
+
+    public DateOnly DenNgay { get; init; }
+
+    /// <summary>Số lớp có khoảng [NgayBatDau, NgayKetThucDuKien] giao với kỳ.</summary>
+    public int SoLopHoc { get; init; }
+
+    /// <summary>Số học viên đang theo học ít nhất một lớp trong kỳ.</summary>
+    public int SoHocVien { get; init; }
+
+    /// <summary>Số giáo viên có phân công giảng dạy trong kỳ.</summary>
+    public int SoGiaoVien { get; init; }
+
+    /// <summary>Số trợ giảng có phân công trong kỳ.</summary>
+    public int SoTroGiang { get; init; }
+
+    /// <summary>Học viên có TrangThaiHocTap = "Đang học".</summary>
+    public int SoHocVienDangHoc { get; init; }
+
+    /// <summary>Số học viên còn nợ học phí (toàn hệ thống, không phụ thuộc kỳ).</summary>
+    public int SoHocVienConNo { get; init; }
+
+    public decimal TongConNo { get; init; }
+
+    public IReadOnlyList<DebtorRowDto> HocVienConNo { get; init; } = [];
+}
+
+/// <summary>Một học viên còn nợ học phí.</summary>
+public sealed class DebtorRowDto
+{
+    public int MaHocPhi { get; init; }
+
+    public int MaDangKy { get; init; }
+
+    public string MaHocVien { get; init; } = string.Empty;
+
+    public string HoTen { get; init; } = string.Empty;
+
+    public string? SoDienThoai { get; init; }
+
+    public string TenKhoaHoc { get; init; } = string.Empty;
+
+    public string? MaLop { get; init; }
+
+    public decimal SoTienPhaiDong { get; init; }
+
+    public decimal SoTienDaDong { get; init; }
+
+    public decimal SoTienConThieu { get; init; }
+
+    public DateOnly? HanThanhToan { get; init; }
+
+    public string TrangThaiHocPhi { get; init; } = string.Empty;
+}
+
+// ============================================================================
 // TỔNG QUAN
 // ============================================================================
 
@@ -133,8 +222,7 @@ public sealed class TuitionOverviewDto
 }
 
 /// <summary>Tình hình khảo sát.</summary>
-public sealed class SurveyOverviewDto
-{
+public sealed class SurveyOverviewDto{
     public int TongSo { get; init; }
 
     public int SoHoatDong { get; init; }

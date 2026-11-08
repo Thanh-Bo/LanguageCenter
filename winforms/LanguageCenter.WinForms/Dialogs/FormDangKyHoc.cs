@@ -48,6 +48,15 @@ public sealed class FormDangKyHoc : Form
         Font = Theme.FontRegular;
 
         DungGiaoDien();
+
+        // ComboBox mặc định chỉ cao ~106px (≈5 dòng) nên danh sách dài trông như
+        // "không đổ hết". Mở rộng vùng xổ xuống cho học viên / khóa học / lớp.
+        foreach (var cbo in new[] { _cboHocVien, _cboChuongTrinh, _cboKhoaHoc, _cboLop })
+        {
+            cbo.DropDownHeight = 320;
+            cbo.IntegralHeight = false;
+        }
+
         NapDuLieu();
     }
 

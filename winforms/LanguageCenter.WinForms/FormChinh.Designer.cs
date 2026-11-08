@@ -9,7 +9,6 @@ partial class FormChinh
     private Label lblLogo = null!;
     private Label lblLogoSub = null!;
     private Panel pnlNavList = null!;
-
     private Button btnNavDashboard = null!;
     private Button btnNavCourses = null!;
     private Button btnNavClasses = null!;
@@ -24,6 +23,7 @@ partial class FormChinh
     private Button btnNavNotifications = null!;
     private Button btnNavReports = null!;
     private Button btnNavAccounts = null!;
+    private Button btnNavBackups = null!;
     private Button btnNavLogout = null!;
 
     private Panel pnlHeader = null!;
@@ -68,6 +68,7 @@ partial class FormChinh
         btnNavNotifications = new Button();
         btnNavReports = new Button();
         btnNavAccounts = new Button();
+        btnNavBackups = new Button();
         btnNavLogout = new Button();
 
         pnlHeader = new Panel();
@@ -324,7 +325,23 @@ partial class FormChinh
         btnNavAccounts.Cursor = Cursors.Hand;
         btnNavAccounts.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
 
+        // btnNavBackups
+        btnNavBackups.Text = "Sao lưu & phục hồi";
+        btnNavBackups.UseMnemonic = false;
+        btnNavBackups.Location = new Point(0, 592);
+        btnNavBackups.Size = new Size(232, 40);
+        btnNavBackups.FlatStyle = FlatStyle.Flat;
+        btnNavBackups.FlatAppearance.BorderSize = 0;
+        btnNavBackups.BackColor = Color.FromArgb(15, 23, 42);
+        btnNavBackups.ForeColor = Color.FromArgb(148, 163, 184);
+        btnNavBackups.Font = new Font("Segoe UI", 9.5f);
+        btnNavBackups.TextAlign = ContentAlignment.MiddleLeft;
+        btnNavBackups.Padding = new Padding(24, 0, 0, 4);
+        btnNavBackups.Cursor = Cursors.Hand;
+        btnNavBackups.FlatAppearance.MouseOverBackColor = Color.FromArgb(30, 41, 59);
+
         pnlNavList.Controls.Add(btnNavAccounts);
+        pnlNavList.Controls.Add(btnNavBackups);
         pnlNavList.Controls.Add(btnNavReports);
         pnlNavList.Controls.Add(btnNavNotifications);
         pnlNavList.Controls.Add(btnNavAssistants);

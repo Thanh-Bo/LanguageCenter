@@ -83,6 +83,20 @@ public sealed class AdminReportsController : ControllerBase
     public async Task<IActionResult> GetSurveyReportAsync(CancellationToken cancellationToken)
         => (await _reportService.GetSurveyReportAsync(cancellationToken)).ToActionResult();
 
+    /// <summary>
+    /// Thống kê theo kỳ: số lớp học, số học viên, số giáo viên / trợ giảng
+    /// và danh sách học viên còn nợ học phí.
+    /// <para>Bỏ trống tham số = tháng hiện tại. Ví dụ: <c>?tuNgay=2026-01-01&amp;denNgay=2026-03-31</c></para>
+    /// </summary>
+    [HttpGet("period")]
+    [Authorize(Roles = StaffRoles + "," + RoleNames.NhanVienKeToan)]
+    [ProducesResponseType(typeof(PeriodReportDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetPeriodAsync(
+        [FromQuery] PeriodReportQuery query,
+        CancellationToken cancellationToken)
+        => (await _reportService.GetPeriodAsync(query, cancellationToken)).ToActionResult();
+
     // ========================================================================
     // PRIVATE
     // ========================================================================

@@ -274,6 +274,8 @@ public sealed class AccountProvisioningStore : IAccountProvisioningStore
             TrinhDoHienTai = data.TrinhDoHienTai,
             TrangThaiHocTap = data.TrangThaiHocTap,
             MoiQuanHePhuHuynh = data.PhuHuynh?.MoiQuanHe,
+            HoTenCha = data.HoTenCha,
+            HoTenMe = data.HoTenMe,
             PhuHuynh = phuHuynh
         });
     }

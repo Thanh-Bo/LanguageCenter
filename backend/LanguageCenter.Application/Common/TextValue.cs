@@ -37,6 +37,43 @@ public static class TextValue
     }
 
     /// <summary>
+    /// Kiểm tra học viên đủ tuổi tối thiểu tại thời điểm hiện tại.
+    /// <para>Quy tắc nghiệp vụ: trung tâm chỉ nhận học viên <b>từ 3 tuổi trở lên</b>.</para>
+    /// </summary>
+    public static bool IsOldEnough(DateOnly ngaySinh, int tuoiToiThieu, out string? error)
+    {
+        error = null;
+
+        if (ngaySinh == default)
+        {
+            return true; // đã có IsPlausibleBirthDate báo lỗi
+        }
+
+        var tuoi = TinhTuoi(ngaySinh, DateOnly.FromDateTime(DateTime.Today));
+
+        if (tuoi < tuoiToiThieu)
+        {
+            error = $"Học viên phải từ {tuoiToiThieu} tuổi trở lên (hiện {tuoi} tuổi, sinh {ngaySinh:dd/MM/yyyy}).";
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>Tuổi tròn tại một mốc thời gian.</summary>
+    public static int TinhTuoi(DateOnly ngaySinh, DateOnly moc)
+    {
+        var tuoi = moc.Year - ngaySinh.Year;
+
+        if (moc < ngaySinh.AddYears(tuoi))
+        {
+            tuoi--;
+        }
+
+        return tuoi;
+    }
+
+    /// <summary>
     /// Số điện thoại Việt Nam: không bắt buộc; nếu nhập thì <b>chỉ chữ số</b>,
     /// <b>bắt đầu bằng số 0</b> và <b>đúng 10 chữ số</b>.
     /// </summary>

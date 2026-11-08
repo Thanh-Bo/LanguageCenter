@@ -90,6 +90,8 @@ public partial class FormSuaHocVien : Form
         txtDiaChi.Text = student.DiaChi ?? string.Empty;
         txtTrinhDoHienTai.Text = student.TrinhDoHienTai ?? string.Empty;
         txtMucTieuHocTap.Text = student.MucTieuHocTap ?? string.Empty;
+        txtHoTenCha.Text = student.HoTenCha ?? string.Empty;
+        txtHoTenMe.Text = student.HoTenMe ?? string.Empty;
 
         cboTrangThaiHocTap.SelectedItem = student.TrangThaiHocTap;
 
@@ -140,6 +142,8 @@ public partial class FormSuaHocVien : Form
             DiaChi = NullIfEmpty(txtDiaChi.Text),
             MucTieuHocTap = NullIfEmpty(txtMucTieuHocTap.Text),
             TrinhDoHienTai = NullIfEmpty(txtTrinhDoHienTai.Text),
+            HoTenCha = NullIfEmpty(txtHoTenCha.Text),
+            HoTenMe = NullIfEmpty(txtHoTenMe.Text),
             // Khối phụ huynh đã bỏ khỏi UI: luôn tạo học viên không kèm phụ huynh.
             PhuHuynh = null
         };
@@ -177,7 +181,10 @@ public partial class FormSuaHocVien : Form
             MucTieuHocTap = NullIfEmpty(txtMucTieuHocTap.Text),
             TrinhDoHienTai = NullIfEmpty(txtTrinhDoHienTai.Text),
             TrangThaiHocTap = cboTrangThaiHocTap.SelectedItem as string,
-            NgayNhapHoc = chkNgayNhapHoc.Checked ? DateOnly.FromDateTime(dtpNgayNhapHoc.Value) : null
+            NgayNhapHoc = chkNgayNhapHoc.Checked ? DateOnly.FromDateTime(dtpNgayNhapHoc.Value) : null,
+            // Chuỗi rỗng = xóa (backend hiểu null = không đổi), nên phải gửi giá trị thật.
+            HoTenCha = txtHoTenCha.Text.Trim(),
+            HoTenMe = txtHoTenMe.Text.Trim()
         };
 
         var result = await AppSession.Api.PatchAsync<StudentDetailDto>($"admin/students/{_studentId}", request);
@@ -198,7 +205,7 @@ public partial class FormSuaHocVien : Form
     /// </summary>
     private bool KiemTraDuLieuHopLe()
     {
-        var controls = new Control[] { txtHoTen, txtEmail, txtSoDienThoai, txtDiaChi, txtTrinhDoHienTai, txtMucTieuHocTap, dtpNgaySinh };
+        var controls = new Control[] { txtHoTen, txtEmail, txtSoDienThoai, txtDiaChi, txtTrinhDoHienTai, txtMucTieuHocTap, txtHoTenCha, txtHoTenMe, dtpNgaySinh };
         UI.KiemTraNhap.BoDanhDau(controls);
 
         var loi = new List<string>();
@@ -210,9 +217,14 @@ public partial class FormSuaHocVien : Form
         UI.KiemTraNhap.DoDai(txtDiaChi, "Địa chỉ", 500, loi);
         UI.KiemTraNhap.DoDai(txtTrinhDoHienTai, "Trình độ hiện tại", 200, loi);
         UI.KiemTraNhap.DoDai(txtMucTieuHocTap, "Mục tiêu học tập", 1000, loi);
+        UI.KiemTraNhap.DoDai(txtHoTenCha, "Họ tên cha", 150, loi);
+        UI.KiemTraNhap.DoDai(txtHoTenMe, "Họ tên mẹ", 150, loi);
 
         // Ngày sinh không được ở tương lai / trước 1900 (áp cho cả tạo mới và sửa).
         UI.KiemTraNhap.NgaySinh(dtpNgaySinh, "Ngày sinh", loi);
+
+        // Quy tắc trung tâm: học viên phải từ 3 tuổi trở lên.
+        UI.KiemTraNhap.TuoiToiThieu(dtpNgaySinh, "Ngày sinh", 3, loi);
 
         UI.KiemTraNhap.HienThiLoi(lblMessage, loi);
 

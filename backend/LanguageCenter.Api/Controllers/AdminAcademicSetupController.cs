@@ -11,7 +11,7 @@ namespace LanguageCenter.Api.Controllers;
 /// Cấu hình học vụ — Quản trị viên và Nhân viên học vụ.
 /// <para>
 /// <c>lesson-contents</c>: nội dung 20 buổi của từng khóa (sinh ca học sẽ gắn theo).
-/// <c>holidays</c>: ngày lễ — buổi rơi vào ngày lễ tự dời sang tuần sau.
+/// <c>holidays</c>: kỳ nghỉ (1 ngày hoặc nhiều ngày) — buổi rơi vào kỳ nghỉ tự dời sang tuần sau.
 /// </para>
 /// </summary>
 [ApiController]
@@ -49,19 +49,19 @@ public sealed class AdminAcademicSetupController : ControllerBase
     // NGÀY LỄ
     // ======================================================================
 
-    /// <summary>Danh sách ngày lễ (sắp theo ngày).</summary>
+    /// <summary>Danh sách kỳ nghỉ (sắp theo ngày bắt đầu).</summary>
     [HttpGet("holidays")]
     public async Task<IActionResult> ListHolidaysAsync(CancellationToken cancellationToken)
         => (await _service.ListHolidaysAsync(cancellationToken)).ToActionResult();
 
-    /// <summary>Thêm ngày lễ — mỗi ngày chỉ 1 dòng.</summary>
+    /// <summary>Thêm kỳ nghỉ. <c>denNgay</c> bỏ trống = nghỉ đúng 1 ngày. Không được chồng lấn kỳ khác.</summary>
     [HttpPost("holidays")]
     public async Task<IActionResult> CreateHolidayAsync(
         [FromBody] CreateHolidayRequest request,
         CancellationToken cancellationToken)
         => (await _service.CreateHolidayAsync(request, cancellationToken)).ToActionResult();
 
-    /// <summary>Cập nhật ngày lễ (PATCH).</summary>
+    /// <summary>Cập nhật kỳ nghỉ (PATCH). Gửi <c>xoaDenNgay = true</c> để chuyển về nghỉ 1 ngày.</summary>
     [HttpPatch("holidays/{id:int}")]
     public async Task<IActionResult> UpdateHolidayAsync(
         int id,
@@ -69,7 +69,7 @@ public sealed class AdminAcademicSetupController : ControllerBase
         CancellationToken cancellationToken)
         => (await _service.UpdateHolidayAsync(id, request, cancellationToken)).ToActionResult();
 
-    /// <summary>Xóa ngày lễ.</summary>
+    /// <summary>Xóa kỳ nghỉ.</summary>
     [HttpDelete("holidays/{id:int}")]
     public async Task<IActionResult> DeleteHolidayAsync(int id, CancellationToken cancellationToken)
         => (await _service.DeleteHolidayAsync(id, cancellationToken)).ToActionResult();

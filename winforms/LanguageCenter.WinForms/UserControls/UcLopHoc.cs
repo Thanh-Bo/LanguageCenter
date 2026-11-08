@@ -17,6 +17,9 @@ public partial class UcLopHoc : UserControl
     private Button _btnXoa = null!;
     private Button _btnTienDo = null!;
 
+    /// <summary>Mục lọc đặc biệt trong combo trạng thái: lớp chưa gán giáo viên.</summary>
+    private const string ChuaPhanCongOption = "Chưa phân công GV";
+
     public UcLopHoc()
     {
         InitializeComponent();
@@ -55,7 +58,7 @@ public partial class UcLopHoc : UserControl
         _dangNap = true;
         cboTrangThai.Items.Clear();
         cboTrangThai.Items.Add(AllOption);
-        cboTrangThai.Items.AddRange(["Đang học", "Chuẩn bị mở", "Đã kết thúc", "Đã hủy"]);
+        cboTrangThai.Items.AddRange(["Đang học", "Chuẩn bị mở", "Đã kết thúc", "Đã hủy", ChuaPhanCongOption]);
         cboTrangThai.SelectedIndex = 0;
 
         cboKhoaHoc.Items.Clear();
@@ -113,17 +116,32 @@ public partial class UcLopHoc : UserControl
     {
         _dangNap = true;
 
-        var dangChon = cboKhoaHoc.SelectedItem?.ToString() ?? AllOption;
+        var dangChon = (cboKhoaHoc.SelectedItem as KhoaHocLoc)?.MaKhoaHoc;
 
         cboKhoaHoc.Items.Clear();
         cboKhoaHoc.Items.Add(AllOption);
-        foreach (var ten in _all.Select(c => c.TenKhoaHoc).Distinct().OrderBy(x => x))
+
+        // Gom theo MÃ khóa học — 2 khóa trùng tên vẫn lọc đúng.
+        foreach (var khoa in _all
+                     .GroupBy(c => c.MaKhoaHoc)
+                     .Select(g => new KhoaHocLoc(g.Key, g.First().TenKhoaHoc))
+                     .OrderBy(x => x.TenKhoaHoc))
         {
-            cboKhoaHoc.Items.Add(ten);
+            cboKhoaHoc.Items.Add(khoa);
         }
 
-        var viTri = cboKhoaHoc.Items.IndexOf(dangChon);
-        cboKhoaHoc.SelectedIndex = viTri >= 0 ? viTri : 0;
+        if (dangChon is null)
+        {
+            cboKhoaHoc.SelectedIndex = 0;
+        }
+        else
+        {
+            var viTri = cboKhoaHoc.Items.Cast<object>()
+                .Select((item, i) => (item, i))
+                .FirstOrDefault(t => t.item is KhoaHocLoc k && k.MaKhoaHoc == dangChon.Value).i;
+
+            cboKhoaHoc.SelectedIndex = viTri > 0 ? viTri : 0;
+        }
 
         _dangNap = false;
     }
@@ -131,13 +149,22 @@ public partial class UcLopHoc : UserControl
     private void ApplyFilter()
     {
         var kw = txtSearch.Text.Trim();
-        var course = cboKhoaHoc.SelectedItem?.ToString() ?? AllOption;
+        var course = cboKhoaHoc.SelectedItem as KhoaHocLoc;
         var status = cboTrangThai.SelectedItem?.ToString() ?? AllOption;
 
         var query = _all.AsEnumerable();
 
-        if (course != AllOption) query = query.Where(c => c.TenKhoaHoc == course);
-        if (status != AllOption) query = query.Where(c => c.TrangThai == status);
+        if (course is not null) query = query.Where(c => c.MaKhoaHoc == course.MaKhoaHoc);
+
+        // Lọc đặc biệt: chỉ lớp CHƯA gán giáo viên nào.
+        if (status == ChuaPhanCongOption)
+        {
+            query = query.Where(c => c.SoPhanCong == 0);
+        }
+        else if (status != AllOption)
+        {
+            query = query.Where(c => c.TrangThai == status);
+        }
 
         if (!string.IsNullOrWhiteSpace(kw))
         {
@@ -148,7 +175,8 @@ public partial class UcLopHoc : UserControl
                 c.TenNhanVienHocVu.Contains(kw, StringComparison.OrdinalIgnoreCase));
         }
 
-        var list = query.OrderBy(c => c.MaLop).ToList();
+        // Lớp MỚI NHẤT lên đầu để thấy ngay lớp vừa thêm.
+        var list = query.OrderByDescending(c => c.MaLopHoc).ToList();
         dgvClasses.Rows.Clear();
 
         foreach (var c in list)
@@ -185,7 +213,8 @@ public partial class UcLopHoc : UserControl
 
         lblSummary.Text = _all.Count == 0
             ? "Chưa có lớp học nào trong hệ thống."
-            : $"Hiển thị {list.Count}/{_all.Count} lớp học phù hợp với bộ lọc";
+            : $"Hiển thị {list.Count}/{_all.Count} lớp học phù hợp với bộ lọc"
+              + (status == ChuaPhanCongOption ? " (đang lọc: chưa phân công GV)" : string.Empty);
     }
 
     private void SapXepThanhCongCu()
@@ -203,6 +232,12 @@ public partial class UcLopHoc : UserControl
     }
 
     private ClassListItemDto? LopDangChon => dgvClasses.CurrentRow?.Tag as ClassListItemDto;
+
+    /// <summary>Mục lọc "khóa học" — hiển thị tên nhưng so sánh bằng MÃ.</summary>
+    private sealed record KhoaHocLoc(int MaKhoaHoc, string TenKhoaHoc)
+    {
+        public override string ToString() => TenKhoaHoc;
+    }
     /// <summary>1 → "Thứ 2" … 7 → "Chủ nhật"; null nếu chưa khai báo.</summary>
     private static string? TenThu(byte? thu) => thu switch
     {

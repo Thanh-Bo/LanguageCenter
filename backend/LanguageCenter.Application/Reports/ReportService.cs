@@ -113,6 +113,25 @@ public sealed class ReportService : IReportService
         return OperationResult<SurveyReportDto>.Ok(report);
     }
 
+    public async Task<OperationResult<PeriodReportDto>> GetPeriodAsync(
+        PeriodReportQuery query,
+        CancellationToken cancellationToken)
+    {
+        var (tuNgay, denNgay) = query.ChuanHoa();
+
+        // Chặn khoảng quá lớn gây quét toàn bảng không cần thiết.
+        if (denNgay.DayNumber - tuNgay.DayNumber > 3660)
+        {
+            return OperationResult<PeriodReportDto>.BadRequest(
+                "Khoảng thống kê quá lớn (tối đa 10 năm).",
+                ["Hãy chọn khoảng ngắn hơn."]);
+        }
+
+        var report = await _reportStore.GetPeriodReportAsync(tuNgay, denNgay, cancellationToken);
+
+        return OperationResult<PeriodReportDto>.Ok(report);
+    }
+
     // ========================================================================
     // PRIVATE HELPERS
     // ========================================================================

@@ -19,6 +19,8 @@ public sealed class HocVienConfiguration : IEntityTypeConfiguration<HocVien>
         builder.Property(x => x.Email).HasMaxLength(255).IsUnicode(false);
         builder.Property(x => x.DiaChi).HasMaxLength(500);
         builder.Property(x => x.MoiQuanHePhuHuynh).HasMaxLength(50);
+        builder.Property(x => x.HoTenCha).HasMaxLength(150);
+        builder.Property(x => x.HoTenMe).HasMaxLength(150);
         builder.Property(x => x.MucTieuHocTap).HasMaxLength(1000);
         builder.Property(x => x.TrinhDoHienTai).HasMaxLength(200);
 

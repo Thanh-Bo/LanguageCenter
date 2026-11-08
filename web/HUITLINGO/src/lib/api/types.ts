@@ -639,6 +639,15 @@ export type TeacherOption = {
   trangThai: string
 }
 
+/** Kỳ nghỉ của trung tâm. `denNgay` bỏ trống = nghỉ đúng 1 ngày. */
+export type Holiday = {
+  maNgayLe: number
+  ngay: string
+  denNgay?: string | null
+  tenNgayLe: string
+  ghiChu?: string | null
+}
+
 /** Lịch học định kỳ của lớp. */
 export type ScheduleListItem = {
   maLichHoc: number

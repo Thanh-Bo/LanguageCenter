@@ -303,6 +303,18 @@ public sealed class TeachingAssignmentService : ITeachingAssignmentService
                 $"'{maGiaoVien}' bị trùng lịch dạy với {chiTiet}.");
         }
 
+        // Giới hạn SỐ LƯỢNG LỚP đang dạy (mô hình: 1 GV phụ trách 1 chương trình = 3 khóa).
+        var soLopDangDay = await _assignmentStore.CountActiveClassesAsync(
+            maGiaoVien, exceptId, cancellationToken);
+
+        if (soLopDangDay >= TeachingRules.SoLopDongThoiToiDa)
+        {
+            return OperationResult<AssignmentDetailDto>.Conflict(
+                $"'{maGiaoVien}' đang phụ trách {soLopDangDay} lớp — đã đạt mức tối đa "
+                + $"{TeachingRules.SoLopDongThoiToiDa} lớp cùng lúc.",
+                [$"Hãy kết thúc một phân công cũ trước khi giao lớp mới."]);
+        }
+
         return null;
     }
 
