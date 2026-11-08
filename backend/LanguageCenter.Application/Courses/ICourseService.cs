@@ -27,4 +27,8 @@ public interface ICourseService
         int maKhoaHoc,
         UpdateStatusRequest request,
         CancellationToken cancellationToken);
+
+    Task<OperationResult<CourseDetailDto>> DeleteAsync(
+        int maKhoaHoc,
+        CancellationToken cancellationToken);
 }

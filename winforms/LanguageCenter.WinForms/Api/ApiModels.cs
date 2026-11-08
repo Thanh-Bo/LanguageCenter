@@ -658,9 +658,24 @@ public sealed class SessionListItemDto
     public string LoaiBuoi { get; init; } = "Buổi học";
 }
 
-public sealed class RoomListItemDto
+/// <summary>Một nhân viên rút gọn — dùng cho ô chọn "Nhân viên học vụ / tư vấn / kế toán".</summary>
+public sealed class StaffListItemDto
 {
-    public int MaPhongHoc { get; init; }
+    public string MaNhanVien { get; init; } = string.Empty;
+    public string HoTen { get; init; } = string.Empty;
+    public string ChucVu { get; init; } = string.Empty;
+    public string TrangThaiLamViec { get; init; } = string.Empty;
+}
+
+/// <summary>Kết quả <c>GET /api/admin/employees</c>.</summary>
+public sealed class EmployeeListDto
+{
+    public IReadOnlyList<StaffListItemDto> Items { get; init; } = Array.Empty<StaffListItemDto>();
+    public int TotalItems { get; init; }
+}
+
+public sealed class RoomListItemDto
+{    public int MaPhongHoc { get; init; }
     public string MaPhong { get; init; } = string.Empty;
     public string TenPhong { get; init; } = string.Empty;
     public string? ViTri { get; init; }
@@ -877,6 +892,7 @@ public sealed class AcademicReportDto
     public int MaLopHoc { get; init; }
     public string MaLop { get; init; } = string.Empty;
     public string TenLop { get; init; } = string.Empty;
+    public int MaKhoaHoc { get; init; }
     public string TenKhoaHoc { get; init; } = string.Empty;
     public int SoHocVien { get; init; }
     public decimal TongTrongSo { get; init; }
@@ -1207,6 +1223,26 @@ public sealed class SyncTeachersResponseDto
     public string? MaGiaoVienChinh { get; init; }
     public string? MaGiaoVienNuocNgoai { get; init; }
     public string? MaTroGiang { get; init; }
+}
+
+#endregion
+
+#region Promotions (Ưu đãi / khuyến mãi)
+
+/// <summary>Một dòng trong <c>GET /api/admin/promotions</c> (chỉ Quản trị viên gọi được).</summary>
+public sealed class PromotionListItemDto
+{
+    public int MaUuDai { get; init; }
+    public string TenUuDai { get; init; } = string.Empty;
+    /// <summary>"Phần trăm" hoặc "Số tiền".</summary>
+    public string LoaiGiamGia { get; init; } = string.Empty;
+    public decimal GiaTriGiam { get; init; }
+    public int SoKhoaHocToiThieu { get; init; }
+    public DateOnly NgayBatDau { get; init; }
+    public DateOnly NgayKetThuc { get; init; }
+    public string TrangThai { get; init; } = string.Empty;
+    /// <summary>Đang "Hoạt động" VÀ hôm nay nằm trong [NgayBatDau, NgayKetThuc].</summary>
+    public bool ConHieuLuc { get; init; }
 }
 
 #endregion

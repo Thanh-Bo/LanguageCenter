@@ -65,8 +65,55 @@ public sealed class FormLopHoc : Form
         // danh sách cũ trong bộ nhớ hoặc lần tải trước bị lỗi.
         Shown += async (_, _) =>
         {
+            await NapHocVuAsync();
+
             if (_existing is null) await NapKhoaHocAsync();
         };
+    }
+
+    /// <summary>
+    /// Nạp ô "Nhân viên học vụ phụ trách" từ <c>GET /api/admin/employees</c>.
+    /// Trước đây danh sách này lấy từ dữ liệu LỚP ĐÃ CÓ nên khi cơ sở dữ liệu trống
+    /// thì chỉ còn giá trị hardcode "NVHV001" (không tồn tại) → không tạo được lớp.
+    /// </summary>
+    private async Task NapHocVuAsync()
+    {
+        var dangChon = _cboHocVu.SelectedItem?.ToString()
+                       ?? (_existing?.MaNhanVienHocVu);
+
+        var result = await AppSession.Api.GetAsync<EmployeeListDto>(
+            QueryStringBuilder.Build("admin/employees", ("dangLamViec", "true")));
+
+        if (!result.Success || result.Data is null || result.Data.Items.Count == 0)
+        {
+            // Không có nhân viên → giữ nguyên những gì đang có, báo rõ cho người dùng.
+            if (_cboHocVu.Items.Count == 0)
+            {
+                _lblThongBao.ForeColor = Theme.Danger;
+                _lblThongBao.Text =
+                    "Chưa có nhân viên nào trong hệ thống. Hãy tạo tài khoản Nhân viên học vụ "
+                    + "ở mục 'Quản lý tài khoản' trước khi mở lớp.";
+                _btnLuu.Enabled = false;
+            }
+
+            return;
+        }
+
+        _cboHocVu.Items.Clear();
+
+        foreach (var nv in result.Data.Items)
+        {
+            _cboHocVu.Items.Add(nv.MaNhanVien);
+        }
+
+        if (!string.IsNullOrWhiteSpace(dangChon) && _cboHocVu.Items.Contains(dangChon))
+        {
+            _cboHocVu.SelectedItem = dangChon;
+        }
+        else
+        {
+            _cboHocVu.SelectedIndex = 0;
+        }
     }
 
     private void DungGiaoDien()
@@ -397,14 +444,14 @@ public sealed class FormLopHoc : Form
 
     private void NapDuLieu(IReadOnlyList<string>? nhanVienHocVu)
     {
-        // Nhân viên học vụ (backend chưa có endpoint danh mục nhân viên → lấy từ dữ liệu lớp đã có)
+        // Nhân viên học vụ: ưu tiên danh sách truyền vào, sau đó sẽ được nạp lại
+        // từ API /admin/employees trong LoadHocVuAsync (xem Load event).
         _cboHocVu.Items.Clear();
         foreach (var ma in (nhanVienHocVu ?? Array.Empty<string>()).Distinct().OrderBy(x => x))
         {
             _cboHocVu.Items.Add(ma);
         }
-        if (_cboHocVu.Items.Count == 0) _cboHocVu.Items.Add("NVHV001");
-        _cboHocVu.SelectedIndex = 0;
+        if (_cboHocVu.Items.Count > 0) _cboHocVu.SelectedIndex = 0;
 
         if (_existing is null)
         {

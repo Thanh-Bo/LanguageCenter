@@ -248,4 +248,39 @@ public sealed class CourseStore : ICourseStore
 
         return WriteOutcome.Success;
     }
+
+    public async Task<WriteOutcome> DeleteAsync(int maKhoaHoc, CancellationToken cancellationToken)
+    {
+        var entity = await _dbContext.KhoaHocs
+            .FirstOrDefaultAsync(x => x.MaKhoaHoc == maKhoaHoc, cancellationToken);
+
+        if (entity is null)
+        {
+            return WriteOutcome.NotFound;
+        }
+
+        // Còn dữ liệu con → không xoá (FK Restrict ở database).
+        var dangDung =
+            await _dbContext.LopHocs.AnyAsync(x => x.MaKhoaHoc == maKhoaHoc, cancellationToken)
+            || await _dbContext.DangKyHocs.AnyAsync(x => x.MaKhoaHoc == maKhoaHoc, cancellationToken)
+            || await _dbContext.NoiDungBaiHocs.AnyAsync(x => x.MaKhoaHoc == maKhoaHoc, cancellationToken)
+            || await _dbContext.LoaiDiems.AnyAsync(x => x.MaKhoaHoc == maKhoaHoc, cancellationToken);
+
+        if (dangDung)
+        {
+            return WriteOutcome.Conflict;
+        }
+
+        _dbContext.KhoaHocs.Remove(entity);
+
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return WriteOutcome.Success;
+        }
+        catch (DbUpdateException)
+        {
+            return WriteOutcome.Conflict;
+        }
+    }
 }

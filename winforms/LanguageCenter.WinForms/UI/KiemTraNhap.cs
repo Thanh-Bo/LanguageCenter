@@ -190,7 +190,8 @@ public static class KiemTraNhap
         return true;
     }
 
-    /// <summary>ComboBox bắt buộc chọn (dùng cho DropDownList).</summary>    public static bool ChonBatBuoc(ComboBox comboBox, string tenTruong, List<string> loi)
+    /// <summary>ComboBox bắt buộc chọn (dùng cho DropDownList).</summary>
+    public static bool ChonBatBuoc(ComboBox comboBox, string tenTruong, List<string> loi)
     {
         if (string.IsNullOrWhiteSpace(comboBox.Text))
         {

@@ -98,7 +98,9 @@ public partial class UcTroGiang : UserControl
             ("page", _currentPage.ToString()),
             ("pageSize", PageSize.ToString()),
             ("search", txtSearch.Text.Trim()),
-            ("loaiGiaoVien", TeacherTypes.TroGiang));
+            ("loaiGiaoVien", TeacherTypes.TroGiang),
+            // Lọc trạng thái Ở SERVER (trước đây lọc sau phân trang nên kết quả sai).
+            ("trangThai", status == AllOption ? null : status));
 
         var result = await AppSession.Api.GetAsync<PagedResult<TeacherListItemDto>>(path);
 
@@ -119,21 +121,7 @@ public partial class UcTroGiang : UserControl
         var data = result.Data;
         _totalPages = Math.Max(data.TotalPages, 1);
 
-        var items = data.Items.AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(status) && status != AllOption)
-        {
-            items = items.Where(t => t.TrangThai == status);
-        }
-
-        var searchTxt = txtSearch.Text.Trim();
-        if (!string.IsNullOrWhiteSpace(searchTxt))
-        {
-            items = items.Where(t => t.HoTen.Contains(searchTxt, StringComparison.OrdinalIgnoreCase)
-                                  || t.MaGiaoVien.Contains(searchTxt, StringComparison.OrdinalIgnoreCase)
-                                  || (!string.IsNullOrEmpty(t.Email) && t.Email.Contains(searchTxt, StringComparison.OrdinalIgnoreCase)));
-        }
-
-        var itemList = items.ToList();
+        var itemList = data.Items.ToList();
 
         foreach (var item in itemList)
         {

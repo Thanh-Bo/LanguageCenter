@@ -24,6 +24,8 @@ public partial class UcLichHoc : UserControl
     private Button _btnNgayLe = null!;
     private Button _btnSuaLich = null!;
     private Button _btnXoaLich = null!;
+    private Button _btnSuaPhong = null!;
+    private Button _btnXoaPhong = null!;
 
     public UcLichHoc()
     {
@@ -86,6 +88,17 @@ public partial class UcLichHoc : UserControl
         _btnXoaLich.Click += BtnXoaLich_Click;
         _btnXoaLich.Visible = false;
         pnlToolbar.Controls.Add(_btnXoaLich);
+
+        // Sửa / xoá PHÒNG HỌC (tab 0).
+        _btnSuaPhong = UiHelpers.CreateSecondaryButton("Sửa phòng", 120, 34);
+        _btnSuaPhong.Click += BtnSuaPhong_Click;
+        _btnSuaPhong.Visible = false;
+        pnlToolbar.Controls.Add(_btnSuaPhong);
+
+        _btnXoaPhong = UiHelpers.CreateDangerButton("Xóa phòng", 120, 34);
+        _btnXoaPhong.Click += BtnXoaPhong_Click;
+        _btnXoaPhong.Visible = false;
+        pnlToolbar.Controls.Add(_btnXoaPhong);
 
         DungThanhCongCu();
 
@@ -174,7 +187,7 @@ public partial class UcLichHoc : UserControl
             Padding = new Padding(0, 2, 4, 0)
         };
 
-        foreach (var button in new[] { btnAdd, _btnSinhCa, _btnTrangThai, _btnDiemDanh, _btnNgayLe, _btnSuaLich, _btnXoaLich })
+        foreach (var button in new[] { btnAdd, _btnSinhCa, _btnTrangThai, _btnDiemDanh, _btnNgayLe, _btnSuaLich, _btnXoaLich, _btnSuaPhong, _btnXoaPhong })
         {
             button.Margin = new Padding(8, 0, 0, 0);
         }
@@ -186,6 +199,8 @@ public partial class UcLichHoc : UserControl
         flpHanhDong.Controls.Add(_btnNgayLe);
         flpHanhDong.Controls.Add(_btnSuaLich);
         flpHanhDong.Controls.Add(_btnXoaLich);
+        flpHanhDong.Controls.Add(_btnSuaPhong);
+        flpHanhDong.Controls.Add(_btnXoaPhong);
         flpHanhDong.Controls.Add(_btnTrangThai);
         flpHanhDong.Controls.Add(_btnDiemDanh);
 
@@ -279,6 +294,8 @@ public partial class UcLichHoc : UserControl
         if (_btnNgayLe is not null) _btnNgayLe.Visible = _currentTab == 1;
         if (_btnSuaLich is not null) _btnSuaLich.Visible = _currentTab == 1;
         if (_btnXoaLich is not null) _btnXoaLich.Visible = _currentTab == 1;
+        if (_btnSuaPhong is not null) _btnSuaPhong.Visible = _currentTab == 0;
+        if (_btnXoaPhong is not null) _btnXoaPhong.Visible = _currentTab == 0;
 
         btnAdd.Text = _currentTab switch
         {
@@ -297,27 +314,58 @@ public partial class UcLichHoc : UserControl
     {
         _dangNap = true;
 
-        var dangChon = cboFilter.SelectedItem?.ToString() ?? AllOption;
+        var dangChonChuoi = cboFilter.SelectedItem as string;
+        var dangChon = (cboFilter.SelectedItem as LopLoc)?.MaLopHoc;
 
         cboFilter.Items.Clear();
         cboFilter.Items.Add(AllOption);
 
-        IEnumerable<string> muc = _currentTab switch
+        if (_currentTab == 0)
         {
-            0 => _rooms.Select(r => r.TrangThai),
-            1 => _schedules.Select(s => s.TenLop),
-            _ => _sessions.Select(s => s.TenLop)
-        };
+            // Tab phòng học: lọc theo TRẠNG THÁI (chuỗi).
+            foreach (var item in _rooms.Select(r => r.TrangThai)
+                         .Where(x => !string.IsNullOrWhiteSpace(x))
+                         .Distinct().OrderBy(x => x))
+            {
+                cboFilter.Items.Add(item);
+            }
 
-        foreach (var item in muc.Where(x => !string.IsNullOrWhiteSpace(x)).Distinct().OrderBy(x => x))
-        {
-            cboFilter.Items.Add(item);
+            var viTri = cboFilter.Items.IndexOf(dangChonChuoi ?? string.Empty);
+            cboFilter.SelectedIndex = viTri > 0 ? viTri : 0;
+            _dangNap = false;
+            return;
         }
 
-        var viTri = cboFilter.Items.IndexOf(dangChon);
-        cboFilter.SelectedIndex = viTri >= 0 ? viTri : 0;
+        // Tab lịch học / ca học: lọc theo LỚP — dùng MÃ để không lẫn lớp trùng tên.
+        var lopNguon = _currentTab == 1
+            ? _schedules.Select(s => (s.MaLopHoc, s.MaLop, s.TenLop))
+            : _sessions.Select(s => (s.MaLopHoc, s.MaLop, s.TenLop));
+
+        foreach (var lop in lopNguon.Distinct().OrderByDescending(x => x.MaLopHoc))
+        {
+            cboFilter.Items.Add(new LopLoc(lop.MaLopHoc, $"{lop.MaLop} — {lop.TenLop}"));
+        }
+
+        if (dangChon is null)
+        {
+            cboFilter.SelectedIndex = 0;
+        }
+        else
+        {
+            var viTri = cboFilter.Items.Cast<object>()
+                .Select((item, i) => (item, i))
+                .FirstOrDefault(t => t.item is LopLoc l && l.MaLopHoc == dangChon.Value).i;
+
+            cboFilter.SelectedIndex = viTri > 0 ? viTri : 0;
+        }
 
         _dangNap = false;
+    }
+
+    /// <summary>Mục lọc "lớp" — hiển thị "Mã — Tên" nhưng so sánh bằng MÃ lớp.</summary>
+    private sealed record LopLoc(int MaLopHoc, string MoTa)
+    {
+        public override string ToString() => MoTa;
     }
 
     private void ApplyFilter()
@@ -326,7 +374,8 @@ public partial class UcLichHoc : UserControl
         DamBaoCotBang();
 
         var kw = txtSearch.Text.Trim();
-        var filter = cboFilter.SelectedItem?.ToString() ?? AllOption;
+        var filterRaw = cboFilter.SelectedItem;
+        var filter = filterRaw?.ToString() ?? AllOption;
 
         if (_currentTab == 0)
         {
@@ -352,13 +401,14 @@ public partial class UcLichHoc : UserControl
                     r.TrangThai
                 );
                 dgvRooms.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(r.TrangThai);
+                dgvRooms.Rows[rowIdx].Tag = r;
             }
             lblSummary.Text = $"Hiển thị {list.Count}/{_rooms.Count} phòng học phù hợp";
         }
         else if (_currentTab == 1)
         {
             var query = _schedules.AsEnumerable();
-            if (filter != AllOption) query = query.Where(s => s.TenLop == filter);
+            if (filterRaw is LopLoc lopLoc) query = query.Where(s => s.MaLopHoc == lopLoc.MaLopHoc);
             if (!string.IsNullOrWhiteSpace(kw))
             {
                 query = query.Where(s => s.TenLop.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
@@ -396,7 +446,7 @@ public partial class UcLichHoc : UserControl
         else
         {
             var query = _sessions.AsEnumerable();
-            if (filter != AllOption) query = query.Where(s => s.TenLop == filter);
+            if (filterRaw is LopLoc lopCa) query = query.Where(s => s.MaLopHoc == lopCa.MaLopHoc);
             if (!string.IsNullOrWhiteSpace(kw))
             {
                 query = query.Where(s => s.TenLop.Contains(kw, StringComparison.OrdinalIgnoreCase) ||
@@ -698,6 +748,61 @@ public partial class UcLichHoc : UserControl
         using var dlg = new FormNgayLe();
 
         dlg.ShowDialog(FindForm());
+    }
+
+    /// <summary>Sửa phòng học đang chọn (tab Phòng học).</summary>
+    private async void BtnSuaPhong_Click(object? sender, EventArgs e)
+    {
+        if (dgvRooms.CurrentRow?.Tag is not RoomListItemDto phong)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một phòng học trong bảng.",
+                "Chưa chọn phòng", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dlg = new FormPhongHoc(phong);
+
+        if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    /// <summary>Xoá phòng học đang chọn — backend chặn nếu còn lịch/ca học dùng phòng.</summary>
+    private async void BtnXoaPhong_Click(object? sender, EventArgs e)
+    {
+        if (dgvRooms.CurrentRow?.Tag is not RoomListItemDto phong)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một phòng học trong bảng.",
+                "Chưa chọn phòng", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var xacNhan = MessageBox.Show(FindForm(),
+            $"Xoá phòng '{phong.MaPhong} — {phong.TenPhong}'?\n\n"
+            + "Chỉ xoá được khi chưa có lịch học / ca học dùng phòng này.",
+            "Xác nhận xoá phòng", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+
+        if (xacNhan != DialogResult.Yes)
+        {
+            return;
+        }
+
+        UseWaitCursor = true;
+
+        var result = await AppSession.Api.DeleteAsync<RoomListItemDto>($"admin/rooms/{phong.MaPhongHoc}");
+
+        UseWaitCursor = false;
+
+        if (!result.Success)
+        {
+            MessageBox.Show(FindForm(),
+                string.IsNullOrWhiteSpace(result.ErrorMessage) ? "Không xoá được phòng học." : result.ErrorMessage,
+                "Không thể xoá", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        await ReloadAsync();
     }
 
     private async void BtnAdd_Click(object? sender, EventArgs e)

@@ -17,6 +17,9 @@ public partial class UcKhoaHoc : UserControl
     /// <summary>Nút mở màn nhập NỘI DUNG 20 BUỔI HỌC của khóa đang chọn.</summary>
     private readonly Button _btnNoiDung = UiHelpers.CreateSecondaryButton("Nội dung 20 buổi", 155, 32);
 
+    private readonly Button _btnSua = UiHelpers.CreateSecondaryButton("Sửa", 90, 32);
+    private readonly Button _btnXoa = UiHelpers.CreateDangerButton("Xoá / Ngừng", 120, 32);
+
     public UcKhoaHoc()
     {
         InitializeComponent();
@@ -28,6 +31,8 @@ public partial class UcKhoaHoc : UserControl
         UI.UiHelpers.StyleGrid(dgvPrograms);
 
         dgvCourses.CellDoubleClick += DgvCourses_CellDoubleClick;
+        dgvLevels.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) SuaCapDo(); };
+        dgvPrograms.CellDoubleClick += (_, e) => { if (e.RowIndex >= 0) SuaChuongTrinh(); };
 
         btnTabCourses.Click += (_, _) => SwitchTab(0);
         btnTabLevels.Click += (_, _) => SwitchTab(1);
@@ -43,10 +48,17 @@ public partial class UcKhoaHoc : UserControl
         _btnNoiDung.Click += BtnNoiDung_Click;
         pnlToolbar.Controls.Add(_btnNoiDung);
 
+        _btnSua.Click += (_, _) => SuaDangChon();
+        _btnXoa.Click += async (_, _) => await XoaDangChonAsync();
+        pnlToolbar.Controls.Add(_btnSua);
+        pnlToolbar.Controls.Add(_btnXoa);
+
         pnlToolbar.Resize += (_, _) =>
         {
             btnAdd.Location = new Point(pnlToolbar.Width - btnAdd.Width - 4, 3);
-            _btnNoiDung.Location = new Point(btnAdd.Left - _btnNoiDung.Width - 8, 3);
+            _btnXoa.Location = new Point(btnAdd.Left - _btnXoa.Width - 8, 3);
+            _btnSua.Location = new Point(_btnXoa.Left - _btnSua.Width - 8, 3);
+            _btnNoiDung.Location = new Point(_btnSua.Left - _btnNoiDung.Width - 8, 3);
         };
 
         SwitchTab(0);
@@ -139,19 +151,37 @@ public partial class UcKhoaHoc : UserControl
     {
         _dangNap = true;
 
-        var dangChon = cboChuongTrinh.SelectedItem?.ToString() ?? AllOption;
+        var dangChon = (cboChuongTrinh.SelectedItem as ChuongTrinhLoc)?.MaChuongTrinh;
 
         cboChuongTrinh.Items.Clear();
         cboChuongTrinh.Items.Add(AllOption);
-        foreach (var ten in _programs.Select(p => p.TenChuongTrinh).Distinct().OrderBy(x => x))
+
+        // Lọc theo MÃ chương trình — hai chương trình trùng tên vẫn tách đúng.
+        foreach (var ct in _programs.OrderBy(p => p.TenChuongTrinh))
         {
-            cboChuongTrinh.Items.Add(ten);
+            cboChuongTrinh.Items.Add(new ChuongTrinhLoc(ct.MaChuongTrinh, ct.TenChuongTrinh));
         }
 
-        var viTri = cboChuongTrinh.Items.IndexOf(dangChon);
-        cboChuongTrinh.SelectedIndex = viTri >= 0 ? viTri : 0;
+        if (dangChon is null)
+        {
+            cboChuongTrinh.SelectedIndex = 0;
+        }
+        else
+        {
+            var viTri = cboChuongTrinh.Items.Cast<object>()
+                .Select((item, i) => (item, i))
+                .FirstOrDefault(t => t.item is ChuongTrinhLoc c && c.MaChuongTrinh == dangChon.Value).i;
+
+            cboChuongTrinh.SelectedIndex = viTri > 0 ? viTri : 0;
+        }
 
         _dangNap = false;
+    }
+
+    /// <summary>Mục lọc chương trình — hiển thị tên nhưng so sánh bằng MÃ.</summary>
+    private sealed record ChuongTrinhLoc(int MaChuongTrinh, string TenChuongTrinh)
+    {
+        public override string ToString() => TenChuongTrinh;
     }
 
     private void SwitchTab(int tabIndex)
@@ -218,13 +248,13 @@ public partial class UcKhoaHoc : UserControl
     private void ApplyFilter()
     {
         var kw = txtSearch.Text.Trim();
-        var prog = cboChuongTrinh.SelectedItem?.ToString() ?? AllOption;
+        var prog = cboChuongTrinh.SelectedItem as ChuongTrinhLoc;
         var status = cboTrangThai.SelectedItem?.ToString() ?? AllOption;
 
         if (_currentTab == 0)
         {
             var courses = _courses.AsEnumerable();
-            if (prog != AllOption) courses = courses.Where(c => c.TenChuongTrinh == prog);
+            if (prog is not null) courses = courses.Where(c => c.MaChuongTrinh == prog.MaChuongTrinh);
             if (status != AllOption) courses = courses.Where(c => c.TrangThai == status);
             if (!string.IsNullOrWhiteSpace(kw))
             {
@@ -255,7 +285,7 @@ public partial class UcKhoaHoc : UserControl
         else if (_currentTab == 1)
         {
             var levels = _levels.AsEnumerable();
-            if (prog != AllOption) levels = levels.Where(l => l.TenChuongTrinh == prog);
+            if (prog is not null) levels = levels.Where(l => l.MaChuongTrinh == prog.MaChuongTrinh);
             if (status != AllOption) levels = levels.Where(l => l.TrangThai == status);
             if (!string.IsNullOrWhiteSpace(kw))
             {
@@ -279,6 +309,7 @@ public partial class UcKhoaHoc : UserControl
                     l.TrangThai
                 );
                 dgvLevels.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(l.TrangThai);
+                dgvLevels.Rows[rowIdx].Tag = l;
             }
             lblSummary.Text = $"Hiển thị {list.Count}/{_levels.Count} cấp độ đào tạo phù hợp";
         }
@@ -310,6 +341,7 @@ public partial class UcKhoaHoc : UserControl
                     p.TrangThai
                 );
                 dgvPrograms.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(p.TrangThai);
+                dgvPrograms.Rows[rowIdx].Tag = p;
             }
             lblSummary.Text = $"Hiển thị {list.Count}/{_programs.Count} chương trình đào tạo phù hợp";
         }
@@ -352,15 +384,130 @@ public partial class UcKhoaHoc : UserControl
             return;
         }
 
-        var itemType = _currentTab switch { 1 => "cấp độ", 2 => "chương trình", _ => "mục" };
+        if (_currentTab == 1)
+        {
+            using var dlg = new FormCapDo(_programs);
+            if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+            {
+                await ReloadAsync();
+            }
+            return;
+        }
 
-        MessageBox.Show(
-            FindForm(),
-            $"Chức năng thêm {itemType} mới chưa hỗ trợ trên bản WinForms.\n"
-            + "Vui lòng dùng bản Web (Quản trị → Chương trình) để tạo mới.",
-            $"Thêm {itemType} mới",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        using var dlgChuongTrinh = new FormChuongTrinh();
+        if (dlgChuongTrinh.ShowDialog(FindForm()) == DialogResult.OK)
+        {
+            await ReloadAsync();
+        }
+    }
+
+    /// <summary>Sửa bản ghi đang chọn theo tab hiện tại.</summary>
+    private void SuaDangChon()
+    {
+        if (_currentTab == 0)
+        {
+            if (dgvCourses.CurrentRow?.Tag is CourseListItemDto khoaHoc)
+            {
+                using var dlg = new FormKhoaHoc(_levels, khoaHoc);
+                if (dlg.ShowDialog(FindForm()) == DialogResult.OK) ReloadData();
+            }
+
+            return;
+        }
+
+        if (_currentTab == 1)
+        {
+            SuaCapDo();
+            return;
+        }
+
+        SuaChuongTrinh();
+    }
+
+    private void SuaCapDo()
+    {
+        if (dgvLevels.CurrentRow?.Tag is not LevelListItemDto capDo)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một cấp độ trong bảng.",
+                "Chưa chọn cấp độ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dlg = new FormCapDo(_programs, capDo);
+        if (dlg.ShowDialog(FindForm()) == DialogResult.OK) ReloadData();
+    }
+
+    private void SuaChuongTrinh()
+    {
+        if (dgvPrograms.CurrentRow?.Tag is not ProgramListItemDto chuongTrinh)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một chương trình trong bảng.",
+                "Chưa chọn chương trình", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dlg = new FormChuongTrinh(chuongTrinh);
+        if (dlg.ShowDialog(FindForm()) == DialogResult.OK) ReloadData();
+    }
+
+    /// <summary>Xoá (khóa học) hoặc Ngừng hoạt động (cấp độ / chương trình — API không có DELETE).</summary>
+    private async Task XoaDangChonAsync()
+    {
+        if (_currentTab == 0)
+        {
+            if (dgvCourses.CurrentRow?.Tag is not CourseListItemDto khoaHoc)
+            {
+                MessageBox.Show(FindForm(), "Vui lòng chọn một khóa học trong bảng.",
+                    "Chưa chọn khóa học", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var xacNhan = MessageBox.Show(FindForm(),
+                $"Xoá khóa học '{khoaHoc.TenKhoaHoc}'?\n\n"
+                + "Chỉ xoá được khi chưa có lớp học / đăng ký / nội dung buổi học / loại điểm.",
+                "Xác nhận xoá", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2);
+
+            if (xacNhan != DialogResult.Yes) return;
+
+            var ketQua = await AppSession.Api.DeleteAsync<CourseListItemDto>($"admin/courses/{khoaHoc.MaKhoaHoc}");
+            ThongBaoKetQua(ketQua.Success, ketQua.ErrorMessage, $"Đã xoá khóa học '{khoaHoc.TenKhoaHoc}'.");
+            if (ketQua.Success) await ReloadAsync();
+            return;
+        }
+
+        if (_currentTab == 1)
+        {
+            if (dgvLevels.CurrentRow?.Tag is not LevelListItemDto capDo) return;
+
+            var ketQua = await AppSession.Api.PatchAsync<LevelListItemDto>(
+                $"admin/levels/{capDo.MaCapDo}/status", new { trangThai = "Ngừng hoạt động" });
+
+            ThongBaoKetQua(ketQua.Success, ketQua.ErrorMessage, $"Đã ngừng hoạt động cấp độ '{capDo.TenCapDo}'.");
+            if (ketQua.Success) await ReloadAsync();
+            return;
+        }
+
+        if (dgvPrograms.CurrentRow?.Tag is not ProgramListItemDto chuongTrinh) return;
+
+        var kq = await AppSession.Api.PatchAsync<ProgramListItemDto>(
+            $"admin/programs/{chuongTrinh.MaChuongTrinh}/status", new { trangThai = "Ngừng hoạt động" });
+
+        ThongBaoKetQua(kq.Success, kq.ErrorMessage, $"Đã ngừng hoạt động chương trình '{chuongTrinh.TenChuongTrinh}'.");
+        if (kq.Success) await ReloadAsync();
+    }
+
+    private void ThongBaoKetQua(bool thanhCong, string? loi, string thongDiep)
+    {
+        if (thanhCong)
+        {
+            lblSummary.ForeColor = Theme.Success;
+            lblSummary.Text = thongDiep;
+            return;
+        }
+
+        MessageBox.Show(FindForm(),
+            string.IsNullOrWhiteSpace(loi) ? "Thao tác không thành công." : loi,
+            "Không thực hiện được", MessageBoxButtons.OK, MessageBoxIcon.Warning);
     }
 
     private async void DgvCourses_CellDoubleClick(object? sender, DataGridViewCellEventArgs e)

@@ -231,4 +231,7 @@ public sealed class TeacherListQuery : PagedQuery
 
     /// <summary>Lọc theo LoaiGiaoVien ("Giáo viên" / "Trợ giảng").</summary>
     public string? LoaiGiaoVien { get; set; }
+
+    /// <summary>Lọc theo trạng thái làm việc ("Đang làm việc" / "Đã nghỉ việc").</summary>
+    public string? TrangThai { get; set; }
 }

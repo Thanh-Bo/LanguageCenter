@@ -58,3 +58,22 @@ public sealed class CreateRoomRequest
     [StringLength(50)]
     public string? TrangThai { get; set; }
 }
+
+/// <summary>Body của <c>PATCH /api/admin/rooms/{id}</c> — mọi field OPTIONAL.</summary>
+public sealed class UpdateRoomRequest
+{
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "Tên phòng tối đa 100 ký tự.")]
+    public string? TenPhong { get; set; }
+
+    [StringLength(255)]
+    public string? ViTri { get; set; }
+
+    [Range(1, 1000, ErrorMessage = "Sức chứa phải từ 1 đến 1000.")]
+    public int? SucChua { get; set; }
+
+    [StringLength(1000)]
+    public string? ThietBi { get; set; }
+
+    [StringLength(50)]
+    public string? TrangThai { get; set; }
+}

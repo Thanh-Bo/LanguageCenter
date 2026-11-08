@@ -14,6 +14,9 @@ public partial class UcXepLop : UserControl
     private int _inClassCount = 0;
     private int _pendingCount = 0;
 
+    /// <summary>Nút "Sửa đăng ký" (đổi ưu đãi / ghi chú) — chỉ hiện ở tab chờ xếp lớp.</summary>
+    private readonly Button _btnSuaDangKy = UiHelpers.CreateSecondaryButton("Sửa đăng ký", 130, 34);
+
     public UcXepLop()
     {
         InitializeComponent();
@@ -35,6 +38,8 @@ public partial class UcXepLop : UserControl
         cboFilterCourse.SelectedIndexChanged += (_, _) => FilterPendingStudents();
         btnEnrollSelectedPending.Click += BtnEnrollSelectedPending_Click;
         btnTuChoiDangKy.Click += BtnTuChoiDangKy_Click;
+
+        _btnSuaDangKy.Click += async (_, _) => await SuaDangKyAsync();
 
         pnlHeader.Paint += (s, e) =>
         {
@@ -64,6 +69,9 @@ public partial class UcXepLop : UserControl
         lblClassDetails.Height = 22;
 
         btnOpenEnrollDialog.Visible = true; // Tạo đăng ký học trực tiếp trên WinForms
+
+        pnlToolbar.Controls.Add(_btnSuaDangKy);
+        _btnSuaDangKy.Visible = false;
 
         SwitchTab(0);
         Load += async (_, _) => await ReloadAsync();
@@ -109,6 +117,7 @@ public partial class UcXepLop : UserControl
         btnOpenEnrollDialog.Location = new Point(btnRemoveFromClass.Left - 12 - btnOpenEnrollDialog.Width, 9);
         btnEnrollSelectedPending.Location = new Point(right - btnEnrollSelectedPending.Width, 9);
         btnTuChoiDangKy.Location = new Point(btnEnrollSelectedPending.Left - 12 - btnTuChoiDangKy.Width, 9);
+        _btnSuaDangKy.Location = new Point(btnTuChoiDangKy.Left - 12 - _btnSuaDangKy.Width, 9);
     }
 
     /// <summary>
@@ -277,6 +286,7 @@ public partial class UcXepLop : UserControl
         cboFilterCourse.Visible = !isInClassTab;
         btnEnrollSelectedPending.Visible = !isInClassTab;
         btnTuChoiDangKy.Visible = !isInClassTab;
+        _btnSuaDangKy.Visible = !isInClassTab;
 
         dgvInClass.Visible = isInClassTab;
         dgvPending.Visible = !isInClassTab;
@@ -590,6 +600,29 @@ public partial class UcXepLop : UserControl
     /// <summary>Đăng ký đang chọn ở bảng "chờ xếp lớp" (null nếu chưa chọn dòng nào).</summary>
     private EnrollmentListItemDto? DangKyDangChon()
         => dgvPending.CurrentRow?.Tag as EnrollmentListItemDto;
+
+    /// <summary>
+    /// Sửa đăng ký học (đổi ưu đãi / ghi chú) — gọi <c>PATCH /api/admin/enrollments/{id}</c>.
+    /// Server tự tính lại số tiền giảm khi đổi ưu đãi.
+    /// </summary>
+    private async Task SuaDangKyAsync()
+    {
+        var dangKy = DangKyDangChon();
+
+        if (dangKy is null)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một học viên trong danh sách chờ xếp lớp.",
+                "Chưa chọn đăng ký", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dlg = new FormSuaDangKy(dangKy);
+
+        if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+        {
+            await ReloadAsync();
+        }
+    }
 
     /// <summary>Tuổi tại thời điểm hiện tại (dùng để đối chiếu độ tuổi chương trình).</summary>
     private static int TinhTuoi(DateOnly ngaySinh)

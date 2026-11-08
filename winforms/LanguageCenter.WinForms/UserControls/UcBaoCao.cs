@@ -669,41 +669,209 @@ public partial class UcBaoCao : UserControl
         }
     }
 
+    /// <summary>Xuất THẬT ra file CSV (mở được bằng Excel) cho bảng đang xem.</summary>
     private void BtnExportExcel_Click(object? sender, EventArgs e)
     {
-        string reportName = _currentReportIndex switch
+        var (tenBang, grid) = BangDangXem();
+
+        if (grid is null || grid.Rows.Count == 0)
         {
-            0 => "DoanhThuHocPhi",
-            1 => "ChatLuongDauRa",
-            2 => "TongQuanTaiChinh",
-            3 => "ThongKeSiSoLop",
-            _ => "TongHop"
+            MessageBox.Show(FindForm(), "Bảng đang xem không có dữ liệu để xuất.",
+                "Không có dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var tenMacDinh = $"HUIT_LingoHub_{tenBang}_{DateTime.Now:yyyyMMdd_HHmm}.csv";
+
+        using var dlg = new SaveFileDialog
+        {
+            Title = "Xuất báo cáo",
+            Filter = "Tệp CSV (mở được bằng Excel)|*.csv",
+            FileName = tenMacDinh,
+            AddExtension = true,
+            OverwritePrompt = true
         };
 
-        MessageBox.Show(
-            FindForm(),
-            $"Báo cáo đã được xuất thành công.\nFile: HUIT_LingoHub_BaoCao_{reportName}_{DateTime.Now:yyyyMMdd_HHmm}.xlsx",
-            "Xuất file Excel thành công",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        if (dlg.ShowDialog(FindForm()) != DialogResult.OK)
+        {
+            return;
+        }
+
+        try
+        {
+            GhiCsv(grid, dlg.FileName);
+
+            var moThu = MessageBox.Show(FindForm(),
+                $"Đã xuất báo cáo:\n{dlg.FileName}\n\nMở thư mục chứa file?",
+                "Xuất báo cáo thành công",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Information);
+
+            if (moThu == DialogResult.Yes)
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = Path.GetDirectoryName(dlg.FileName)!,
+                    UseShellExecute = true
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(FindForm(), $"Không ghi được file: {ex.Message}",
+                "Lỗi xuất báo cáo", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
+    /// <summary>In THẬT bảng đang xem qua hộp thoại xem trước khi in.</summary>
     private void BtnPrint_Click(object? sender, EventArgs e)
     {
-        string reportTitle = _currentReportIndex switch
-        {
-            0 => "Báo cáo Doanh thu & Học phí",
-            1 => "Báo cáo Chất lượng đào tạo & Đầu ra",
-            2 => "Báo cáo Tổng quan Tài chính & Ngân sách",
-            3 => "Thống kê Sĩ số & Công suất lớp học",
-            _ => "Báo cáo Thống kê"
-        };
+        var (tenBang, grid) = BangDangXem();
 
-        MessageBox.Show(
-            FindForm(),
-            $"Đã gửi lệnh in cho: {reportTitle}\nĐến máy in mạng văn phòng trung tâm HUIT LingoHub.",
-            "In báo cáo",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        if (grid is null || grid.Rows.Count == 0)
+        {
+            MessageBox.Show(FindForm(), "Bảng đang xem không có dữ liệu để in.",
+                "Không có dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        try
+        {
+            using var doc = new System.Drawing.Printing.PrintDocument();
+            doc.DocumentName = $"HUIT LingoHub — {tenBang}";
+
+            var dongHienTai = 0;
+
+            doc.PrintPage += (_, ev) =>
+            {
+                const float le = 40f;
+                var y = le;
+                var font = new Font("Segoe UI", 8.5f);
+                var fontDam = new Font("Segoe UI", 8.5f, FontStyle.Bold);
+
+                ev.Graphics!.DrawString(
+                    $"{lblCurrentReportTitle.Text} — {DateTime.Now:dd/MM/yyyy HH:mm}",
+                    new Font("Segoe UI", 11f, FontStyle.Bold),
+                    Brushes.Black, le, y);
+
+                y += 28f;
+
+                var cotHienThi = new List<DataGridViewColumn>();
+
+                foreach (DataGridViewColumn c in grid.Columns)
+                {
+                    if (c.Visible && c.Width > 0) cotHienThi.Add(c);
+                }
+
+                var leTrai = new List<float>();
+                var x = le;
+
+                foreach (var c in cotHienThi)
+                {
+                    leTrai.Add(x);
+                    x += c.Width * 0.9f;
+                }
+
+                void VeDong(int chiSo, bool dam)
+                {
+                    var yDong = le + 28f + chiSo * 20f;
+                    x = le;
+
+                    for (var i = 0; i < cotHienThi.Count; i++)
+                    {
+                        var cot = cotHienThi[i];
+                        var noiDung = dam
+                            ? cot.HeaderText
+                            : Convert.ToString(grid.Rows[chiSo].Cells[cot.Index].Value) ?? string.Empty;
+
+                        ev.Graphics!.DrawString(
+                            noiDung.Length > 40 ? noiDung[..40] : noiDung,
+                            dam ? fontDam : font,
+                            Brushes.Black,
+                            leTrai[i],
+                            yDong);
+                    }
+                }
+
+                for (var i = 0; i < cotHienThi.Count; i++)
+                {
+                    ev.Graphics!.DrawString(
+                        cotHienThi[i].HeaderText,
+                        fontDam, Brushes.Black, leTrai[i], le + 28f - 18f);
+                }
+
+                while (dongHienTai < grid.Rows.Count)
+                {
+                    if (y + (dongHienTai + 1) * 20f > ev.MarginBounds.Bottom - le)
+                    {
+                        ev.HasMorePages = true;
+                        return;
+                    }
+
+                    VeDong(dongHienTai, dam: false);
+                    dongHienTai++;
+                    y = le + 28f + dongHienTai * 20f;
+                }
+
+                ev.HasMorePages = false;
+            };
+
+            using var preview = new PrintPreviewDialog
+            {
+                Document = doc,
+                Width = 1000,
+                Height = 720,
+                StartPosition = FormStartPosition.CenterParent
+            };
+
+            preview.ShowDialog(FindForm());
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(FindForm(), $"Không in được báo cáo: {ex.Message}",
+                "Lỗi in", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    /// <summary>Bảng dữ liệu đang hiển thị theo tab báo cáo hiện tại.</summary>
+    private (string TenBang, DataGridView? Grid) BangDangXem() => _currentReportIndex switch
+    {
+        0 => ("DoanhThuHocPhi", dgvRevenue),
+        1 => ("ChatLuongDauRa", dgvQuality),
+        2 => ("TongQuanTaiChinh", dgvFinancial),
+        3 => ("ThongKeSiSoLop", dgvClasses),
+        ChiSoBaoCaoTheoKy => ("ThongKeTheoKy", _dgvPeriod),
+        _ => ("TongHop", null)
+    };
+
+    /// <summary>Ghi lưới ra CSV (UTF-8 BOM để Excel hiển thị đúng tiếng Việt).</summary>
+    private static void GhiCsv(DataGridView grid, string duongDan)
+    {
+        var cotHienThi = grid.Columns
+            .Cast<DataGridViewColumn>()
+            .Where(c => c.Visible && c.Width > 0)
+            .ToList();
+
+        static string Boc(string? giaTri)
+        {
+            var s = giaTri ?? string.Empty;
+
+            if (s.Contains('"') || s.Contains(',') || s.Contains('\n'))
+            {
+                s = "\"" + s.Replace("\"", "\"\"") + "\"";
+            }
+
+            return s;
+        }
+
+        using var writer = new StreamWriter(duongDan, false, new System.Text.UTF8Encoding(true));
+
+        writer.WriteLine(string.Join(",", cotHienThi.Select(c => Boc(c.HeaderText))));
+
+        foreach (DataGridViewRow row in grid.Rows)
+        {
+            if (row.IsNewRow) continue;
+
+            writer.WriteLine(string.Join(",", cotHienThi.Select(c => Boc(Convert.ToString(row.Cells[c.Index].Value)))));
+        }
     }
 }

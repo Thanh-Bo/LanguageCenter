@@ -27,6 +27,17 @@ public partial class UcLopHoc : UserControl
         UI.UiHelpers.StyleGrid(dgvClasses);
         dgvClasses.CellDoubleClick += DgvClasses_CellDoubleClick;
 
+        // Cột "Giảng viên" (số phân công đang hiệu lực) — thêm tại runtime để không phải sửa Designer.
+        if (!dgvClasses.Columns.Contains("PhanCong"))
+        {
+            dgvClasses.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                Name = "PhanCong",
+                HeaderText = "Giảng viên",
+                FillWeight = 90
+            });
+        }
+
         txtSearch.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; ApplyFilter(); } };
         cboKhoaHoc.SelectedIndexChanged += (_, _) => { if (!_dangNap) ApplyFilter(); };
         cboTrangThai.SelectedIndexChanged += (_, _) => { if (!_dangNap) ApplyFilter(); };
@@ -199,6 +210,14 @@ public partial class UcLopHoc : UserControl
                 c.TrangThai
             );
             dgvClasses.Rows[rowIdx].Cells["TrangThai"].Style.ForeColor = UiHelpers.StatusColor(c.TrangThai);
+
+            // Cột "Giảng viên": 0 phân công = chưa có ai phụ trách.
+            var cellPhanCong = dgvClasses.Rows[rowIdx].Cells["PhanCong"];
+            cellPhanCong.Value = c.SoPhanCong == 0 ? "Chưa phân công" : $"{c.SoPhanCong} người";
+            cellPhanCong.Style.ForeColor = c.SoPhanCong == 0 ? Theme.Danger : Theme.Success;
+            cellPhanCong.ToolTipText = c.SoPhanCong == 0
+                ? "Lớp chưa được phân công giáo viên / trợ giảng. Sang màn 'Phân công giảng dạy' để gán."
+                : $"Lớp đang có {c.SoPhanCong} phân công còn hiệu lực.";
 
             if (c.SoCaHoc == 0)
             {

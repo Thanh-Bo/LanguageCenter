@@ -10,8 +10,12 @@ public partial class UcDiemSo : UserControl
 
     private IReadOnlyList<ClassListItemDto> _classes = Array.Empty<ClassListItemDto>();
     private IReadOnlyList<TeacherListItemDto> _teachers = Array.Empty<TeacherListItemDto>();
+    private IReadOnlyList<CourseListItemDto> _courses = Array.Empty<CourseListItemDto>();
     private AcademicReportDto? _report;
     private bool _dangNap;
+
+    /// <summary>Mở màn quản lý ĐẦU ĐIỂM / TRỌNG SỐ theo khóa học.</summary>
+    private readonly Button _btnLoaiDiem = UiHelpers.CreateSecondaryButton("Đầu điểm & trọng số", 175, 32);
 
     public UcDiemSo()
     {
@@ -32,7 +36,50 @@ public partial class UcDiemSo : UserControl
         btnSave.Visible = true;
         btnSave.Click += BtnNhapDiem_Click;
 
+        _btnLoaiDiem.Click += async (_, _) => await MoLoaiDiemAsync();
+        pnlToolbar.Controls.Add(_btnLoaiDiem);
+
+        pnlToolbar.Resize += (_, _) =>
+        {
+            btnExport.Location = new Point(pnlToolbar.Width - btnExport.Width - 4, 3);
+            btnSave.Location = new Point(btnExport.Left - btnSave.Width - 8, 3);
+            _btnLoaiDiem.Location = new Point(btnSave.Left - _btnLoaiDiem.Width - 8, 3);
+        };
+
         Load += async (_, _) => await ReloadAsync();
+    }
+
+    /// <summary>Nạp danh sách khóa học rồi mở màn quản lý đầu điểm.</summary>
+    private async Task MoLoaiDiemAsync()
+    {
+        if (_courses.Count == 0)
+        {
+            UseWaitCursor = true;
+
+            var result = await AppSession.Api.GetAsync<PagedResult<CourseListItemDto>>(
+                QueryStringBuilder.Build("admin/courses", ("page", "1"), ("pageSize", "1000")));
+
+            UseWaitCursor = false;
+
+            _courses = result.Data?.Items ?? Array.Empty<CourseListItemDto>();
+        }
+
+        if (_courses.Count == 0)
+        {
+            MessageBox.Show(FindForm(), "Chưa có khóa học nào trong hệ thống.",
+                "Thiếu dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        // Mặc định chọn khóa học của lớp đang xem (nếu có).
+        int? maKhoaHoc = _report?.MaKhoaHoc;
+
+        using var dlg = new FormLoaiDiem(_courses, maKhoaHoc);
+
+        if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+        {
+            await LoadGradesAsync();
+        }
     }
 
     private async Task ReloadAsync()

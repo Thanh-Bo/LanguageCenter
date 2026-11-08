@@ -17,6 +17,8 @@ public sealed class FormDangKyHoc : Form
     private readonly ComboBox _cboChuongTrinh = UiHelpers.CreateComboBox(560);
     private readonly ComboBox _cboKhoaHoc = UiHelpers.CreateComboBox(560);
     private readonly ComboBox _cboLop = UiHelpers.CreateComboBox(560);
+    private readonly ComboBox _cboUuDai = UiHelpers.CreateComboBox(560);
+    private readonly TextBox _txtTimHocVien = UiHelpers.CreateTextBox(180);
     private readonly TextBox _txtLichMongMuon = UiHelpers.CreateTextBox(560);
     private readonly TextBox _txtGhiChu = UiHelpers.CreateTextBox(560);
     private readonly Label _lblHocPhi = new();
@@ -24,6 +26,7 @@ public sealed class FormDangKyHoc : Form
     private readonly Button _btnLuu = UiHelpers.CreatePrimaryButton("Tạo đăng ký", 150, 36);
     private readonly Button _btnHuy = UiHelpers.CreateSecondaryButton("Hủy bỏ", 110, 36);
 
+    private IReadOnlyList<PromotionListItemDto> _uuDais = Array.Empty<PromotionListItemDto>();
     private bool _dangNap;
 
     public bool DataChanged { get; private set; }
@@ -43,21 +46,22 @@ public sealed class FormDangKyHoc : Form
         MaximizeBox = false;
         MinimizeBox = false;
         ShowInTaskbar = false;
-        ClientSize = new Size(620, 550);
+        ClientSize = new Size(620, 660);
         BackColor = Color.White;
         Font = Theme.FontRegular;
 
         DungGiaoDien();
 
         // ComboBox mặc định chỉ cao ~106px (≈5 dòng) nên danh sách dài trông như
-        // "không đổ hết". Mở rộng vùng xổ xuống cho học viên / khóa học / lớp.
-        foreach (var cbo in new[] { _cboHocVien, _cboChuongTrinh, _cboKhoaHoc, _cboLop })
+        // "không đổ hết". Mở rộng vùng xổ xuống cho học viên / khóa học / lớp / ưu đãi.
+        foreach (var cbo in new[] { _cboHocVien, _cboChuongTrinh, _cboKhoaHoc, _cboLop, _cboUuDai })
         {
             cbo.DropDownHeight = 320;
             cbo.IntegralHeight = false;
         }
 
         NapDuLieu();
+        Load += async (_, _) => await NapUuDaiAsync();
     }
 
     private void DungGiaoDien()
@@ -71,18 +75,37 @@ public sealed class FormDangKyHoc : Form
             Location = new Point(24, 18)
         });
 
-        DatTruong("Học viên *", _cboHocVien, 56);
-        DatTruong("Chương trình *", _cboChuongTrinh, 116);
-        DatTruong("Khóa học *", _cboKhoaHoc, 176);
-        DatTruong("Lớp học (để trống nếu xếp lớp sau)", _cboLop, 236);
-        DatTruong("Lịch học mong muốn", _txtLichMongMuon, 296);
-        DatTruong("Ghi chú", _txtGhiChu, 356);
+        // ---- Học viên + ô tìm nhanh ----
+        Controls.Add(new Label
+        {
+            Text = "Học viên * (gõ để tìm nhanh theo mã / tên)",
+            AutoSize = true,
+            ForeColor = Theme.TextMedium,
+            Font = Theme.FontSub,
+            Location = new Point(24, 56)
+        });
+
+        _txtTimHocVien.Location = new Point(24, 76);
+        _txtTimHocVien.PlaceholderText = "Tìm mã / tên…";
+        _txtTimHocVien.TextChanged += (_, _) => LocHocVien();
+        Controls.Add(_txtTimHocVien);
+
+        _cboHocVien.Location = new Point(214, 76);
+        _cboHocVien.Width = 370;
+        Controls.Add(_cboHocVien);
+
+        DatTruong("Chương trình *", _cboChuongTrinh, 136);
+        DatTruong("Khóa học *", _cboKhoaHoc, 196);
+        DatTruong("Lớp học (để trống nếu xếp lớp sau)", _cboLop, 256);
+        DatTruong("Ưu đãi / khuyến mãi (để trống nếu không áp dụng)", _cboUuDai, 316);
+        DatTruong("Lịch học mong muốn", _txtLichMongMuon, 376);
+        DatTruong("Ghi chú", _txtGhiChu, 436);
 
         // Học phí hiện ngay cạnh ô khóa học (không nhồi vào tên khóa học cho dài dòng).
         _cboKhoaHoc.Width = 430;
         _lblHocPhi.AutoSize = false;
         _lblHocPhi.Size = new Size(126, 24);
-        _lblHocPhi.Location = new Point(462, 198);
+        _lblHocPhi.Location = new Point(462, 218);
         _lblHocPhi.Font = Theme.FontBold;
         _lblHocPhi.ForeColor = Theme.Primary;
         _lblHocPhi.TextAlign = ContentAlignment.MiddleRight;
@@ -98,15 +121,15 @@ public sealed class FormDangKyHoc : Form
 
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(570, 46);
-        _lblThongBao.Location = new Point(24, 412);
+        _lblThongBao.Location = new Point(24, 508);
         _lblThongBao.ForeColor = Theme.Danger;
         _lblThongBao.Font = Theme.FontSub;
         Controls.Add(_lblThongBao);
 
-        _btnLuu.Location = new Point(324, 478);
+        _btnLuu.Location = new Point(324, 574);
         _btnLuu.Click += async (_, _) => await LuuAsync();
 
-        _btnHuy.Location = new Point(482, 478);
+        _btnHuy.Location = new Point(482, 574);
         _btnHuy.Click += (_, _) => { DialogResult = DialogResult.Cancel; Close(); };
 
         Controls.Add(_btnLuu);
@@ -133,15 +156,80 @@ public sealed class FormDangKyHoc : Form
 
     private void NapDuLieu()
     {
+        LocHocVien();
+        DoVaoComboChuongTrinh();
+    }
+
+    /// <summary>Nạp danh sách ƯU ĐÃI còn hiệu lực từ API.</summary>
+    private async Task NapUuDaiAsync()
+    {
+        var result = await AppSession.Api.GetAsync<PagedResult<PromotionListItemDto>>(
+            QueryStringBuilder.Build("admin/promotions", ("page", "1"), ("pageSize", "1000")));
+
+        _uuDais = result.Success && result.Data is not null
+            ? result.Data.Items
+            : Array.Empty<PromotionListItemDto>();
+
+        _cboUuDai.Items.Clear();
+        _cboUuDai.Items.Add(KhongUuDai);
+
+        foreach (var u in _uuDais.Where(x => x.ConHieuLuc && x.TrangThai == "Hoạt động"))
+        {
+            var moTa = u.LoaiGiamGia == "Phần trăm"
+                ? $"{u.TenUuDai} — giảm {u.GiaTriGiam:0.##}%"
+                : $"{u.TenUuDai} — giảm {u.GiaTriGiam:N0} ₫";
+
+            _cboUuDai.Items.Add(new UuDaiItem(u.MaUuDai, moTa));
+        }
+
+        _cboUuDai.SelectedIndex = 0;
+    }
+
+    /// <summary>Lọc nhanh combo học viên theo mã hoặc tên (gõ vào ô bên trái).</summary>
+    private void LocHocVien()
+    {
+        var kw = _txtTimHocVien.Text.Trim();
+        var dangChon = (_cboHocVien.SelectedItem as HocVienItem)?.MaHocVien;
+
+        _dangNap = true;
         _cboHocVien.Items.Clear();
-        foreach (var hv in _hocViens.OrderBy(h => h.MaHocVien))
+
+        IEnumerable<StudentListItemDto> nguon = _hocViens;
+
+        if (!string.IsNullOrWhiteSpace(kw))
+        {
+            nguon = nguon.Where(h =>
+                h.MaHocVien.Contains(kw, StringComparison.OrdinalIgnoreCase)
+                || h.HoTen.Contains(kw, StringComparison.OrdinalIgnoreCase)
+                || (h.SoDienThoai ?? string.Empty).Contains(kw, StringComparison.OrdinalIgnoreCase));
+        }
+
+        foreach (var hv in nguon.OrderBy(h => h.MaHocVien))
         {
             _cboHocVien.Items.Add(new HocVienItem(hv.MaHocVien,
                 $"{hv.MaHocVien} — {hv.HoTen} ({hv.TrangThaiHocTap})"));
         }
-        if (_cboHocVien.Items.Count > 0) _cboHocVien.SelectedIndex = 0;
 
-        DoVaoComboChuongTrinh();
+        if (_cboHocVien.Items.Count > 0)
+        {
+            var viTri = 0;
+
+            if (dangChon is not null)
+            {
+                for (var i = 0; i < _cboHocVien.Items.Count; i++)
+                {
+                    if (_cboHocVien.Items[i] is HocVienItem it && it.MaHocVien == dangChon)
+                    {
+                        viTri = i;
+                        break;
+                    }
+                }
+            }
+
+            _cboHocVien.SelectedIndex = viTri;
+        }
+
+        _dangNap = false;
     }
 
     /// <summary>Đổ danh sách CHƯƠNG TRÌNH (lấy từ các khóa học đang có) rồi nạp khóa học theo chương trình.</summary>
@@ -243,6 +331,7 @@ public sealed class FormDangKyHoc : Form
         }
 
         var maLopHoc = (_cboLop.SelectedItem as LopItem)?.MaLopHoc;
+        var maUuDai = (_cboUuDai.SelectedItem as UuDaiItem)?.MaUuDai;
 
         _btnLuu.Enabled = false;
         UseWaitCursor = true;
@@ -252,6 +341,7 @@ public sealed class FormDangKyHoc : Form
             maHocVien = hocVien.MaHocVien,
             maKhoaHoc = khoaHoc.MaKhoaHoc,
             maLopHoc,
+            maUuDai,
             lichHocMongMuon = string.IsNullOrWhiteSpace(_txtLichMongMuon.Text) ? null : _txtLichMongMuon.Text.Trim(),
             ghiChu = string.IsNullOrWhiteSpace(_txtGhiChu.Text) ? null : _txtGhiChu.Text.Trim()
         });
@@ -276,6 +366,13 @@ public sealed class FormDangKyHoc : Form
     {
         public override string ToString() => MoTa;
     }
+
+    private sealed record UuDaiItem(int MaUuDai, string MoTa)
+    {
+        public override string ToString() => MoTa;
+    }
+
+    private const string KhongUuDai = "— Không áp dụng ưu đãi —";
 
     private sealed record KhoaHocItem(int MaKhoaHoc, string MoTa, decimal HocPhiCoBan)
     {

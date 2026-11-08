@@ -12,6 +12,9 @@ public partial class UcPhanCongGiangDay : UserControl
     private IReadOnlyList<ClassListItemDto> _classes = Array.Empty<ClassListItemDto>();
     private Button _btnKetThuc = null!;
     private Button _btnGanNhanSu = null!;
+
+    /// <summary>Lọc theo trạng thái phân công (Đang phân công / Chờ / Đã kết thúc / Đã huỷ).</summary>
+    private ComboBox _cboTrangThai = null!;
     private bool _dangNap;
 
     public UcPhanCongGiangDay()
@@ -61,6 +64,21 @@ public partial class UcPhanCongGiangDay : UserControl
         cboVaiTro.Items.Add(AllOption);
         cboVaiTro.Items.AddRange(["Giáo viên chính", "Giáo viên nước ngoài", "Trợ giảng"]);
         cboVaiTro.SelectedIndex = 0;
+
+        // Bộ lọc TRẠNG THÁI PHÂN CÔNG — để xem lại lịch sử (đã kết thúc / đã huỷ).
+        _cboTrangThai = new ComboBox
+        {
+            Font = new Font("Segoe UI", 9.5f),
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Width = 170,
+            Location = new Point(84, 4)
+        };
+        _cboTrangThai.Items.Add(AllOption);
+        _cboTrangThai.Items.AddRange(["Đang phân công", "Chờ phân công", "Đã kết thúc", "Đã huỷ"]);
+        _cboTrangThai.SelectedIndex = 0;
+        _cboTrangThai.SelectedIndexChanged += (_, _) => { if (!_dangNap) ApplyFilter(); };
+        pnlToolbar.Controls.Add(_cboTrangThai);
+
         _dangNap = false;
         Load += async (_, _) => await ReloadAsync();
     }
@@ -189,11 +207,13 @@ public partial class UcPhanCongGiangDay : UserControl
         var kw = txtSearch.Text.Trim();
         var lop = cboLopHoc.SelectedItem as LopLoc;
         var vaiTro = cboVaiTro.SelectedItem?.ToString() ?? AllOption;
+        var trangThai = _cboTrangThai?.SelectedItem?.ToString() ?? AllOption;
 
         var query = _all.AsEnumerable();
 
         if (lop is not null) query = query.Where(a => a.MaLopHoc == lop.MaLopHoc);
         if (vaiTro != AllOption) query = query.Where(a => a.VaiTroPhanCong == vaiTro);
+        if (trangThai != AllOption) query = query.Where(a => a.TrangThai == trangThai);
 
         if (!string.IsNullOrWhiteSpace(kw))
         {

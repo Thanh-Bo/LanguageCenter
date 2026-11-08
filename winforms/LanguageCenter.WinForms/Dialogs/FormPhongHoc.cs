@@ -27,9 +27,21 @@ public sealed class FormPhongHoc : Form
 
     public RoomListItemDto? PhongVuaTao { get; private set; }
 
-    public FormPhongHoc()
+    /// <summary>True khi đã lưu thành công — nơi gọi nên tải lại danh sách.</summary>
+    public bool DataChanged { get; private set; }
+
+    private readonly RoomListItemDto? _existing;
+
+    public FormPhongHoc() : this(null)
     {
-        Text = "Thêm phòng học";
+    }
+
+    /// <param name="existing">Truyền vào để mở chế độ SỬA (PATCH /api/admin/rooms/{id}).</param>
+    public FormPhongHoc(RoomListItemDto? existing)
+    {
+        _existing = existing;
+
+        Text = existing is null ? "Thêm phòng học" : $"Cập nhật phòng — {existing.MaPhong}";
         StartPosition = FormStartPosition.CenterParent;
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -46,17 +58,17 @@ public sealed class FormPhongHoc : Form
     {
         Controls.Add(new Label
         {
-            Text = "THÊM PHÒNG HỌC MỚI",
+            Text = _existing is null ? "THÊM PHÒNG HỌC MỚI" : "CẬP NHẬT PHÒNG HỌC",
             Font = Theme.FontHeading,
             ForeColor = Theme.Primary,
             AutoSize = true,
             Location = new Point(24, 18)
         });
 
-        DatTruong("Mã phòng (tự động sinh)", _txtMaPhong, 56);
+        DatTruong("Mã phòng", _txtMaPhong, 56);
         _txtMaPhong.ReadOnly = true;
         _txtMaPhong.BackColor = Color.FromArgb(241, 245, 249);
-        _txtMaPhong.Text = "(tự động sinh khi lưu)";
+        _txtMaPhong.Text = _existing?.MaPhong ?? "(tự động sinh khi lưu)";
 
         DatTruong("Tên phòng *", _txtTenPhong, 116);
         _txtTenPhong.MaxLength = 100;
@@ -80,6 +92,19 @@ public sealed class FormPhongHoc : Form
         DatTruong("Trạng thái *", _cboTrangThai, 356);
         _cboTrangThai.Items.AddRange(TrangThaiPhong);
         _cboTrangThai.SelectedIndex = 0;
+
+        if (_existing is not null)
+        {
+            _txtTenPhong.Text = _existing.TenPhong;
+            _txtViTri.Text = _existing.ViTri ?? string.Empty;
+            _txtThietBi.Text = _existing.ThietBi ?? string.Empty;
+            _numSucChua.Value = Math.Clamp(_existing.SucChua, 1, 1000);
+
+            var viTriTt = Array.IndexOf(TrangThaiPhong, _existing.TrangThai);
+            if (viTriTt >= 0) _cboTrangThai.SelectedIndex = viTriTt;
+
+            _btnLuu.Text = "Lưu thay đổi";
+        }
 
         _lblThongBao.AutoSize = false;
         _lblThongBao.Size = new Size(552, 40);
@@ -132,14 +157,23 @@ public sealed class FormPhongHoc : Form
         UseWaitCursor = true;
 
         // Mã phòng do server tự sinh — KHÔNG gửi maPhong lên.
-        var result = await AppSession.Api.PostAsync<RoomListItemDto>("admin/rooms", new
-        {
-            tenPhong,
-            viTri = string.IsNullOrWhiteSpace(_txtViTri.Text) ? null : _txtViTri.Text.Trim(),
-            sucChua = (int)_numSucChua.Value,
-            thietBi = string.IsNullOrWhiteSpace(_txtThietBi.Text) ? null : _txtThietBi.Text.Trim(),
-            trangThai = _cboTrangThai.SelectedItem as string
-        });
+        var result = _existing is null
+            ? await AppSession.Api.PostAsync<RoomListItemDto>("admin/rooms", new
+            {
+                tenPhong,
+                viTri = string.IsNullOrWhiteSpace(_txtViTri.Text) ? null : _txtViTri.Text.Trim(),
+                sucChua = (int)_numSucChua.Value,
+                thietBi = string.IsNullOrWhiteSpace(_txtThietBi.Text) ? null : _txtThietBi.Text.Trim(),
+                trangThai = _cboTrangThai.SelectedItem as string
+            })
+            : await AppSession.Api.PatchAsync<RoomListItemDto>($"admin/rooms/{_existing.MaPhongHoc}", new
+            {
+                tenPhong,
+                viTri = _txtViTri.Text.Trim(),
+                sucChua = (int)_numSucChua.Value,
+                thietBi = _txtThietBi.Text.Trim(),
+                trangThai = _cboTrangThai.SelectedItem as string
+            });
 
         UseWaitCursor = false;
         _btnLuu.Enabled = true;
@@ -159,10 +193,14 @@ public sealed class FormPhongHoc : Form
         }
 
         PhongVuaTao = result.Data;
+        DataChanged = true;
 
-        MessageBox.Show(this,
-            $"Đã thêm phòng học:\n\n• Mã phòng: {result.Data?.MaPhong}\n• Tên phòng: {result.Data?.TenPhong}",
-            "Thêm phòng thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        if (_existing is null)
+        {
+            MessageBox.Show(this,
+                $"Đã thêm phòng học:\n\n• Mã phòng: {result.Data?.MaPhong}\n• Tên phòng: {result.Data?.TenPhong}",
+                "Thêm phòng thành công", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
 
         DialogResult = DialogResult.OK;
         Close();

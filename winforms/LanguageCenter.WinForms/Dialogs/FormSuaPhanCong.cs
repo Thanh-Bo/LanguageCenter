@@ -112,6 +112,12 @@ public partial class FormSuaPhanCong : Form
     /// Tải phân công hiện có của lớp đang chọn — nhờ vậy lưu lần 2 sẽ CẬP NHẬT
     /// thay vì tạo thêm dòng trùng.
     /// </summary>
+    /// <summary>Lớp đang chọn — so khớp bằng MÃ lớp (không dùng index).</summary>
+    private ClassListItemDto? LopDangChon
+        => cboLopHoc.SelectedItem is LopItem item
+            ? _classes.FirstOrDefault(c => c.MaLopHoc == item.MaLopHoc)
+            : null;
+
     private async Task NapPhanCongCuaLopAsync()
     {
         if (_lopChiDinh is not null)
@@ -119,12 +125,12 @@ public partial class FormSuaPhanCong : Form
             return; // lớp cố định → đã có danh sách truyền vào
         }
 
-        if (cboLopHoc.SelectedIndex < 0 || cboLopHoc.SelectedIndex >= _classes.Count)
-        {
-            return;
-        }
+        var lop = LopDangChon;
 
-        var lop = _classes[cboLopHoc.SelectedIndex];
+        if (lop is null)
+        {
+            return; // lớp cố định → đã có danh sách truyền vào
+        }
 
         var result = await AppSession.Api.GetAsync<PagedResult<AssignmentListItemDto>>(
             QueryStringBuilder.Build(
@@ -147,13 +153,13 @@ public partial class FormSuaPhanCong : Form
     /// <summary>Hiển thị khoảng ngày của lớp đang chọn (phân công bám theo lớp).</summary>
     private void CapNhatThoiGian()
     {
-        if (cboLopHoc.SelectedIndex < 0 || cboLopHoc.SelectedIndex >= _classes.Count)
+        var lop = LopDangChon;
+
+        if (lop is null)
         {
             _lblThoiGian.Text = "—";
             return;
         }
-
-        var lop = _classes[cboLopHoc.SelectedIndex];
 
         _lblThoiGian.Text = $"{lop.NgayBatDau:dd/MM/yyyy}  →  {lop.NgayKetThucDuKien:dd/MM/yyyy}";
     }
@@ -206,8 +212,7 @@ public partial class FormSuaPhanCong : Form
         cboLopHoc.Items.Clear();
         foreach (var c in _classes)
         {
-            // Chỉ hiển thị TÊN lớp — mã lớp không cần thiết trong ô chọn này.
-            cboLopHoc.Items.Add(c.TenLop);
+            cboLopHoc.Items.Add(new LopItem(c.MaLopHoc, c.TenLop));
         }
         if (cboLopHoc.Items.Count > 0)
         {
@@ -250,7 +255,7 @@ public partial class FormSuaPhanCong : Form
 
         foreach (var t in _teachers.Where(t => string.Equals(t.LoaiGiaoVien, loaiHoSo, StringComparison.OrdinalIgnoreCase)))
         {
-            cbo.Items.Add($"{t.MaGiaoVien} - {t.HoTen}");
+            cbo.Items.Add(new NhanSuItem(t.MaGiaoVien, $"{t.MaGiaoVien} - {t.HoTen}"));
         }
 
         cbo.SelectedIndex = 0;
@@ -270,10 +275,9 @@ public partial class FormSuaPhanCong : Form
 
             for (var i = 1; i < cbo.Items.Count; i++)
             {
-                var item = cbo.Items[i]?.ToString();
-
-                if (item is not null && a.MaGiaoVien is not null
-                    && item.StartsWith(a.MaGiaoVien + " ", StringComparison.OrdinalIgnoreCase))
+                if (cbo.Items[i] is NhanSuItem item
+                    && a.MaGiaoVien is not null
+                    && string.Equals(item.MaGiaoVien, a.MaGiaoVien, StringComparison.OrdinalIgnoreCase))
                 {
                     cbo.SelectedIndex = i;
                     break;
@@ -284,26 +288,36 @@ public partial class FormSuaPhanCong : Form
 
     private TeacherListItemDto? NguoiDangChon(ComboBox cbo)
     {
-        if (cbo.SelectedIndex <= 0)
+        if (cbo.SelectedIndex <= 0 || cbo.Items[cbo.SelectedIndex] is not NhanSuItem item)
         {
             return null;
         }
 
-        var dong = cbo.Items[cbo.SelectedIndex]?.ToString();
-        var ma = dong?.Split(" - ")[0];
+        return _teachers.FirstOrDefault(t => t.MaGiaoVien == item.MaGiaoVien);
+    }
 
-        return _teachers.FirstOrDefault(t => t.MaGiaoVien == ma);
+    /// <summary>Mục trong ô chọn nhân sự — so khớp bằng MÃ, không tách chuỗi.</summary>
+    private sealed record NhanSuItem(string MaGiaoVien, string MoTa)
+    {
+        public override string ToString() => MoTa;
+    }
+
+    /// <summary>Mục trong ô chọn lớp — so khớp bằng MÃ lớp.</summary>
+    private sealed record LopItem(int MaLopHoc, string MoTa)
+    {
+        public override string ToString() => MoTa;
     }
 
     private async void BtnSave_Click(object? sender, EventArgs e)
     {
-        if (cboLopHoc.SelectedIndex < 0 || cboLopHoc.SelectedIndex >= _classes.Count)
+        var lop = LopDangChon;
+
+        if (lop is null)
         {
             MessageBox.Show(this, "Vui lòng chọn lớp học.", "Thiếu thông tin", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
         }
 
-        var lop = _classes[cboLopHoc.SelectedIndex];
         var giaoVienChinh = NguoiDangChon(cboNhanSu);
         var giaoVienNuocNgoai = NguoiDangChon(_cboNuocNgoai);
         var troGiang = NguoiDangChon(cboTroGiang);

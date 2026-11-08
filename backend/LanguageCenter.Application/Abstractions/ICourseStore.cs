@@ -25,6 +25,12 @@ public interface ICourseStore
 
     Task<WriteOutcome> UpdateStatusAsync(int maKhoaHoc, string trangThai, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Xoá khóa học. Trả <c>Conflict</c> khi còn Cấp độ/Lớp học/Nội dung buổi học/
+    /// Loại điểm/Đăng ký học tham chiếu (FK Restrict).
+    /// </summary>
+    Task<WriteOutcome> DeleteAsync(int maKhoaHoc, CancellationToken cancellationToken);
+
     /// <summary>Học phí cơ bản + trạng thái hiện tại — dùng khi tạo đăng ký học.</summary>
     Task<CourseTuitionInfo?> GetTuitionInfoAsync(int maKhoaHoc, CancellationToken cancellationToken);
 }

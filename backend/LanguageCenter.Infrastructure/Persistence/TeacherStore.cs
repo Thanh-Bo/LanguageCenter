@@ -117,6 +117,13 @@ public sealed class TeacherStore : ITeacherStore
             source = source.Where(giaoVien => giaoVien.LoaiGiaoVien == query.LoaiGiaoVien);
         }
 
+        // Lọc trạng thái PHẢI chạy ở SQL: nếu để client lọc sau khi phân trang
+        // thì chỉ lọc đúng 20 dòng của trang hiện tại → sai kết quả.
+        if (!string.IsNullOrWhiteSpace(query.TrangThai))
+        {
+            source = source.Where(giaoVien => giaoVien.TrangThai == query.TrangThai);
+        }
+
         var totalItems = await source.CountAsync(cancellationToken);
 
         var items = await source

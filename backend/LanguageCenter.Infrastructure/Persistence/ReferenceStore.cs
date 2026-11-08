@@ -42,4 +42,11 @@ public sealed class ReferenceStore : IReferenceStore
             .Where(x => x.MaHocVien == maHocVien)
             .Select(x => (string?)x.TrangThaiHocTap)
             .FirstOrDefaultAsync(cancellationToken);
+
+    public async Task<IReadOnlyList<StaffOptionDto>> ListStaffAsync(CancellationToken cancellationToken)
+        => await _dbContext.NhanViens
+            .AsNoTracking()
+            .OrderBy(x => x.MaNhanVien)
+            .Select(x => new StaffOptionDto(x.MaNhanVien, x.HoTen, x.ChucVu, x.TrangThaiLamViec))
+            .ToListAsync(cancellationToken);
 }

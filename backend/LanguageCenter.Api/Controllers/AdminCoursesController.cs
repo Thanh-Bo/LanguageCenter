@@ -71,4 +71,14 @@ public sealed class AdminCoursesController : ControllerBase
         [FromBody] UpdateStatusRequest request,
         CancellationToken cancellationToken)
         => (await _courseService.UpdateStatusAsync(id, request, cancellationToken)).ToActionResult();
+
+    /// <summary>
+    /// Xoá khóa học — CHỈ khi chưa có lớp học / đăng ký / nội dung buổi học / loại điểm.
+    /// </summary>
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
+        => (await _courseService.DeleteAsync(id, cancellationToken)).ToActionResult();
 }

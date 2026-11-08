@@ -100,4 +100,80 @@ public sealed class RoomService : IRoomService
 
         return OperationResult<RoomListItemDto>.Created(created!, "Tạo phòng học thành công.");
     }
+
+    public async Task<OperationResult<RoomListItemDto>> UpdateAsync(
+        int maPhongHoc,
+        UpdateRoomRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (request.TenPhong is null
+            && request.ViTri is null
+            && request.SucChua is null
+            && request.ThietBi is null
+            && request.TrangThai is null)
+        {
+            return OperationResult<RoomListItemDto>.BadRequest(
+                "Không có trường nào được cập nhật.",
+                ["Hãy gửi ít nhất một trường cần thay đổi."]);
+        }
+
+        if (request.TenPhong is not null && string.IsNullOrWhiteSpace(request.TenPhong))
+        {
+            return OperationResult<RoomListItemDto>.BadRequest("Tên phòng không được để trống.");
+        }
+
+        if (request.SucChua is { } sucChua && sucChua <= 0)
+        {
+            return OperationResult<RoomListItemDto>.BadRequest("Sức chứa phải lớn hơn 0.");
+        }
+
+        if (request.TrangThai is { } trangThai)
+        {
+            trangThai = trangThai.Trim();
+
+            if (!RoomStatuses.IsValid(trangThai))
+            {
+                return OperationResult<RoomListItemDto>.BadRequest(
+                    "Trạng thái phòng không hợp lệ.",
+                    [$"Chỉ chấp nhận: {string.Join(", ", RoomStatuses.All)}."]);
+            }
+        }
+
+        var outcome = await _roomStore.UpdateAsync(maPhongHoc, request, cancellationToken);
+
+        if (outcome == WriteOutcome.NotFound)
+        {
+            return OperationResult<RoomListItemDto>.NotFound($"Không tìm thấy phòng có id = {maPhongHoc}.");
+        }
+
+        if (outcome != WriteOutcome.Success)
+        {
+            return OperationResult<RoomListItemDto>.Conflict("Không cập nhật được phòng học.");
+        }
+
+        var updated = await _roomStore.GetDetailAsync(maPhongHoc, cancellationToken);
+
+        return OperationResult<RoomListItemDto>.Ok(updated!);
+    }
+
+    public async Task<OperationResult<RoomListItemDto>> DeleteAsync(
+        int maPhongHoc,
+        CancellationToken cancellationToken)
+    {
+        var outcome = await _roomStore.DeleteAsync(maPhongHoc, cancellationToken);
+
+        if (outcome == WriteOutcome.NotFound)
+        {
+            return OperationResult<RoomListItemDto>.NotFound($"Không tìm thấy phòng có id = {maPhongHoc}.");
+        }
+
+        if (outcome == WriteOutcome.Conflict)
+        {
+            return OperationResult<RoomListItemDto>.Conflict(
+                "Không xoá được phòng vì đang có lịch học hoặc ca học sử dụng. "
+                + "Hãy đổi trạng thái sang 'Ngưng sử dụng' thay vì xoá.");
+        }
+
+        return OperationResult<RoomListItemDto>.NoContent();
+    }
 }

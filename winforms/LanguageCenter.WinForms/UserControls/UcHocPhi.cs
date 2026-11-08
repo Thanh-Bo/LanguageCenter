@@ -31,6 +31,7 @@ public partial class UcHocPhi : UserControl
     private int _currentTab = 0; // 0: Sổ học phí, 1: Lịch sử thanh toán, 2: Quản lý biên nhận
 
     private Button _btnTaoPhieu = null!;
+    private Button _btnSuaPhieu = null!;
 
     public UcHocPhi()
     {
@@ -56,6 +57,10 @@ public partial class UcHocPhi : UserControl
         _btnTaoPhieu = UiHelpers.CreateSecondaryButton("Tạo phiếu học phí", 150, 34);
         _btnTaoPhieu.Click += BtnTaoPhieu_Click;
         pnlToolbar.Controls.Add(_btnTaoPhieu);
+
+        _btnSuaPhieu = UiHelpers.CreateSecondaryButton("Sửa phiếu", 120, 34);
+        _btnSuaPhieu.Click += async (_, _) => await SuaPhieuAsync();
+        pnlToolbar.Controls.Add(_btnSuaPhieu);
 
         pnlToolbar.Resize += (_, _) => SapXepThanhCongCu();
         SapXepThanhCongCu();
@@ -151,141 +156,6 @@ public partial class UcHocPhi : UserControl
         tblStats.Controls.Add(UI.UiHelpers.CreateStatCard("Tỷ lệ thu học phí", $"{rate:F1}%", "Chỉ tiêu thu kỳ hiện hành", Theme.Purple), 3, 0);
     }
 
-    private void LoadSampleData()
-    {
-        _items.Clear();
-        _items.AddRange([
-            new TuitionFeeItem
-            {
-                MaHocPhi = "HP2026-001",
-                MaDangKy = "DK001",
-                MaHocVien = "HV001",
-                HoTenHocVien = "Trần Bảo Ngọc",
-                TenKhoaLop = "IELTS Master 7.5+ (Lớp IE-A01)",
-                SoTienGoc = 12500000m,
-                SoTienGiam = 1250000m,
-                SoTienPhaiDong = 11250000m,
-                SoTienDaDong = 11250000m,
-                SoTienConThieu = 0m,
-                HanThanhToan = new DateOnly(2026, 10, 15),
-                TrangThaiHocPhi = "Đã hoàn thành",
-                PhuongThuc = "Chuyển khoản (Vietcombank)",
-                SoBienNhan = "BN-2026-0018",
-                NgayThanhToan = DateTime.Now.AddDays(-10)
-            },
-            new TuitionFeeItem
-            {
-                MaHocPhi = "HP2026-002",
-                MaDangKy = "DK002",
-                MaHocVien = "HV002",
-                HoTenHocVien = "Lê Hoàng Nam",
-                TenKhoaLop = "Giao tiếp phản xạ PRO (Lớp GT-B02)",
-                SoTienGoc = 6800000m,
-                SoTienGiam = 500000m,
-                SoTienPhaiDong = 6300000m,
-                SoTienDaDong = 3500000m,
-                SoTienConThieu = 2800000m,
-                HanThanhToan = new DateOnly(2026, 10, 25),
-                TrangThaiHocPhi = "Đóng đợt 1",
-                PhuongThuc = "Tiền mặt tại quầy",
-                SoBienNhan = "BN-2026-0034",
-                NgayThanhToan = DateTime.Now.AddDays(-5)
-            },
-            new TuitionFeeItem
-            {
-                MaHocPhi = "HP2026-003",
-                MaDangKy = "DK003",
-                MaHocVien = "HV003",
-                HoTenHocVien = "Vũ Thuỳ Linh",
-                TenKhoaLop = "Luyện thi TOEIC 750+ (Lớp TC-C01)",
-                SoTienGoc = 5500000m,
-                SoTienGiam = 0m,
-                SoTienPhaiDong = 5500000m,
-                SoTienDaDong = 0m,
-                SoTienConThieu = 5500000m,
-                HanThanhToan = new DateOnly(2026, 10, 20),
-                TrangThaiHocPhi = "Chưa thanh toán",
-                PhuongThuc = "— Chưa nộp —",
-                SoBienNhan = "—",
-                NgayThanhToan = null
-            },
-            new TuitionFeeItem
-            {
-                MaHocPhi = "HP2026-004",
-                MaDangKy = "DK004",
-                MaHocVien = "HV004",
-                HoTenHocVien = "Nguyễn Minh Khang",
-                TenKhoaLop = "Tiếng Anh Thiếu nhi Movers (Lớp KD-03)",
-                SoTienGoc = 7500000m,
-                SoTienGiam = 750000m,
-                SoTienPhaiDong = 6750000m,
-                SoTienDaDong = 6750000m,
-                SoTienConThieu = 0m,
-                HanThanhToan = new DateOnly(2026, 10, 10),
-                TrangThaiHocPhi = "Đã hoàn thành",
-                PhuongThuc = "VNPay-QR / Thẻ",
-                SoBienNhan = "BN-2026-0052",
-                NgayThanhToan = DateTime.Now.AddDays(-8)
-            },
-            new TuitionFeeItem
-            {
-                MaHocPhi = "HP2026-005",
-                MaDangKy = "DK005",
-                MaHocVien = "HV005",
-                HoTenHocVien = "Phạm Quỳnh Anh",
-                TenKhoaLop = "IELTS Intensive 6.5 (Lớp IE-B01)",
-                SoTienGoc = 9800000m,
-                SoTienGiam = 800000m,
-                SoTienPhaiDong = 9000000m,
-                SoTienDaDong = 4500000m,
-                SoTienConThieu = 4500000m,
-                HanThanhToan = new DateOnly(2026, 10, 30),
-                TrangThaiHocPhi = "Đóng đợt 1",
-                PhuongThuc = "Chuyển khoản (Vietcombank)",
-                SoBienNhan = "BN-2026-0067",
-                NgayThanhToan = DateTime.Now.AddDays(-2)
-            },
-            new TuitionFeeItem
-            {
-                MaHocPhi = "HP2026-006",
-                MaDangKy = "DK006",
-                MaHocVien = "HV006",
-                HoTenHocVien = "Đỗ Gia Huy",
-                TenKhoaLop = "Tiếng Anh Giao tiếp căn bản (Lớp GT-A01)",
-                SoTienGoc = 4500000m,
-                SoTienGiam = 0m,
-                SoTienPhaiDong = 4500000m,
-                SoTienDaDong = 4500000m,
-                SoTienConThieu = 0m,
-                HanThanhToan = new DateOnly(2026, 10, 12),
-                TrangThaiHocPhi = "Đã hoàn thành",
-                PhuongThuc = "Tiền mặt tại quầy",
-                SoBienNhan = "BN-2026-0071",
-                NgayThanhToan = DateTime.Now.AddDays(-6)
-            },
-            new TuitionFeeItem
-            {
-                MaHocPhi = "HP2026-007",
-                MaDangKy = "DK007",
-                MaHocVien = "HV007",
-                HoTenHocVien = "Hoàng Mai Linh",
-                TenKhoaLop = "Luyện thi TOEIC Chuyên sâu 800+ (Lớp TC-A02)",
-                SoTienGoc = 7200000m,
-                SoTienGiam = 500000m,
-                SoTienPhaiDong = 6700000m,
-                SoTienDaDong = 0m,
-                SoTienConThieu = 6700000m,
-                HanThanhToan = new DateOnly(2026, 10, 28),
-                TrangThaiHocPhi = "Chưa thanh toán",
-                PhuongThuc = "— Chưa nộp —",
-                SoBienNhan = "—",
-                NgayThanhToan = null
-            }
-        ]);
-
-        FilterData();
-    }
-
     private void SwitchTab(int tabIndex)
     {
         _currentTab = tabIndex;
@@ -309,6 +179,7 @@ public partial class UcHocPhi : UserControl
         btnCollectFee.Visible = _currentTab == 0;
         btnPrintReceipt.Text = _currentTab == 2 ? "In lại biên nhận" : "In biên lai";
         if (_btnTaoPhieu is not null) _btnTaoPhieu.Visible = _currentTab == 0;
+        if (_btnSuaPhieu is not null) _btnSuaPhieu.Visible = _currentTab == 0;
         SapXepThanhCongCu();
 
         cboTrangThai.Visible = _currentTab == 0;
@@ -321,7 +192,7 @@ public partial class UcHocPhi : UserControl
     {
         var right = pnlToolbar.Width - 4;
 
-        foreach (var button in new[] { btnPrintReceipt, btnCollectFee, _btnTaoPhieu })
+        foreach (var button in new[] { btnPrintReceipt, btnCollectFee, _btnTaoPhieu, _btnSuaPhieu })
         {
             if (button is null || !button.Visible) continue;
 
@@ -371,10 +242,46 @@ public partial class UcHocPhi : UserControl
         }
     }
 
+    /// <summary>Mở hộp thoại sửa phiếu học phí đang chọn (hạn thanh toán / đồng bộ ưu đãi).</summary>
+    private async Task SuaPhieuAsync()
+    {
+        if (dgvTuition.CurrentRow is null || dgvTuition.CurrentRow.Index < 0)
+        {
+            MessageBox.Show(FindForm(), "Vui lòng chọn một dòng học phí cần sửa.",
+                "Chưa chọn phiếu", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var maHocPhi = dgvTuition.Rows[dgvTuition.CurrentRow.Index].Cells["MaHocPhi"].Value?.ToString();
+        var phieu = _items.FirstOrDefault(x => x.MaHocPhi == maHocPhi);
+
+        if (phieu is null)
+        {
+            MessageBox.Show(FindForm(), "Không tìm thấy phiếu học phí tương ứng trong dữ liệu đã tải.",
+                "Thiếu dữ liệu", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        var chiTiet = await AppSession.Api.GetAsync<TuitionItemDto>($"admin/tuition-fees/{phieu.MaHocPhi}");
+
+        if (!chiTiet.Success || chiTiet.Data is null)
+        {
+            MessageBox.Show(FindForm(), chiTiet.ErrorMessage, "Không tải được phiếu",
+                MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        using var dlg = new FormSuaHocPhi(chiTiet.Data);
+
+        if (dlg.ShowDialog(FindForm()) == DialogResult.OK)
+        {
+            await ReloadAsync();
+        }
+    }
+
     private void FilterData()
     {
         UpdateStats();
-
         var search = txtSearch.Text.Trim();
         var status = cboTrangThai.SelectedItem?.ToString();
         var method = cboPhuongThuc.SelectedItem?.ToString();

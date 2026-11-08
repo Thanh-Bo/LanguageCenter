@@ -203,10 +203,13 @@ public sealed class FormCaHoc : Form
 
         _cboGiaoVien.Items.Clear();
         _cboGiaoVien.Items.Add("— Không chỉ định —");
-        foreach (var gv in _teachers.OrderBy(t => t.MaGiaoVien))
+        // Giáo viên thực tế của ca phải là hồ sơ "Giáo viên" — không cho chọn trợ giảng.
+        foreach (var gv in _teachers
+                     .Where(t => t.LoaiGiaoVien == TeacherTypes.GiaoVien)
+                     .OrderBy(t => t.MaGiaoVien))
         {
             _cboGiaoVien.Items.Add(new GiaoVienItem(gv.MaGiaoVien,
-                $"{gv.MaGiaoVien} — {gv.HoTen} ({gv.LoaiGiaoVien})"));
+                $"{gv.MaGiaoVien} — {gv.HoTen}"));
         }
         _cboGiaoVien.SelectedIndex = 0;
 

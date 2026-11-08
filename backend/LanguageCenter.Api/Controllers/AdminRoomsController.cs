@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace LanguageCenter.Api.Controllers;
 
 /// <summary>
-/// Danh mục phòng học — đọc + tạo mới. Dùng để chọn phòng khi tạo lịch học / ca học.
+/// Danh mục phòng học — đọc, tạo, sửa, xoá. Dùng để chọn phòng khi tạo lịch học / ca học.
 /// </summary>
 [ApiController]
 [Route("api/admin/rooms")]
@@ -47,4 +47,23 @@ public sealed class AdminRoomsController : ControllerBase
         [FromBody] CreateRoomRequest request,
         CancellationToken cancellationToken)
         => (await _roomService.CreateAsync(request, cancellationToken)).ToActionResult();
+
+    /// <summary>Cập nhật phòng học (PATCH) — mọi field đều tùy chọn.</summary>
+    [HttpPatch("{id:int}")]
+    [ProducesResponseType(typeof(RoomListItemDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> UpdateAsync(
+        int id,
+        [FromBody] UpdateRoomRequest request,
+        CancellationToken cancellationToken)
+        => (await _roomService.UpdateAsync(id, request, cancellationToken)).ToActionResult();
+
+    /// <summary>Xoá phòng học — chặn khi còn lịch học / ca học dùng phòng.</summary>
+    [HttpDelete("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
+    public async Task<IActionResult> DeleteAsync(int id, CancellationToken cancellationToken)
+        => (await _roomService.DeleteAsync(id, cancellationToken)).ToActionResult();
 }

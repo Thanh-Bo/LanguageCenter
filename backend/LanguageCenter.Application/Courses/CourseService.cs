@@ -173,6 +173,27 @@ public sealed class CourseService : ICourseService
         return OperationResult<CourseDetailDto>.Ok(updated!);
     }
 
+    public async Task<OperationResult<CourseDetailDto>> DeleteAsync(
+        int maKhoaHoc,
+        CancellationToken cancellationToken)
+    {
+        var outcome = await _courseStore.DeleteAsync(maKhoaHoc, cancellationToken);
+
+        if (outcome == WriteOutcome.NotFound)
+        {
+            return OperationResult<CourseDetailDto>.NotFound($"Không tìm thấy khóa học có id = {maKhoaHoc}.");
+        }
+
+        if (outcome == WriteOutcome.Conflict)
+        {
+            return OperationResult<CourseDetailDto>.Conflict(
+                "Không xoá được khóa học vì đang có lớp học / đăng ký học / nội dung buổi học / loại điểm. "
+                + "Hãy đổi trạng thái sang 'Đã kết thúc' thay vì xoá.");
+        }
+
+        return OperationResult<CourseDetailDto>.NoContent();
+    }
+
     // ========================================================================
     // PRIVATE HELPERS
     // ========================================================================

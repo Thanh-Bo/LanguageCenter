@@ -24,4 +24,17 @@ public interface IReferenceStore
 
     /// <summary>Trả <c>TrangThaiHocTap</c> của học viên; <c>null</c> nếu không tồn tại.</summary>
     Task<string?> GetStudentStatusAsync(string maHocVien, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Danh sách nhân viên đang làm việc — dùng để chọn "Nhân viên học vụ phụ trách",
+    /// "Nhân viên tư vấn", "Nhân viên kế toán" trên các form WinForms.
+    /// </summary>
+    Task<IReadOnlyList<StaffOptionDto>> ListStaffAsync(CancellationToken cancellationToken);
 }
+
+/// <summary>Một nhân viên rút gọn cho các ô chọn (dropdown).</summary>
+public sealed record StaffOptionDto(
+    string MaNhanVien,
+    string HoTen,
+    string ChucVu,
+    string TrangThaiLamViec);

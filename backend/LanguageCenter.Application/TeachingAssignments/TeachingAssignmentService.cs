@@ -311,8 +311,7 @@ public sealed class TeachingAssignmentService : ITeachingAssignmentService
         {
             return OperationResult<AssignmentDetailDto>.Conflict(
                 $"'{maGiaoVien}' đang phụ trách {soLopDangDay} lớp — đã đạt mức tối đa "
-                + $"{TeachingRules.SoLopDongThoiToiDa} lớp cùng lúc.",
-                [$"Hãy kết thúc một phân công cũ trước khi giao lớp mới."]);
+                + $"{TeachingRules.SoLopDongThoiToiDa} lớp cùng lúc. Hãy kết thúc một phân công cũ trước khi giao lớp mới.");
         }
 
         return null;

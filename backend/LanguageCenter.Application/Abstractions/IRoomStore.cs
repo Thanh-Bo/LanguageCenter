@@ -21,6 +21,15 @@ public interface IRoomStore
 
     /// <summary>Tạo phòng. Trả về MaPhongHoc mới, hoặc null nếu trùng mã (race condition).</summary>
     Task<int?> CreateAsync(RoomCreateData data, CancellationToken cancellationToken);
+
+    /// <summary>Cập nhật phòng. Field null = không đổi.</summary>
+    Task<WriteOutcome> UpdateAsync(
+        int maPhongHoc,
+        UpdateRoomRequest changes,
+        CancellationToken cancellationToken);
+
+    /// <summary>Xoá phòng (chặn khi còn lịch học / ca học tham chiếu).</summary>
+    Task<WriteOutcome> DeleteAsync(int maPhongHoc, CancellationToken cancellationToken);
 }
 
 /// <summary>Dữ liệu tạo phòng học (đã qua kiểm tra ở tầng Application).</summary>

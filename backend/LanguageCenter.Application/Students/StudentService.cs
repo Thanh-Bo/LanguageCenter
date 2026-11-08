@@ -62,8 +62,8 @@ public sealed class StudentService : IStudentService
             && await _studentStore.PhoneExistsAsync(soDienThoai, exceptMaHocVien: null, cancellationToken))
         {
             return OperationResult<CreateStudentResponse>.Conflict(
-                $"Số điện thoại '{soDienThoai}' đã được dùng cho hồ sơ khác.",
-                ["Mỗi số điện thoại chỉ gắn với một hồ sơ (học viên / phụ huynh / giáo viên)."]);
+                $"Số điện thoại '{soDienThoai}' đã được dùng cho hồ sơ khác "
+                + "(mỗi số điện thoại chỉ gắn với một hồ sơ học viên / phụ huynh / giáo viên).");
         }
 
         // Mật khẩu mặc định của trung tâm ("111111") — chỉ lưu dạng hash, không log plain text.
@@ -168,8 +168,8 @@ public sealed class StudentService : IStudentService
             && await _studentStore.PhoneExistsAsync(soDienThoai, code, cancellationToken))
         {
             return OperationResult<StudentDetailDto>.Conflict(
-                $"Số điện thoại '{soDienThoai}' đã được dùng cho hồ sơ khác.",
-                ["Mỗi số điện thoại chỉ gắn với một hồ sơ (học viên / phụ huynh / giáo viên)."]);
+                $"Số điện thoại '{soDienThoai}' đã được dùng cho hồ sơ khác "
+                + "(mỗi số điện thoại chỉ gắn với một hồ sơ học viên / phụ huynh / giáo viên).");
         }
 
         var outcome = await _studentStore.UpdateAsync(code, request, cancellationToken);

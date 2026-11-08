@@ -98,7 +98,9 @@ public partial class UcGiaoVien : UserControl
             ("page", _currentPage.ToString()),
             ("pageSize", PageSize.ToString()),
             ("search", txtSearch.Text.Trim()),
-            ("loaiGiaoVien", TeacherTypes.GiaoVien));
+            ("loaiGiaoVien", TeacherTypes.GiaoVien),
+            // Lọc trạng thái Ở SERVER: lọc sau khi phân trang chỉ đúng 20 dòng/trang.
+            ("trangThai", status == AllOption ? null : status));
 
         var result = await AppSession.Api.GetAsync<PagedResult<TeacherListItemDto>>(path);
 
@@ -119,21 +121,8 @@ public partial class UcGiaoVien : UserControl
         var data = result.Data;
         _totalPages = Math.Max(data.TotalPages, 1);
 
-        var items = data.Items.AsEnumerable();
-        if (!string.IsNullOrWhiteSpace(status) && status != AllOption)
-        {
-            items = items.Where(t => t.TrangThai == status);
-        }
-
-        var searchTxt = txtSearch.Text.Trim();
-        if (!string.IsNullOrWhiteSpace(searchTxt))
-        {
-            items = items.Where(t => t.HoTen.Contains(searchTxt, StringComparison.OrdinalIgnoreCase)
-                                  || t.MaGiaoVien.Contains(searchTxt, StringComparison.OrdinalIgnoreCase)
-                                  || (!string.IsNullOrEmpty(t.Email) && t.Email.Contains(searchTxt, StringComparison.OrdinalIgnoreCase)));
-        }
-
-        var itemList = items.ToList();
+        // Không lọc lại ở client nữa — server đã lọc theo trangThai + search.
+        var itemList = data.Items.ToList();
 
         foreach (var item in itemList)
         {

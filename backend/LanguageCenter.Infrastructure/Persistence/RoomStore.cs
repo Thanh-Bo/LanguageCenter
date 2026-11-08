@@ -140,4 +140,79 @@ public sealed class RoomStore : IRoomStore
             return null;
         }
     }
+
+    public async Task<WriteOutcome> UpdateAsync(
+        int maPhongHoc,
+        UpdateRoomRequest changes,
+        CancellationToken cancellationToken)
+    {
+        var entity = await _dbContext.PhongHocs
+            .FirstOrDefaultAsync(x => x.MaPhongHoc == maPhongHoc, cancellationToken);
+
+        if (entity is null)
+        {
+            return WriteOutcome.NotFound;
+        }
+
+        if (changes.TenPhong is not null)
+        {
+            entity.TenPhong = changes.TenPhong.Trim();
+        }
+
+        if (changes.ViTri is not null)
+        {
+            entity.ViTri = TextValue.Optional(changes.ViTri);
+        }
+
+        if (changes.SucChua is { } sucChua)
+        {
+            entity.SucChua = sucChua;
+        }
+
+        if (changes.ThietBi is not null)
+        {
+            entity.ThietBi = TextValue.Optional(changes.ThietBi);
+        }
+
+        if (changes.TrangThai is not null)
+        {
+            entity.TrangThai = changes.TrangThai.Trim();
+        }
+
+        await _dbContext.SaveChangesAsync(cancellationToken);
+
+        return WriteOutcome.Success;
+    }
+
+    public async Task<WriteOutcome> DeleteAsync(int maPhongHoc, CancellationToken cancellationToken)
+    {
+        var entity = await _dbContext.PhongHocs
+            .FirstOrDefaultAsync(x => x.MaPhongHoc == maPhongHoc, cancellationToken);
+
+        if (entity is null)
+        {
+            return WriteOutcome.NotFound;
+        }
+
+        // Còn lịch học / ca học dùng phòng → không xoá (FK Restrict).
+        var dangDung = await _dbContext.LichHocs.AnyAsync(x => x.MaPhongHoc == maPhongHoc, cancellationToken)
+                       || await _dbContext.CaHocs.AnyAsync(x => x.MaPhongHoc == maPhongHoc, cancellationToken);
+
+        if (dangDung)
+        {
+            return WriteOutcome.Conflict;
+        }
+
+        _dbContext.PhongHocs.Remove(entity);
+
+        try
+        {
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return WriteOutcome.Success;
+        }
+        catch (DbUpdateException)
+        {
+            return WriteOutcome.Conflict;
+        }
+    }
 }

@@ -17,4 +17,13 @@ public interface IRoomService
     Task<OperationResult<RoomListItemDto>> CreateAsync(
         CreateRoomRequest request,
         CancellationToken cancellationToken);
+
+    Task<OperationResult<RoomListItemDto>> UpdateAsync(
+        int maPhongHoc,
+        UpdateRoomRequest request,
+        CancellationToken cancellationToken);
+
+    Task<OperationResult<RoomListItemDto>> DeleteAsync(
+        int maPhongHoc,
+        CancellationToken cancellationToken);
 }
